@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <UserSecretsId>marathonrms-webapp-3d9a41c0</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WebApp chỉ tham chiếu DTOs – không truy cập DB (yêu cầu 2.6) -->
+    <ProjectReference Include="..\MarathonRMS.DTOs\MarathonRMS.DTOs.csproj" />
+  </ItemGroup>
+
+</Project>

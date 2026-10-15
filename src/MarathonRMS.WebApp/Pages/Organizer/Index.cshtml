@@ -1,0 +1,6 @@
+@page
+@{
+    ViewData["Title"] = "Ban tổ chức";
+    var model = new RoleHomeModel("Ban tổ chức", "bi-trophy", User.FindFirst("org_name")?.Value, new[] { "Tạo giải, chính sách giải, cự ly, giá, nhóm tuổi, checkpoint (UC-18 → UC-24)", "Danh sách đăng ký, gán BIB (UC-48, UC-49)", "Tính kết quả, công bố tạm → chính thức, DSQ (UC-59 → UC-61)", "Mời / gỡ Staff (UC-13)" });
+}
+<partial name="_RoleHome" model="model" />

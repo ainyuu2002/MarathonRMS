@@ -1,0 +1,6 @@
+@page
+@{
+    ViewData["Title"] = "Quản trị hệ thống";
+    var model = new RoleHomeModel("Quản trị hệ thống", "bi-gear-wide-connected", null, new[] { "Quản lý tài khoản Admin (UC-14)", "Cấu hình hệ thống: cổng thanh toán, thời gian giữ chỗ, mặc định chính sách giải (UC-15)", "Điều khoản sử dụng & chính sách quyền riêng tư theo phiên bản (UC-84)" });
+}
+<partial name="_RoleHome" model="model" />

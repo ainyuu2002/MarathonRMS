@@ -1,0 +1,18 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+<section class="p-4 p-md-5 mb-4 rounded-3 bg-body-tertiary border">
+    <h1 class="display-6 fw-semibold">Marathon Race Management System</h1>
+    <p class="lead mb-4">Nền tảng đăng ký và quản lý giải chạy cho nhiều ban tổ chức – giải đường phố và trail.</p>
+    @if (User.Identity?.IsAuthenticated != true)
+    {
+        <a class="btn btn-warning btn-lg me-2" asp-page="/Account/Register">Tạo tài khoản</a>
+        <a class="btn btn-outline-secondary btn-lg" asp-page="/Account/Login">Đăng nhập</a>
+    }
+</section>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Danh sách giải chạy (UC-34) sẽ hiển thị ở đây từ Giai đoạn 1.
+</div>

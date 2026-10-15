@@ -1,0 +1,6 @@
+@page
+@{
+    ViewData["Title"] = "Vận hành ngày thi";
+    var model = new RoleHomeModel("Vận hành ngày thi", "bi-stopwatch", User.FindFirst("org_name")?.Value, new[] { "Tra cứu VĐV, phát race kit (UC-52, UC-53)", "Nhập thời gian checkpoint, ghi nhận bỏ cuộc (UC-57, UC-58)" });
+}
+<partial name="_RoleHome" model="model" />

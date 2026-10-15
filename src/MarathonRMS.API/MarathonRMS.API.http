@@ -1,0 +1,10 @@
+@api = https://localhost:7040
+
+### Đăng nhập (dùng tài khoản demo trong appsettings.Development.json → Seed)
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "superadmin@mrms.local", "password": "<mật khẩu demo>" }
+
+### Văn bản pháp lý hiện hành
+GET {{api}}/api/legal/terms

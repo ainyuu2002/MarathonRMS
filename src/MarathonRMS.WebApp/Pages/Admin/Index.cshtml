@@ -1,0 +1,6 @@
+@page
+@{
+    ViewData["Title"] = "Quản trị nền tảng";
+    var model = new RoleHomeModel("Quản trị nền tảng", "bi-shield-check", null, new[] { "Duyệt hồ sơ đăng ký làm BTC (UC-09)", "Quản lý BTC, khóa/mở tài khoản (UC-10, UC-11)", "Quản lý địa điểm (UC-12)" });
+}
+<partial name="_RoleHome" model="model" />

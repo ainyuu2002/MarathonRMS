@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.API", "MarathonRMS.API\MarathonRMS.API.csproj", "{27FC6C1C-11D6-4B84-B9B0-E953FAE0CA0C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.BusinessObjects", "MarathonRMS.BusinessObjects\MarathonRMS.BusinessObjects.csproj", "{A9CE7DED-646A-41BA-85E6-D52E566EED0C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.DTOs", "MarathonRMS.DTOs\MarathonRMS.DTOs.csproj", "{ACAC131B-4543-484E-BA79-E188145984F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.DataAccessObjects", "MarathonRMS.DataAccessObjects\MarathonRMS.DataAccessObjects.csproj", "{AB9880DE-0516-4927-9808-E7B6D236045B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.Repositories", "MarathonRMS.Repositories\MarathonRMS.Repositories.csproj", "{28BE4FD3-0A6A-4EC3-A1DE-FEC277744DF4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.Services", "MarathonRMS.Services\MarathonRMS.Services.csproj", "{281138F4-A2B4-432F-A57D-AF34A872CF80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.WebApp", "MarathonRMS.WebApp\MarathonRMS.WebApp.csproj", "{D92B3919-9BCD-42B8-B031-3B300E391A27}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{27FC6C1C-11D6-4B84-B9B0-E953FAE0CA0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27FC6C1C-11D6-4B84-B9B0-E953FAE0CA0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27FC6C1C-11D6-4B84-B9B0-E953FAE0CA0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27FC6C1C-11D6-4B84-B9B0-E953FAE0CA0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9CE7DED-646A-41BA-85E6-D52E566EED0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9CE7DED-646A-41BA-85E6-D52E566EED0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9CE7DED-646A-41BA-85E6-D52E566EED0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9CE7DED-646A-41BA-85E6-D52E566EED0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACAC131B-4543-484E-BA79-E188145984F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACAC131B-4543-484E-BA79-E188145984F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACAC131B-4543-484E-BA79-E188145984F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACAC131B-4543-484E-BA79-E188145984F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB9880DE-0516-4927-9808-E7B6D236045B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB9880DE-0516-4927-9808-E7B6D236045B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB9880DE-0516-4927-9808-E7B6D236045B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB9880DE-0516-4927-9808-E7B6D236045B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28BE4FD3-0A6A-4EC3-A1DE-FEC277744DF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28BE4FD3-0A6A-4EC3-A1DE-FEC277744DF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28BE4FD3-0A6A-4EC3-A1DE-FEC277744DF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28BE4FD3-0A6A-4EC3-A1DE-FEC277744DF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{281138F4-A2B4-432F-A57D-AF34A872CF80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{281138F4-A2B4-432F-A57D-AF34A872CF80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{281138F4-A2B4-432F-A57D-AF34A872CF80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{281138F4-A2B4-432F-A57D-AF34A872CF80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D92B3919-9BCD-42B8-B031-3B300E391A27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D92B3919-9BCD-42B8-B031-3B300E391A27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D92B3919-9BCD-42B8-B031-3B300E391A27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D92B3919-9BCD-42B8-B031-3B300E391A27}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

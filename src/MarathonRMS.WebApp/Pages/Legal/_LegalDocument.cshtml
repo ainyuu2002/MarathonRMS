@@ -1,0 +1,17 @@
+@model MarathonRMS.DTOs.Legal.LegalDocumentDto?
+@if (Model is null)
+{
+    <div asp-validation-summary="All" class="alert alert-warning"></div>
+}
+else
+{
+    <article class="card">
+        <div class="card-body">
+            @* Nội dung do SuperAdmin soạn; khi làm UC-84 (sửa văn bản) phải lọc HTML phía server trước khi lưu – BR-50 *@
+            @Html.Raw(Model.Content)
+        </div>
+        <div class="card-footer small text-secondary">
+            Phiên bản @Model.Version – áp dụng từ @Model.PublishedAt.ToString("dd/MM/yyyy")
+        </div>
+    </article>
+}

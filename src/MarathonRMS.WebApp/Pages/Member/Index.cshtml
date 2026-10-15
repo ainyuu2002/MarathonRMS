@@ -1,0 +1,6 @@
+@page
+@{
+    ViewData["Title"] = "Khu vực của tôi";
+    var model = new RoleHomeModel("Khu vực của tôi", "bi-person-badge", null, new[] { "Hồ sơ người chạy & các đồng ý dữ liệu (UC-03, UC-04)", "Đăng ký giải, thanh toán, đăng ký của tôi (UC-39 → UC-45)", "Nộp hồ sơ trở thành Ban tổ chức (UC-08)" });
+}
+<partial name="_RoleHome" model="model" />

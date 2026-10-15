@@ -1,0 +1,18 @@
+@model RoleHomeModel
+@* Trang chủ tạm cho từng khu vực role – Giai đoạn 1 thay bằng chức năng thật *@
+<div class="d-flex align-items-center gap-3 mb-3">
+    <i class="bi @Model.Icon fs-1 text-primary"></i>
+    <div>
+        <h1 class="h3 mb-0">@Model.Title</h1>
+        <div class="text-secondary">Xin chào @User.Identity?.Name@(Model.OrganizationName is null ? "" : $" – {Model.OrganizationName}")</div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">Chức năng sẽ có ở Giai đoạn 1</div>
+    <ul class="list-group list-group-flush">
+        @foreach (var item in Model.Upcoming)
+        {
+            <li class="list-group-item"><i class="bi bi-hourglass-split text-secondary"></i> @item</li>
+        }
+    </ul>
+</div>

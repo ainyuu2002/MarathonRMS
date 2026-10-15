@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MarathonRMS.Repositories\MarathonRMS.Repositories.csproj" />
+    <ProjectReference Include="..\MarathonRMS.DTOs\MarathonRMS.DTOs.csproj" />
+  </ItemGroup>
+
+</Project>
