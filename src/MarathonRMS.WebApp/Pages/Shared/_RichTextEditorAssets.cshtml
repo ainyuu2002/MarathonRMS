@@ -1,0 +1,14 @@
+@* Đặt trong @section Scripts của trang có dùng _RichTextEditor *@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" />
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+    document.querySelectorAll('.rich-text-editor').forEach(el => {
+        const input = document.getElementById(el.dataset.target);
+        const quill = new Quill(el, {
+            theme: 'snow',
+            modules: { toolbar: [[{ header: [2, 3, false] }], ['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'blockquote'], ['clean']] }
+        });
+        if (input.value) quill.clipboard.dangerouslyPasteHTML(input.value); // nội dung đã được server lọc khi lưu
+        input.form?.addEventListener('submit', () => { input.value = quill.getSemanticHTML(); });
+    });
+</script>

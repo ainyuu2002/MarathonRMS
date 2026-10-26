@@ -49,6 +49,16 @@ void AddApiClient<TClient>() where TClient : class =>
 
 AddApiClient<AuthApiClient>();
 AddApiClient<LegalApiClient>();
+// Phần A
+AddApiClient<ProfileApiClient>();
+AddApiClient<OrganizationApiClient>();
+AddApiClient<VenueApiClient>();
+AddApiClient<AdminApiClient>();
+AddApiClient<SuperAdminApiClient>();
+// Phần B
+
+// Phần C
+
 
 var app = builder.Build();
 

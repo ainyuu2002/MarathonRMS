@@ -1,0 +1,8 @@
+@model RichTextEditorModel
+@*
+    Trình soạn thảo có định dạng (Quill) dùng chung – A: văn bản pháp lý; B: mô tả giải.
+    Nội dung HTML được ghi vào <input type="hidden" name="@Model.FieldName">; server PHẢI lọc lại bằng IHtmlContentSanitizer (BR-50).
+    Trang dùng partial này cần thêm vào section Styles/Scripts: <partial name="_RichTextEditorAssets" />
+*@
+<div class="rich-text-editor border rounded" data-target="@Model.FieldId" style="min-height:@(Model.MinHeightPx)px"></div>
+<input type="hidden" id="@Model.FieldId" name="@Model.FieldName" value="@Model.Value" />

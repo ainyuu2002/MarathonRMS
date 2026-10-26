@@ -1,6 +1,14 @@
 @page
 @{
     ViewData["Title"] = "Quản trị nền tảng";
-    var model = new RoleHomeModel("Quản trị nền tảng", "bi-shield-check", null, new[] { "Duyệt hồ sơ đăng ký làm BTC (UC-09)", "Quản lý BTC, khóa/mở tài khoản (UC-10, UC-11)", "Quản lý địa điểm (UC-12)" });
+    var cards = new[]
+    {
+        new NavCard("Hồ sơ Ban tổ chức", "Duyệt / từ chối hồ sơ đăng ký làm BTC", "bi-inbox", "/Admin/OrganizationApplications"),
+        new NavCard("Ban tổ chức", "Xem, sửa, tạm khóa ban tổ chức", "bi-buildings", "/Admin/Organizations"),
+        new NavCard("Tài khoản", "Tìm kiếm, khóa / mở tài khoản", "bi-people", "/Admin/Users"),
+        new NavCard("Địa điểm", "Địa điểm tổ chức dùng chung giữa các giải", "bi-geo-alt", "/Admin/Venues")
+    };
 }
-<partial name="_RoleHome" model="model" />
+<h1 class="h3 mb-1">Quản trị nền tảng</h1>
+<p class="text-secondary mb-4">Xin chào @User.Identity?.Name</p>
+<partial name="_NavCards" model="cards" />

@@ -60,6 +60,15 @@ src/
 
 Phụ thuộc: `API → Services → Repositories → DataAccessObjects → BusinessObjects`; `API, Services → DTOs`; **`WebApp → DTOs` duy nhất** (WebApp không truy cập DB).
 
+## Thành phần dùng chung (đã có – dùng lại, đừng viết mới)
+
+| Ở đâu | Thành phần |
+|---|---|
+| `Services/Common` | `IOrganizationScope` (phạm vi BTC BR-30, BTC bị khóa, xung đột lợi ích BR-32) · `IPrivacyFilter` (ẩn tên công khai BR-37, che số giấy tờ) · `AgeCalculator` · `IHtmlContentSanitizer` (BR-50) · `IAuditLogger` · `IDateTimeProvider` · `ISystemSettingsProvider` · `ToPagedAsync` · `SlugHelper` · `EnumParser` |
+| `WebApp` | `<status-badge status="…" />` · `_Pager` + `PagerModel` · `_RichTextEditor` + `_RichTextEditorAssets` · `_NavCards` · `BasePageModel.HandleApiErrorAsync` · `ApiClientBase` (Get/Post/Put/Patch/Delete, `Query`) |
+
+Đăng ký DI / typed client mới: thêm trong khối chú thích của phần mình ở `ServiceCollectionExtensions.cs` và `WebApp/Program.cs`.
+
 ## Quy ước
 
 - **Phiên bản package** chỉ khai báo trong `Directory.Packages.props`; csproj ghi `<PackageReference Include="..." />` không kèm Version.

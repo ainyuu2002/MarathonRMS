@@ -1,6 +1,14 @@
 @page
 @{
     ViewData["Title"] = "Quản trị hệ thống";
-    var model = new RoleHomeModel("Quản trị hệ thống", "bi-gear-wide-connected", null, new[] { "Quản lý tài khoản Admin (UC-14)", "Cấu hình hệ thống: cổng thanh toán, thời gian giữ chỗ, mặc định chính sách giải (UC-15)", "Điều khoản sử dụng & chính sách quyền riêng tư theo phiên bản (UC-84)" });
+    var cards = new[]
+    {
+        new NavCard("Tài khoản quản trị", "Tạo, khóa, đổi quyền Admin / SuperAdmin", "bi-shield-lock", "/SuperAdmin/Admins"),
+        new NavCard("Cấu hình hệ thống", "Thanh toán, thời gian giữ chỗ, mặc định chính sách giải, giới hạn giá", "bi-sliders", "/SuperAdmin/Settings"),
+        new NavCard("Điều khoản & quyền riêng tư", "Đăng phiên bản mới của văn bản pháp lý", "bi-file-earmark-text", "/SuperAdmin/Legal"),
+        new NavCard("Nhật ký hệ thống", "Xem lịch sử thao tác nhạy cảm (Giai đoạn 3)", "bi-journal-text", null)
+    };
 }
-<partial name="_RoleHome" model="model" />
+<h1 class="h3 mb-1">Quản trị hệ thống</h1>
+<p class="text-secondary mb-4">Xin chào @User.Identity?.Name</p>
+<partial name="_NavCards" model="cards" />

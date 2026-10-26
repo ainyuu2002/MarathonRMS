@@ -1,0 +1,64 @@
+@page
+@model MarathonRMS.WebApp.Pages.Admin.UsersModel
+@{
+    ViewData["Title"] = "Tài khoản";
+}
+<h1 class="h3 mb-3">Tài khoản</h1>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6"><input name="Keyword" value="@Model.Keyword" class="form-control" placeholder="Họ tên hoặc email" /></div>
+    <div class="col-md-4">
+        <select name="Role" class="form-select">
+            <option value="">Mọi vai trò</option>
+            @foreach (var r in AppRoles.All)
+            {
+                <option value="@r" selected="@(Model.Role == r)">@r</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2 d-grid"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i> Tìm</button></div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Ban tổ chức</th><th>Ngày tạo</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var u in Model.Data.Items)
+                {
+                    <tr>
+                        <td>@u.FullName</td>
+                        <td class="small">@u.Email</td>
+                        <td class="small">@string.Join(", ", u.Roles)</td>
+                        <td class="small">@u.OrganizationName</td>
+                        <td class="small">@u.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td><status-badge status="@(u.IsActive ? "Active" : "Inactive")" /></td>
+                        <td class="text-end">
+                            @if (UsersModel.IsAdminAccount(u))
+                            {
+                                <span class="small text-secondary">Do SuperAdmin quản lý</span>
+                            }
+                            else if (u.IsActive)
+                            {
+                                <form method="post" asp-page-handler="SetActive" asp-route-id="@u.Id" asp-route-isActive="false"
+                                      asp-route-keyword="@Model.Keyword" asp-route-role="@Model.Role" asp-route-p="@Model.P" class="d-flex gap-1">
+                                    <input name="reason" class="form-control form-control-sm" placeholder="Lý do" />
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-lock"></i></button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="SetActive" asp-route-id="@u.Id" asp-route-isActive="true"
+                                      asp-route-keyword="@Model.Keyword" asp-route-role="@Model.Role" asp-route-p="@Model.P">
+                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-unlock"></i> Mở khóa</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="mt-2"><partial name="_Pager" model="PagerModel.From(Model.Data, new { keyword = Model.Keyword, role = Model.Role })" /></div>

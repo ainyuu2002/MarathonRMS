@@ -1,0 +1,80 @@
+@model MarathonRMS.WebApp.Pages.Shared.VenuesPageModel
+<h1 class="h3 mb-3">Địa điểm tổ chức</h1>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <form method="get" class="d-flex gap-2 mb-3">
+            <input name="City" value="@Model.City" class="form-control" placeholder="Lọc theo tỉnh/thành phố" />
+            <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+        </form>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Tên</th><th>Địa chỉ</th><th>Tỉnh/TP</th><th class="text-center">Số giải</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var v in Model.Venues)
+                        {
+                            <tr>
+                                <td>@v.Name</td>
+                                <td class="small">@v.Address</td>
+                                <td>@v.City</td>
+                                <td class="text-center">@v.EventCount</td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-route-edit="@v.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                    @if (v.EventCount == 0)
+                                    {
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@v.Id" class="d-inline"
+                                              onsubmit="return confirm('Xóa địa điểm @v.Name?');">
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        @if (Model.Venues.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-center text-secondary py-4">Chưa có địa điểm.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <form method="post" asp-page-handler="Save" class="card" novalidate>
+            <div class="card-header">@(Model.EditingId is null ? "Thêm địa điểm" : "Sửa địa điểm")</div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                <input type="hidden" asp-for="EditingId" />
+                <div class="mb-2">
+                    <label asp-for="Input.Name" class="form-label">Tên</label>
+                    <input asp-for="Input.Name" class="form-control" />
+                    <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                </div>
+                <div class="mb-2">
+                    <label asp-for="Input.Address" class="form-label">Địa chỉ</label>
+                    <input asp-for="Input.Address" class="form-control" />
+                    <span asp-validation-for="Input.Address" class="text-danger small"></span>
+                </div>
+                <div class="mb-2">
+                    <label asp-for="Input.City" class="form-label">Tỉnh/Thành phố</label>
+                    <input asp-for="Input.City" class="form-control" />
+                    <span asp-validation-for="Input.City" class="text-danger small"></span>
+                </div>
+                <div class="row g-2">
+                    <div class="col">
+                        <label asp-for="Input.Latitude" class="form-label">Vĩ độ</label>
+                        <input asp-for="Input.Latitude" class="form-control" step="0.000001" />
+                    </div>
+                    <div class="col">
+                        <label asp-for="Input.Longitude" class="form-label">Kinh độ</label>
+                        <input asp-for="Input.Longitude" class="form-control" step="0.000001" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                @if (Model.EditingId is not null) { <a asp-page="" class="btn btn-link">Hủy</a> } else { <span></span> }
+                <button class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>

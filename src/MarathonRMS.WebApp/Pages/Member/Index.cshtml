@@ -1,6 +1,13 @@
 @page
 @{
     ViewData["Title"] = "Khu vực của tôi";
-    var model = new RoleHomeModel("Khu vực của tôi", "bi-person-badge", null, new[] { "Hồ sơ người chạy & các đồng ý dữ liệu (UC-03, UC-04)", "Đăng ký giải, thanh toán, đăng ký của tôi (UC-39 → UC-45)", "Nộp hồ sơ trở thành Ban tổ chức (UC-08)" });
+    var cards = new[]
+    {
+        new NavCard("Hồ sơ của tôi", "Thông tin người chạy, liên hệ khẩn cấp, đồng ý dữ liệu", "bi-person-vcard", "/Member/Profile"),
+        new NavCard("Đăng ký làm Ban tổ chức", "Tổ chức giải chạy trên hệ thống bằng tài khoản này", "bi-building-add", "/Member/BecomeOrganizer"),
+        new NavCard("Đăng ký của tôi", "Giải đã đăng ký, BIB, mã QR nhận race kit (phần B – Giai đoạn 1)", "bi-ticket-perforated", null)
+    };
 }
-<partial name="_RoleHome" model="model" />
+<h1 class="h3 mb-1">Khu vực của tôi</h1>
+<p class="text-secondary mb-4">Xin chào @User.Identity?.Name</p>
+<partial name="_NavCards" model="cards" />

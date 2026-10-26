@@ -1,0 +1,107 @@
+@page
+@model MarathonRMS.WebApp.Pages.Member.BecomeOrganizerModel
+@{
+    ViewData["Title"] = "Đăng ký làm Ban tổ chức";
+}
+<h1 class="h3 mb-3">Đăng ký làm Ban tổ chức</h1>
+<p class="text-secondary">Tổ chức giải chạy trên hệ thống bằng chính tài khoản này. Sau khi được duyệt, tài khoản có thêm quyền Ban tổ chức và vẫn đăng ký chạy giải bình thường.</p>
+
+@if (Model.NeedsSessionRefresh)
+{
+    <div class="alert alert-success d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-check-circle"></i> Hồ sơ của bạn đã được duyệt.</span>
+        <form method="post" asp-page-handler="RefreshSession">
+            <button class="btn btn-success btn-sm">Kích hoạt quyền Ban tổ chức</button>
+        </form>
+    </div>
+}
+
+@if (Model.Applications.Count > 0)
+{
+    <div class="card mb-4">
+        <div class="card-header">Hồ sơ đã nộp</div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Tổ chức</th><th>Mã số thuế</th><th>Ngày nộp</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model.Applications)
+                    {
+                        <tr>
+                            <td>@a.OrganizationName</td>
+                            <td>@a.TaxCode</td>
+                            <td>@a.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><status-badge status="@a.Status" /></td>
+                            <td class="small">@(a.Status == "Rejected" ? $"Lý do: {a.RejectReason}" : a.ReviewedAt is DateTime r ? $"Xử lý lúc {r:dd/MM/yyyy HH:mm}" : "")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model.AlreadyInOrganization)
+{
+    <div class="alert alert-secondary">Tài khoản của bạn đã thuộc một ban tổ chức.</div>
+}
+else if (Model.HasPending)
+{
+    <div class="alert alert-warning"><i class="bi bi-hourglass-split"></i> Hồ sơ đang chờ duyệt – mỗi tài khoản chỉ có một hồ sơ chờ duyệt tại một thời điểm.</div>
+}
+else
+{
+    <form method="post" class="card" novalidate>
+        <div class="card-header">Hồ sơ mới</div>
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label asp-for="Input.OrganizationName" class="form-label">Tên tổ chức</label>
+                    <input asp-for="Input.OrganizationName" class="form-control" />
+                    <span asp-validation-for="Input.OrganizationName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.TaxCode" class="form-label">Mã số thuế</label>
+                    <input asp-for="Input.TaxCode" class="form-control" />
+                    <span asp-validation-for="Input.TaxCode" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.RepresentativeName" class="form-label">Người đại diện</label>
+                    <input asp-for="Input.RepresentativeName" class="form-control" />
+                    <span asp-validation-for="Input.RepresentativeName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.ContactEmail" class="form-label">Email liên hệ</label>
+                    <input asp-for="Input.ContactEmail" class="form-control" />
+                    <span asp-validation-for="Input.ContactEmail" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.ContactPhone" class="form-label">Điện thoại</label>
+                    <input asp-for="Input.ContactPhone" class="form-control" />
+                    <span asp-validation-for="Input.ContactPhone" class="text-danger small"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.Address" class="form-label">Địa chỉ</label>
+                    <input asp-for="Input.Address" class="form-control" />
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.Description" class="form-label">Giới thiệu, kinh nghiệm tổ chức sự kiện</label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.DocumentUrl" class="form-label">Link giấy phép kinh doanh / quyết định thành lập</label>
+                    <input asp-for="Input.DocumentUrl" class="form-control" placeholder="https://…" />
+                    <span asp-validation-for="Input.DocumentUrl" class="text-danger small"></span>
+                    <div class="form-text">Giấy tờ của tổ chức – không gửi ảnh giấy tờ tùy thân cá nhân.</div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-end">
+            <button class="btn btn-primary"><i class="bi bi-send"></i> Gửi hồ sơ</button>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

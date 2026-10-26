@@ -20,3 +20,7 @@ html {
 body {
   margin-bottom: 60px;
 }
+/* Thẻ điều hướng trang chủ khu vực role */
+.nav-card { transition: box-shadow .15s ease, transform .15s ease; }
+.nav-card:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.08); transform: translateY(-2px); }
+.border-dashed { border-style: dashed !important; }

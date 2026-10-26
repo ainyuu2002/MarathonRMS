@@ -1,0 +1,45 @@
+@page
+@model MarathonRMS.WebApp.Pages.SuperAdmin.LegalModel
+@{
+    ViewData["Title"] = "Điều khoản & quyền riêng tư";
+}
+<h1 class="h3 mb-3">Điều khoản &amp; quyền riêng tư</h1>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link @(Model.DocType == "Terms" ? "active" : "")" asp-route-docType="Terms">Điều khoản sử dụng</a></li>
+    <li class="nav-item"><a class="nav-link @(Model.DocType == "Privacy" ? "active" : "")" asp-route-docType="Privacy">Chính sách quyền riêng tư</a></li>
+</ul>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <form method="post" asp-route-docType="@Model.DocType" class="card">
+            <div class="card-header">Soạn phiên bản mới (phiên bản @((Model.Versions.FirstOrDefault()?.Version ?? 0) + 1))</div>
+            <div class="card-body">
+                <div asp-validation-summary="All" class="alert alert-danger py-2"></div>
+                <partial name="_RichTextEditor" model="new RichTextEditorModel(Html.NameFor(m => m.Input.Content), Model.Input.Content, 360)" />
+                <div class="form-text">Mỗi lần đăng là một phiên bản mới; phiên bản cũ được giữ nguyên để đối chiếu sự đồng ý của người dùng. Nội dung được lọc HTML trước khi lưu.</div>
+            </div>
+            <div class="card-footer text-end">
+                <button class="btn btn-primary" onclick="return confirm('Đăng phiên bản mới?');"><i class="bi bi-upload"></i> Đăng phiên bản mới</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Lịch sử phiên bản</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var v in Model.Versions)
+                {
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Phiên bản @v.Version @(v == Model.Versions.First() ? Html.Raw("<span class=\"badge text-bg-success\">Hiện hành</span>") : null)</span>
+                        <span class="small text-secondary">@v.PublishedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_RichTextEditorAssets" />
+}

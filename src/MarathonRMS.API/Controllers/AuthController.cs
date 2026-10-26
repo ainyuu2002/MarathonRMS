@@ -33,6 +33,12 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken ct) =>
         Ok(await _auth.LoginAsync(request, ct));
 
+    /// <summary>Cấp lại JWT với quyền hiện tại (sau khi được duyệt làm BTC, được mời làm Staff…).</summary>
+    [HttpPost("refresh")]
+    [Authorize]
+    public async Task<ActionResult<AuthResponse>> Refresh(CancellationToken ct) =>
+        Ok(await _auth.RefreshAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, ct));
+
     /// <summary>Thông tin tài khoản đang đăng nhập.</summary>
     [HttpGet("me")]
     [Authorize]

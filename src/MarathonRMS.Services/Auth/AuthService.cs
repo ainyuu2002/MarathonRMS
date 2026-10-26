@@ -13,6 +13,8 @@ public interface IAuthService
     Task<CurrentUserDto> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
     Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default);
     Task<CurrentUserDto> GetCurrentUserAsync(string userId, CancellationToken ct = default);
+    /// <summary>Cấp lại JWT với role/BTC hiện tại – dùng sau khi được duyệt làm BTC, được mời làm Staff, đổi quyền.</summary>
+    Task<AuthResponse> RefreshAsync(string userId, CancellationToken ct = default);
 }
 
 public class AuthService : IAuthService
@@ -108,6 +110,16 @@ public class AuthService : IAuthService
             ExpiresAt = expires,
             User = await ToDtoAsync(user, roles, ct)
         };
+    }
+
+    public async Task<AuthResponse> RefreshAsync(string userId, CancellationToken ct = default)
+    {
+        var user = await _users.FindByIdAsync(userId) ?? throw new NotFoundException("Không tìm thấy tài khoản.");
+        if (!user.IsActive)
+            throw new BusinessRuleException(ErrorCodes.AccountDisabled, "Tài khoản đã bị khóa bởi quản trị viên.", 403);
+        var roles = await _users.GetRolesAsync(user);
+        var (token, expires) = _tokens.CreateToken(user, roles);
+        return new AuthResponse { AccessToken = token, ExpiresAt = expires, User = await ToDtoAsync(user, roles, ct) };
     }
 
     public async Task<CurrentUserDto> GetCurrentUserAsync(string userId, CancellationToken ct = default)

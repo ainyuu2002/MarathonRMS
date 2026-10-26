@@ -1,4 +1,5 @@
 using System.Net;
+using MarathonRMS.WebApp.ApiClients;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -30,5 +31,15 @@ public abstract class BasePageModel : PageModel
         if (ex.ValidationErrors.Count == 0)
             ModelState.AddModelError(string.Empty, ex.Message);
         return null;
+    }
+
+    /// <summary>
+    /// Lấy JWT mới với role/BTC hiện tại và đăng nhập lại cookie – dùng sau khi quyền thay đổi
+    /// (được duyệt làm BTC, được mời làm Staff) mà không bắt người dùng đăng xuất.
+    /// </summary>
+    protected async Task RefreshSessionAsync(AuthApiClient auth, CancellationToken ct = default)
+    {
+        var refreshed = await auth.RefreshAsync(ct);
+        await AuthCookieSignIn.SignInAsync(HttpContext, refreshed);
     }
 }

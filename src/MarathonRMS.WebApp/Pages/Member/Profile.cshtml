@@ -1,0 +1,150 @@
+@page
+@model MarathonRMS.WebApp.Pages.Member.ProfileModel
+@{
+    ViewData["Title"] = "Hồ sơ của tôi";
+    var healthGranted = Model.Consents.Any(c => c.ConsentType == "HealthData" && c.Granted);
+}
+<h1 class="h3 mb-3">Hồ sơ của tôi</h1>
+
+@if (Model.Profile is { IsCompleteForRegistration: false })
+{
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> Hoàn thiện các trường có dấu <span class="text-danger">*</span> để đăng ký giải nhanh hơn – thông tin sẽ được điền sẵn vào form đăng ký.</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <form method="post" class="card" novalidate>
+            <div class="card-header">Thông tin người chạy</div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.FullName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                        <input asp-for="Input.FullName" class="form-control" />
+                        <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.DateOfBirth" class="form-label">Ngày sinh <span class="text-danger">*</span></label>
+                        <input asp-for="Input.DateOfBirth" type="date" class="form-control" />
+                        <span asp-validation-for="Input.DateOfBirth" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.Gender" class="form-label">Giới tính <span class="text-danger">*</span></label>
+                        <select asp-for="Input.Gender" class="form-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="M">Nam</option>
+                            <option value="F">Nữ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Nationality" class="form-label">Quốc tịch <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Nationality" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.IdType" class="form-label">Loại giấy tờ</label>
+                        <select asp-for="Input.IdType" class="form-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="CCCD">CCCD</option>
+                            <option value="Passport">Hộ chiếu</option>
+                            <option value="BirthCertificate">Giấy khai sinh</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.IdNumber" class="form-label">Số giấy tờ</label>
+                        <input asp-for="Input.IdNumber" class="form-control" />
+                        <span asp-validation-for="Input.IdNumber" class="text-danger small"></span>
+                        <div class="form-text">Chỉ lưu số, không lưu ảnh giấy tờ.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Phone" class="form-control" />
+                        <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.TShirtSize" class="form-label">Size áo <span class="text-danger">*</span></label>
+                        <select asp-for="Input.TShirtSize" class="form-select">
+                            <option value="">-- Chọn --</option>
+                            @foreach (var size in DomainValues.TShirtSizes) { <option value="@size">@size</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.ClubName" class="form-label">Câu lạc bộ</label>
+                        <input asp-for="Input.ClubName" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.EmergencyContactName" class="form-label">Người liên hệ khẩn cấp <span class="text-danger">*</span></label>
+                        <input asp-for="Input.EmergencyContactName" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.EmergencyContactPhone" class="form-label">SĐT liên hệ khẩn cấp <span class="text-danger">*</span></label>
+                        <input asp-for="Input.EmergencyContactPhone" class="form-control" />
+                        <span asp-validation-for="Input.EmergencyContactPhone" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+                <h2 class="h6">Thông tin y tế <span class="badge text-bg-light border">Tùy chọn</span></h2>
+                <p class="small text-secondary">Giúp đội y tế xử lý khi bạn gặp sự cố. Chỉ BTC và nhân viên của giải bạn tham gia được xem.</p>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label asp-for="Input.BloodType" class="form-label">Nhóm máu</label>
+                        <input asp-for="Input.BloodType" class="form-control" placeholder="VD: O+" />
+                    </div>
+                    <div class="col-md-9">
+                        <label asp-for="Input.MedicalNotes" class="form-label">Bệnh nền / ghi chú y tế</label>
+                        <input asp-for="Input.MedicalNotes" class="form-control" />
+                    </div>
+                </div>
+                @if (!healthGranted)
+                {
+                    @* BR-09: không tick sẵn *@
+                    <div class="form-check mt-3">
+                        <input asp-for="Input.HealthDataConsent" class="form-check-input" />
+                        <label asp-for="Input.HealthDataConsent" class="form-check-label small">
+                            Tôi đồng ý cho phép xử lý dữ liệu sức khỏe của mình cho mục đích hỗ trợ y tế khi thi đấu.
+                        </label>
+                    </div>
+                }
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu hồ sơ</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Đồng ý xử lý dữ liệu</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var c in Model.Consents)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between gap-2">
+                            <span class="small">@c.Description</span>
+                            @if (c.Granted) { <span class="badge text-bg-success align-self-start">Đã đồng ý</span> }
+                            else { <span class="badge text-bg-secondary align-self-start">Chưa</span> }
+                        </div>
+                        @if (!c.IsRequired)
+                        {
+                            <form method="post" asp-page-handler="Consent" class="mt-2">
+                                <input type="hidden" name="consentType" value="@c.ConsentType" />
+                                <input type="hidden" name="granted" value="@((!c.Granted).ToString().ToLowerInvariant())" />
+                                <button class="btn btn-sm @(c.Granted ? "btn-outline-danger" : "btn-outline-success")">
+                                    @(c.Granted ? "Rút lại đồng ý" : "Đồng ý")
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="small text-secondary mt-1">Bắt buộc để sử dụng hệ thống@(c.DocumentVersion is int v ? $" – phiên bản {v}" : "").</div>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

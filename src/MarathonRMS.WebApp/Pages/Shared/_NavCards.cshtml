@@ -1,0 +1,29 @@
+@model IEnumerable<NavCard>
+@* Lưới thẻ điều hướng cho trang chủ của từng khu vực role *@
+<div class="row g-3">
+    @foreach (var card in Model)
+    {
+        <div class="col-sm-6 col-lg-4">
+            @if (card.Page is null)
+            {
+                <div class="card h-100 border-dashed text-secondary">
+                    <div class="card-body">
+                        <i class="bi @card.Icon fs-3"></i>
+                        <h2 class="h6 mt-2 mb-1">@card.Title</h2>
+                        <p class="small mb-0">@card.Description</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <a asp-page="@card.Page" class="card h-100 text-decoration-none nav-card">
+                    <div class="card-body">
+                        <i class="bi @card.Icon fs-3 text-primary"></i>
+                        <h2 class="h6 mt-2 mb-1 text-body">@card.Title</h2>
+                        <p class="small text-secondary mb-0">@card.Description</p>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</div>

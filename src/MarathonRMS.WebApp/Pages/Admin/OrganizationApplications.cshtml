@@ -1,0 +1,63 @@
+@page
+@model MarathonRMS.WebApp.Pages.Admin.OrganizationApplicationsModel
+@{
+    ViewData["Title"] = "Hồ sơ Ban tổ chức";
+    var tabs = new (string? Value, string Label)[] { ("Pending", "Chờ duyệt"), ("Approved", "Đã duyệt"), ("Rejected", "Từ chối"), ("All", "Tất cả") };
+}
+<h1 class="h3 mb-3">Hồ sơ đăng ký làm Ban tổ chức</h1>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<ul class="nav nav-tabs mb-3">
+    @foreach (var t in tabs)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(Model.Status == t.Value ? "active" : "")" asp-route-status="@t.Value">@t.Label</a>
+        </li>
+    }
+</ul>
+
+@if (Model.Data.Items.Count == 0)
+{
+    <div class="text-center text-secondary py-5">Không có hồ sơ.</div>
+}
+@foreach (var a in Model.Data.Items)
+{
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><strong>@a.OrganizationName</strong> <span class="text-secondary small">– MST @a.TaxCode</span></span>
+            <status-badge status="@a.Status" />
+        </div>
+        <div class="card-body">
+            <div class="row small g-2">
+                <div class="col-md-6"><span class="text-secondary">Người nộp:</span> @a.ApplicantName (@a.ApplicantEmail)</div>
+                <div class="col-md-6"><span class="text-secondary">Ngày nộp:</span> @a.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                <div class="col-md-6"><span class="text-secondary">Người đại diện:</span> @a.RepresentativeName</div>
+                <div class="col-md-6"><span class="text-secondary">Liên hệ:</span> @a.ContactEmail · @a.ContactPhone</div>
+                @if (!string.IsNullOrEmpty(a.Address)) { <div class="col-12"><span class="text-secondary">Địa chỉ:</span> @a.Address</div> }
+                @if (!string.IsNullOrEmpty(a.Description)) { <div class="col-12"><span class="text-secondary">Giới thiệu:</span> @a.Description</div> }
+                @if (!string.IsNullOrEmpty(a.DocumentUrl))
+                {
+                    <div class="col-12"><span class="text-secondary">Giấy tờ:</span> <a href="@a.DocumentUrl" target="_blank" rel="noopener noreferrer">@a.DocumentUrl</a></div>
+                }
+                @if (a.Status != "Pending")
+                {
+                    <div class="col-12 text-secondary">Xử lý bởi @a.ReviewedByName lúc @a.ReviewedAt?.ToString("dd/MM/yyyy HH:mm")@(a.RejectReason is null ? "" : $" – Lý do: {a.RejectReason}")</div>
+                }
+            </div>
+        </div>
+        @if (a.Status == "Pending")
+        {
+            <div class="card-footer d-flex flex-wrap gap-2 justify-content-end">
+                <form method="post" asp-page-handler="Reject" asp-route-id="@a.Id" asp-route-status="@Model.Status" class="d-flex gap-2 flex-grow-1">
+                    <input name="reason" class="form-control form-control-sm" placeholder="Lý do từ chối (bắt buộc)" required minlength="5" />
+                    <button class="btn btn-sm btn-outline-danger text-nowrap">Từ chối</button>
+                </form>
+                <form method="post" asp-page-handler="Approve" asp-route-id="@a.Id" asp-route-status="@Model.Status"
+                      onsubmit="return confirm('Duyệt hồ sơ và tạo ban tổ chức @a.OrganizationName?');">
+                    <button class="btn btn-sm btn-success text-nowrap"><i class="bi bi-check-lg"></i> Duyệt</button>
+                </form>
+            </div>
+        }
+    </div>
+}
+<partial name="_Pager" model="PagerModel.From(Model.Data, new { status = Model.Status })" />

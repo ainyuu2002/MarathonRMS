@@ -1,0 +1,89 @@
+@page
+@model MarathonRMS.WebApp.Pages.Admin.OrganizationsModel
+@{
+    ViewData["Title"] = "Ban tổ chức";
+}
+<h1 class="h3 mb-3">Ban tổ chức</h1>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<div class="row g-4">
+    <div class="@(Model.Edit is null ? "col-12" : "col-lg-8")">
+        <form method="get" class="d-flex gap-2 mb-3">
+            <input name="Keyword" value="@Model.Keyword" class="form-control" placeholder="Tên, mã số thuế, email" />
+            <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+        </form>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Tên</th><th>MST</th><th>Liên hệ</th><th class="text-center">Thành viên</th><th class="text-center">Giải</th><th>Trạng thái</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var o in Model.Data.Items)
+                        {
+                            <tr>
+                                <td>@o.Name</td>
+                                <td>@o.TaxCode</td>
+                                <td class="small">@o.ContactEmail<br />@o.ContactPhone</td>
+                                <td class="text-center">@o.MemberCount</td>
+                                <td class="text-center">@o.EventCount</td>
+                                <td><status-badge status="@(o.IsActive ? "Active" : "Inactive")" /></td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-route-edit="@o.Id" asp-route-keyword="@Model.Keyword" asp-route-p="@Model.P" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" asp-page-handler="SetActive" asp-route-id="@o.Id" asp-route-isActive="@(!o.IsActive)"
+                                          asp-route-keyword="@Model.Keyword" asp-route-p="@Model.P" class="d-inline"
+                                          onsubmit="return confirm('@(o.IsActive ? "Tạm khóa" : "Mở khóa") ban tổ chức @o.Name?');">
+                                        <button class="btn btn-sm @(o.IsActive ? "btn-outline-danger" : "btn-outline-success")">
+                                            <i class="bi @(o.IsActive ? "bi-lock" : "bi-unlock")"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="mt-2"><partial name="_Pager" model="PagerModel.From(Model.Data, new { keyword = Model.Keyword })" /></div>
+    </div>
+
+    @if (Model.Edit is not null)
+    {
+        <div class="col-lg-4">
+            <form method="post" asp-page-handler="Save" asp-route-edit="@Model.Edit" asp-route-keyword="@Model.Keyword" asp-route-p="@Model.P" class="card" novalidate>
+                <div class="card-header">Sửa ban tổ chức</div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label asp-for="Input.Name" class="form-label">Tên</label>
+                        <input asp-for="Input.Name" class="form-control" />
+                        <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Input.ContactEmail" class="form-label">Email</label>
+                        <input asp-for="Input.ContactEmail" class="form-control" />
+                        <span asp-validation-for="Input.ContactEmail" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Input.ContactPhone" class="form-label">Điện thoại</label>
+                        <input asp-for="Input.ContactPhone" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Input.LogoUrl" class="form-label">Logo (URL)</label>
+                        <input asp-for="Input.LogoUrl" class="form-control" />
+                        <span asp-validation-for="Input.LogoUrl" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Input.Description" class="form-label">Giới thiệu</label>
+                        <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a asp-route-keyword="@Model.Keyword" asp-route-p="@Model.P" class="btn btn-link">Đóng</a>
+                    <button class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
+                </div>
+            </form>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

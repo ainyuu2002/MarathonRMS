@@ -16,6 +16,10 @@ public class AuthApiClient : ApiClientBase
 
     public Task<CurrentUserDto> GetMeAsync(CancellationToken ct = default) =>
         GetAsync<CurrentUserDto>("api/auth/me", ct);
+
+    /// <summary>Cấp lại JWT với quyền hiện tại – gọi rồi đăng nhập lại cookie bằng AuthCookieSignIn.</summary>
+    public Task<AuthResponse> RefreshAsync(CancellationToken ct = default) =>
+        PostAsync<AuthResponse>("api/auth/refresh", ct);
 }
 
 public class LegalApiClient : ApiClientBase

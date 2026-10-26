@@ -1,8 +1,11 @@
 using MarathonRMS.DataAccessObjects;
 using MarathonRMS.Repositories;
+using MarathonRMS.Services.Accounts;
+using MarathonRMS.Services.Admin;
 using MarathonRMS.Services.Auth;
 using MarathonRMS.Services.Common;
 using MarathonRMS.Services.Legal;
+using MarathonRMS.Services.Organizations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,6 +23,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SystemSettingDAO>();
         services.AddScoped<AuditLogDAO>();
         services.AddScoped<OrganizationDAO>();
+        services.AddScoped<OrganizationApplicationDAO>();
+        services.AddScoped<VenueDAO>();
+        services.AddScoped<UserDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -29,6 +35,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+        services.AddScoped<IOrganizationApplicationRepository, OrganizationApplicationRepository>();
+        services.AddScoped<IVenueRepository, VenueRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -37,12 +46,29 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<ISystemSettingsProvider, SystemSettingsProvider>();
+        // Dùng chung cho B, C: lọc HTML (BR-50), quyền riêng tư công khai (BR-37), phạm vi BTC + xung đột lợi ích (BR-30, BR-32)
+        services.AddSingleton<IHtmlContentSanitizer, HtmlContentSanitizer>();
+        services.AddSingleton<IPrivacyFilter, PrivacyFilter>();
+        services.AddScoped<IOrganizationScope, OrganizationScope>();
 
         // Nghiệp vụ
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ILegalService, LegalService>();
+
+        // Phần A – hồ sơ, BTC, quản trị
+        services.AddScoped<IConsentService, ConsentService>();
+        services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IOrganizationApplicationService, OrganizationApplicationService>();
+        services.AddScoped<IOrganizationService, OrganizationService>();
+        services.AddScoped<IUserAdminService, UserAdminService>();
+        services.AddScoped<IVenueService, VenueService>();
+        services.AddScoped<ISystemSettingService, SystemSettingService>();
+
+        // Phần B – giải, đăng ký, thanh toán (thêm bên dưới)
+
+        // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
 
         return services;
     }

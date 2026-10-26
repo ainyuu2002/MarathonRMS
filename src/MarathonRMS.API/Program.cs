@@ -54,6 +54,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.FromMinutes(1),
             RoleClaimType = ClaimTypes.Role
         };
+        // Tài khoản bị khóa (UC-11, UC-14) mất quyền ngay ở request kế tiếp, không chờ JWT hết hạn
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                var users = context.HttpContext.RequestServices.GetRequiredService<UserManager<AppUser>>();
+                var user = userId is null ? null : await users.FindByIdAsync(userId);
+                if (user is null || !user.IsActive)
+                    context.Fail("Tài khoản không còn hoạt động.");
+            }
+        };
     });
 
 builder.Services.AddAuthorizationBuilder()

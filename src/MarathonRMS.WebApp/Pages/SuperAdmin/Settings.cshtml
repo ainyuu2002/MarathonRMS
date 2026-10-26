@@ -1,0 +1,51 @@
+@page
+@model MarathonRMS.WebApp.Pages.SuperAdmin.SettingsModel
+@{
+    ViewData["Title"] = "Cấu hình hệ thống";
+}
+<h1 class="h3 mb-3">Cấu hình hệ thống</h1>
+<p class="text-secondary small">Thay đổi có hiệu lực ngay và được ghi nhật ký. Giá trị "mặc định chính sách" chỉ áp dụng cho giải tạo sau thời điểm sửa.</p>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@foreach (var group in Model.Groups)
+{
+    <div class="card mb-3">
+        <div class="card-header">@SettingsModel.GroupLabel(group.Key)</div>
+        <ul class="list-group list-group-flush">
+            @foreach (var s in group)
+            {
+                var value = s.Key == Model.FailedKey ? Model.FailedValue : s.Value;
+                <li class="list-group-item">
+                    <form method="post" class="row g-2 align-items-center">
+                        <input type="hidden" name="key" value="@s.Key" />
+                        <div class="col-md-6">
+                            <div class="fw-semibold small"><code>@s.Key</code></div>
+                            <div class="small text-secondary">@s.Description</div>
+                        </div>
+                        <div class="col-md-4">
+                            @if (s.DataType == "Bool")
+                            {
+                                <select name="value" class="form-select form-select-sm">
+                                    <option value="true" selected="@(value == "true")">Bật</option>
+                                    <option value="false" selected="@(value == "false")">Tắt</option>
+                                </select>
+                            }
+                            else
+                            {
+                                <input name="value" value="@value" class="form-control form-control-sm @(s.Key == Model.FailedKey ? "is-invalid" : "")"
+                                       inputmode="@(s.DataType is "Int" or "Decimal" ? "decimal" : "text")" required />
+                            }
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-sm btn-outline-primary">Lưu</button>
+                        </div>
+                        @if (s.UpdatedAt is DateTime at)
+                        {
+                            <div class="col-12 small text-secondary">Sửa lần cuối: @at.ToString("dd/MM/yyyy HH:mm")</div>
+                        }
+                    </form>
+                </li>
+            }
+        </ul>
+    </div>
+}
