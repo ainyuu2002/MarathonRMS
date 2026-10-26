@@ -64,8 +64,10 @@ Phụ thuộc: `API → Services → Repositories → DataAccessObjects → Busi
 
 | Ở đâu | Thành phần |
 |---|---|
-| `Services/Common` | `IOrganizationScope` (phạm vi BTC BR-30, BTC bị khóa, xung đột lợi ích BR-32) · `IPrivacyFilter` (ẩn tên công khai BR-37, che số giấy tờ) · `AgeCalculator` · `IHtmlContentSanitizer` (BR-50) · `IAuditLogger` · `IDateTimeProvider` · `ISystemSettingsProvider` · `ToPagedAsync` · `SlugHelper` · `EnumParser` |
-| `WebApp` | `<status-badge status="…" />` · `_Pager` + `PagerModel` · `_RichTextEditor` + `_RichTextEditorAssets` · `_NavCards` · `BasePageModel.HandleApiErrorAsync` · `ApiClientBase` (Get/Post/Put/Patch/Delete, `Query`) |
+| `Services/Common` | `IOrganizationScope` (phạm vi BTC BR-30, BTC bị khóa, xung đột lợi ích BR-32) · `IPrivacyFilter` (ẩn tên công khai BR-37, che số giấy tờ) · `AgeCalculator` · `IHtmlContentSanitizer` (BR-50) · `IAuditLogger` · `IDateTimeProvider` · `ISystemSettingsProvider` · `ToPagedAsync` · `SlugHelper` · `EnumParser` · `IFileStorage` (file tải lên, `API/wwwroot/uploads`) |
+| `Services` (nghiệp vụ dùng chung) | `ICouponService.QuoteAsync/RedeemAsync/ReleaseAsync` (coupon khi đăng ký – BR-11) · `IEventContentService.GetPublicAsync` (trang giới thiệu + album) |
+| `API` | `OData/EdmModelBuilder.cs` – khai báo entity set OData theo vùng từng phần; mẫu controller: `AuditLogsController` |
+| `WebApp` | `<status-badge status="…" />` · `_Pager` + `PagerModel` · `_RichTextEditor` + `_RichTextEditorAssets` · `_NavCards` · `_EventContent` + `_EventGallery` · `BasePageModel.HandleApiErrorAsync` · `ApiClientBase` (Get/Post/Put/Patch/Delete, `Query`, `GetODataPageAsync`, `PostMultipartAsync`) · `ODataQuery` (dựng `$filter` an toàn) |
 
 Đăng ký DI / typed client mới: thêm trong khối chú thích của phần mình ở `ServiceCollectionExtensions.cs` và `WebApp/Program.cs`.
 

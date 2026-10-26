@@ -25,6 +25,13 @@ public abstract class ApiClientBase
     protected async Task<T> PostAsync<T>(string url, CancellationToken ct = default) =>
         await ReadAsync<T>(await SendAsync(() => Http.PostAsync(url, null, ct)), ct);
 
+    /// <summary>POST multipart/form-data (tải file lên).</summary>
+    protected async Task<T> PostMultipartAsync<T>(string url, MultipartFormDataContent content, CancellationToken ct = default) =>
+        await ReadAsync<T>(await SendAsync(() => Http.PostAsync(url, content, ct)), ct);
+
+    protected async Task PutAsync(string url, object body, CancellationToken ct = default) =>
+        await EnsureSuccessAsync(await SendAsync(() => Http.PutAsJsonAsync(url, body, Json, ct)), ct);
+
     protected async Task<T> PutAsync<T>(string url, object body, CancellationToken ct = default) =>
         await ReadAsync<T>(await SendAsync(() => Http.PutAsJsonAsync(url, body, Json, ct)), ct);
 
@@ -33,6 +40,26 @@ public abstract class ApiClientBase
 
     protected async Task DeleteAsync(string url, CancellationToken ct = default) =>
         await EnsureSuccessAsync(await SendAsync(() => Http.DeleteAsync(url, ct)), ct);
+
+    /// <summary>
+    /// Đọc một trang từ endpoint OData (GET odata/{entitySet}) thành PagedResult để dùng chung partial _Pager.
+    /// filter/orderBy theo cú pháp OData; dựng filter bằng ODataQuery.Str/Date để tránh lỗi dấu nháy.
+    /// </summary>
+    protected async Task<MarathonRMS.DTOs.Common.PagedResult<T>> GetODataPageAsync<T>(string entitySet, string? filter, string? orderBy,
+        int page, int pageSize, CancellationToken ct = default)
+    {
+        page = Math.Max(1, page);
+        var url = Query($"odata/{entitySet}", ("$filter", filter), ("$orderby", orderBy), ("$top", pageSize),
+            ("$skip", (page - 1) * pageSize), ("$count", "true"));
+        var body = await ReadAsync<ODataResponse<T>>(await SendAsync(() => Http.GetAsync(url, ct)), ct);
+        return new MarathonRMS.DTOs.Common.PagedResult<T> { Items = body.Value, Page = page, PageSize = pageSize, TotalCount = (int)body.Count };
+    }
+
+    private sealed class ODataResponse<T>
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("@odata.count")] public long Count { get; set; }
+        public List<T> Value { get; set; } = new();
+    }
 
     /// <summary>Ghép query string, bỏ tham số rỗng. VD Query("api/x", ("page", 2), ("q", null)).</summary>
     protected static string Query(string path, params (string Key, object? Value)[] parameters)

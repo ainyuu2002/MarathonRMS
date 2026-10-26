@@ -1,0 +1,82 @@
+@page "{eventId:int?}"
+@model MarathonRMS.WebApp.Pages.Organizer.EventAlbumModel
+@{
+    ViewData["Title"] = "Album ảnh giải";
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Album ảnh giải</h1>
+    <select class="form-select w-auto" onchange="location.href='@Url.Page("/Organizer/EventAlbum")/' + this.value" aria-label="Chọn giải">
+        <option value="">-- Chọn giải --</option>
+        @foreach (var e in Model.Events)
+        {
+            <option value="@e.EventId" selected="@(e.EventId == Model.EventId)">@e.EventName</option>
+        }
+    </select>
+</div>
+@if (Model.UploadSummary is not null)
+{
+    <div class="alert alert-success py-2 mb-2">@Model.UploadSummary</div>
+}
+<div asp-validation-summary="All" class="alert alert-danger py-2"></div>
+
+@if (Model.EventId is null)
+{
+    <p class="text-secondary text-center py-5">@(Model.Events.Count == 0 ? "Ban tổ chức chưa có giải nào." : "Chọn một giải để quản lý album.")</p>
+    return;
+}
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link" asp-page="/Organizer/EventContent" asp-route-eventId="@Model.EventId">Soạn nội dung</a></li>
+    <li class="nav-item"><a class="nav-link" asp-page="/Organizer/EventContent" asp-route-eventId="@Model.EventId" asp-route-preview="true">Xem trước</a></li>
+    <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-images"></i> Album ảnh</a></li>
+</ul>
+
+<form method="post" asp-page-handler="Upload" asp-route-eventId="@Model.EventId" enctype="multipart/form-data" class="card mb-4">
+    <div class="card-body row g-2 align-items-end">
+        <div class="col-md-6">
+            <label asp-for="Files" class="form-label">Chọn ảnh (JPG, PNG, WebP – chọn được nhiều ảnh)</label>
+            <input asp-for="Files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Caption" class="form-label">Chú thích chung (tùy chọn)</label>
+            <input asp-for="Caption" class="form-control" maxlength="300" />
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-primary"><i class="bi bi-upload"></i> Tải lên</button>
+        </div>
+    </div>
+    <div class="card-footer small text-secondary">Ảnh được đổi tên ngẫu nhiên khi lưu. Dung lượng và số ảnh tối đa mỗi giải do quản trị hệ thống cấu hình.</div>
+</form>
+
+<h2 class="h5 mb-3">@Model.EventName <span class="text-secondary fw-normal">(@Model.Media.Count ảnh)</span></h2>
+@if (Model.Media.Count == 0)
+{
+    <p class="text-secondary">Chưa có ảnh nào.</p>
+}
+<div class="row g-3">
+    @foreach (var m in Model.Media)
+    {
+        <div class="col-sm-6 col-md-4 col-xl-3">
+            <div class="card h-100 @(m.IsVisible ? "" : "border-secondary opacity-75")">
+                <a href="@m.FileUrl" target="_blank" class="ratio ratio-4x3 bg-light">
+                    <img src="@m.FileUrl" alt="@(m.Caption ?? "Ảnh")" loading="lazy" class="card-img-top w-100 h-100" style="object-fit:cover" />
+                </a>
+                <form method="post" asp-page-handler="Update" asp-route-eventId="@Model.EventId" asp-route-id="@m.Id" class="card-body p-2">
+                    <input name="caption" value="@m.Caption" class="form-control form-control-sm mb-1" placeholder="Chú thích" maxlength="300" />
+                    <div class="d-flex gap-2 align-items-center">
+                        <input name="displayOrder" type="number" min="0" value="@m.DisplayOrder" class="form-control form-control-sm" style="width:5rem" title="Thứ tự" />
+                        <div class="form-check form-switch mb-0">
+                            <input name="isVisible" type="checkbox" value="true" class="form-check-input" id="vis-@m.Id" checked="@m.IsVisible" />
+                            <label class="form-check-label small" for="vis-@m.Id">Hiện</label>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary ms-auto" title="Lưu"><i class="bi bi-check-lg"></i></button>
+                    </div>
+                </form>
+                <form method="post" asp-page-handler="Delete" asp-route-eventId="@Model.EventId" asp-route-id="@m.Id" class="card-footer p-2 text-end" onsubmit="return confirm('Xóa ảnh này?');">
+                    <span class="small text-secondary float-start">@m.UploadedAt.ToString("dd/MM/yyyy")</span>
+                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Xóa</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>

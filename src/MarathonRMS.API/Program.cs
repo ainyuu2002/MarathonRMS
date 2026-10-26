@@ -1,11 +1,13 @@
 using System.Security.Claims;
 using System.Text;
 using MarathonRMS.API.Infrastructure;
+using MarathonRMS.API.OData;
 using MarathonRMS.BusinessObjects.Data;
 using MarathonRMS.BusinessObjects.Entities;
 using MarathonRMS.DTOs.Common;
 using MarathonRMS.Services;
 using MarathonRMS.Services.Auth;
+using MarathonRMS.Services.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OData;
@@ -77,13 +79,26 @@ builder.Services.AddAuthorizationBuilder()
 
 // ---------- Tầng nghiệp vụ ----------
 builder.Services.AddMarathonServices(config);
+// File tải lên (ảnh giải – BR-51) lưu ở wwwroot/uploads, phục vụ tĩnh qua /uploads
+builder.Services.Configure<FileStorageOptions>(o =>
+{
+    o.RootPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
+    o.RequestPath = "/uploads";
+    o.PublicBaseUrl = config["FileStorage:PublicBaseUrl"] ?? "https://localhost:7040";
+});
 
 // ---------- Web API + OData ----------
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
-    // EDM model và route "odata" được thêm ở Giai đoạn 1 (Events, Registrations, Results…)
-    .AddOData(options => options.Select().Filter().OrderBy().Expand().Count().SetMaxTop(100));
+    // Route "odata": entity set khai báo trong OData/EdmModelBuilder.cs (mỗi phần một vùng).
+    // Thời gian lưu theo giờ VN (IDateTimeProvider) nên OData cũng hiểu/trả theo +07:00.
+    .AddOData(options =>
+    {
+        options.Select().Filter().OrderBy().Expand().Count().SetMaxTop(100)
+            .AddRouteComponents("odata", EdmModelBuilder.Build());
+        options.TimeZone = TimeZoneInfo.FindSystemTimeZoneById(OperatingSystem.IsWindows() ? "SE Asia Standard Time" : "Asia/Ho_Chi_Minh");
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -120,6 +135,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+// Phục vụ ảnh đã tải lên (BR-51) tại /uploads – provider riêng vì wwwroot có thể chưa tồn tại lúc khởi động
+var uploadsRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
+Directory.CreateDirectory(uploadsRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsRoot),
+    RequestPath = "/uploads"
+});
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

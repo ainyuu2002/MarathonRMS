@@ -66,6 +66,12 @@ public interface IAuditLogger
 
 public class AuditLogger : IAuditLogger
 {
+    // Giữ nguyên tiếng Việt trong nhật ký (không escape thành mã unicode) để SuperAdmin đọc được
+    private static readonly JsonSerializerOptions AuditJson = new()
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     private readonly IAuditLogRepository _repository;
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
@@ -85,8 +91,8 @@ public class AuditLogger : IAuditLogger
             Action = action,
             EntityType = entityType,
             EntityId = entityId,
-            OldValues = oldValues is null ? null : JsonSerializer.Serialize(oldValues),
-            NewValues = newValues is null ? null : JsonSerializer.Serialize(newValues),
+            OldValues = oldValues is null ? null : JsonSerializer.Serialize(oldValues, AuditJson),
+            NewValues = newValues is null ? null : JsonSerializer.Serialize(newValues, AuditJson),
             IpAddress = _currentUser.IpAddress,
             CreatedAt = _clock.Now
         }, ct);

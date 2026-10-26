@@ -9,6 +9,7 @@
             modules: { toolbar: [[{ header: [2, 3, false] }], ['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'blockquote'], ['clean']] }
         });
         if (input.value) quill.clipboard.dangerouslyPasteHTML(input.value); // nội dung đã được server lọc khi lưu
-        input.form?.addEventListener('submit', () => { input.value = quill.getSemanticHTML(); });
+        // Quill 2 getSemanticHTML() đổi mọi dấu cách thành &nbsp; khiến đoạn dài không xuống dòng – trả lại dấu cách thường
+        input.form?.addEventListener('submit', () => { input.value = quill.getSemanticHTML().replace(/&nbsp;/g, ' '); });
     });
 </script>

@@ -1,0 +1,212 @@
+@page "{eventId:int?}"
+@model MarathonRMS.WebApp.Pages.Organizer.EventContentModel
+@{
+    ViewData["Title"] = "Trang giới thiệu giải";
+    var c = Model.Data;
+    string TypeLabel(string t) => EventContentModel.SectionTypes.FirstOrDefault(x => x.Value == t).Label ?? t;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Trang giới thiệu giải</h1>
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <select class="form-select" onchange="location.href='@Url.Page("/Organizer/EventContent")/' + this.value" aria-label="Chọn giải">
+            <option value="">-- Chọn giải --</option>
+            @foreach (var e in Model.Events)
+            {
+                <option value="@e.EventId" selected="@(e.EventId == Model.EventId)">@e.EventName</option>
+            }
+        </select>
+    </form>
+</div>
+
+@if (c is null)
+{
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+    <div class="text-secondary py-5 text-center">
+        @if (Model.Events.Count == 0)
+        {
+            <p>Ban tổ chức chưa có giải nào. Tạo giải trước rồi quay lại soạn trang giới thiệu.</p>
+        }
+        else
+        {
+            <p>Chọn một giải để soạn trang giới thiệu.</p>
+        }
+    </div>
+    return;
+}
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link @(Model.Preview ? "" : "active")" asp-route-eventId="@c.EventId">Soạn nội dung</a></li>
+    <li class="nav-item"><a class="nav-link @(Model.Preview ? "active" : "")" asp-route-eventId="@c.EventId" asp-route-preview="true">Xem trước</a></li>
+    <li class="nav-item"><a class="nav-link" asp-page="/Organizer/EventAlbum" asp-route-eventId="@c.EventId"><i class="bi bi-images"></i> Album ảnh</a></li>
+</ul>
+
+@if (Model.Preview)
+{
+    <div class="alert alert-info small py-2">Bản xem trước chỉ gồm khối và ảnh đang hiển thị – giống trang công khai.</div>
+    <h2 class="h4 mb-3" style="color:@(c.ThemeColor ?? "#0D6EFD")">@c.EventName</h2>
+    var visible = new MarathonRMS.DTOs.EventContent.EventContentDto
+    {
+        EventId = c.EventId, EventName = c.EventName, ThemeColor = c.ThemeColor,
+        Sections = c.Sections.Where(s => s.IsVisible).ToList(), Schedule = c.Schedule,
+        Gallery = c.Gallery.Where(m => m.IsVisible).ToList()
+    };
+    <partial name="_EventContent" model="visible" />
+    <h2 class="h5 mt-4 mb-3">Album ảnh</h2>
+    <partial name="_EventGallery" model="visible.Gallery" />
+    return;
+}
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h5 mb-0">Khối nội dung</h2>
+            <a asp-route-eventId="@c.EventId" asp-route-section="0" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Thêm khối</a>
+        </div>
+        <p class="small text-secondary">Các khối hiển thị theo thứ tự từ trên xuống. Khối loại “Lịch trình” sẽ kèm bảng giờ ở cột bên phải.</p>
+
+        @if (Model.Section is not null)
+        {
+            <form method="post" asp-page-handler="SaveSection" asp-route-eventId="@c.EventId" asp-route-section="@Model.Section" class="card mb-3 border-primary">
+                <div class="card-header">@(Model.Section > 0 ? "Sửa khối" : "Thêm khối")</div>
+                <div class="card-body">
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-8">
+                            <label asp-for="SectionInput.Title" class="form-label">Tiêu đề</label>
+                            <input asp-for="SectionInput.Title" class="form-control" />
+                            <span asp-validation-for="SectionInput.Title" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="SectionInput.SectionType" class="form-label">Loại</label>
+                            <select asp-for="SectionInput.SectionType" class="form-select">
+                                @foreach (var t in EventContentModel.SectionTypes)
+                                {
+                                    <option value="@t.Value">@t.Label</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <label class="form-label">Nội dung</label>
+                    <partial name="_RichTextEditor" model="new RichTextEditorModel(Html.NameFor(m => m.SectionInput.BodyHtml), Model.SectionInput.BodyHtml, 220)" />
+                    <span asp-validation-for="SectionInput.BodyHtml" class="text-danger small"></span>
+                    <div class="form-check mt-2">
+                        <input asp-for="SectionInput.IsVisible" class="form-check-input" />
+                        <label asp-for="SectionInput.IsVisible" class="form-check-label">Hiển thị công khai</label>
+                    </div>
+                </div>
+                <div class="card-footer d-flex gap-2 justify-content-end">
+                    <a asp-route-eventId="@c.EventId" class="btn btn-outline-secondary">Hủy</a>
+                    <button class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        }
+
+        @if (c.Sections.Count == 0)
+        {
+            <div class="text-center text-secondary border rounded py-4">Chưa có khối nội dung nào.</div>
+        }
+        @for (var i = 0; i < c.Sections.Count; i++)
+        {
+            var s = c.Sections[i];
+            <div class="card mb-2 @(s.IsVisible ? "" : "opacity-75")">
+                <div class="card-body py-2 d-flex align-items-center gap-2">
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-semibold text-truncate">@s.Title</div>
+                        <div class="small text-secondary">
+                            @TypeLabel(s.SectionType)
+                            @if (!s.IsVisible) { <span class="badge text-bg-secondary ms-1">Đang ẩn</span> }
+                        </div>
+                    </div>
+                    <form method="post" asp-page-handler="MoveSection" asp-route-eventId="@c.EventId" asp-route-id="@s.Id" asp-route-dir="-1" class="d-inline">
+                        <button class="btn btn-sm btn-outline-secondary" disabled="@(i == 0)" title="Lên"><i class="bi bi-arrow-up"></i></button>
+                    </form>
+                    <form method="post" asp-page-handler="MoveSection" asp-route-eventId="@c.EventId" asp-route-id="@s.Id" asp-route-dir="1" class="d-inline">
+                        <button class="btn btn-sm btn-outline-secondary" disabled="@(i == c.Sections.Count - 1)" title="Xuống"><i class="bi bi-arrow-down"></i></button>
+                    </form>
+                    <a asp-route-eventId="@c.EventId" asp-route-section="@s.Id" class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                    <form method="post" asp-page-handler="DeleteSection" asp-route-eventId="@c.EventId" asp-route-id="@s.Id" class="d-inline" onsubmit="return confirm('Xóa khối này?');">
+                        <button class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-4">
+        <form method="post" asp-page-handler="Theme" asp-route-eventId="@c.EventId" class="card mb-4">
+            <div class="card-header">Màu chủ đạo</div>
+            <div class="card-body d-flex gap-2 align-items-center">
+                <input type="color" class="form-control form-control-color" value="@(Model.ThemeInput.ThemeColor ?? "#0D6EFD")"
+                       oninput="document.getElementById('ThemeInput_ThemeColor').value = this.value.toUpperCase()" aria-label="Chọn màu" />
+                <input asp-for="ThemeInput.ThemeColor" class="form-control" placeholder="#0D6EFD" />
+                <button class="btn btn-outline-primary">Lưu</button>
+            </div>
+            <span asp-validation-for="ThemeInput.ThemeColor" class="text-danger small px-3 pb-2"></span>
+        </form>
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h5 mb-0">Lịch trình</h2>
+            <a asp-route-eventId="@c.EventId" asp-route-item="0" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Thêm</a>
+        </div>
+        @if (Model.Item is not null)
+        {
+            <form method="post" asp-page-handler="SaveSchedule" asp-route-eventId="@c.EventId" asp-route-item="@Model.Item" class="card mb-3 border-primary">
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label asp-for="ScheduleInput.Title" class="form-label">Nội dung</label>
+                        <input asp-for="ScheduleInput.Title" class="form-control" placeholder="VD: Xuất phát cự ly 42K" />
+                        <span asp-validation-for="ScheduleInput.Title" class="text-danger small"></span>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label asp-for="ScheduleInput.StartsAt" class="form-label">Bắt đầu</label>
+                            <input asp-for="ScheduleInput.StartsAt" class="form-control" />
+                            <span asp-validation-for="ScheduleInput.StartsAt" class="text-danger small"></span>
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="ScheduleInput.EndsAt" class="form-label">Kết thúc</label>
+                            <input asp-for="ScheduleInput.EndsAt" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="ScheduleInput.Location" class="form-label">Địa điểm</label>
+                        <input asp-for="ScheduleInput.Location" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="ScheduleInput.Note" class="form-label">Ghi chú</label>
+                        <input asp-for="ScheduleInput.Note" class="form-control" />
+                    </div>
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a asp-route-eventId="@c.EventId" class="btn btn-sm btn-outline-secondary">Hủy</a>
+                        <button class="btn btn-sm btn-primary">Lưu</button>
+                    </div>
+                </div>
+            </form>
+        }
+        <ul class="list-group">
+            @foreach (var item in c.Schedule)
+            {
+                <li class="list-group-item d-flex gap-2 align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="small text-secondary">@item.StartsAt.ToString("dd/MM HH:mm")@(item.EndsAt is DateTime e ? $" – {e:HH:mm}" : "")</div>
+                        <div>@item.Title</div>
+                        @if (item.Location is not null) { <div class="small text-secondary"><i class="bi bi-geo-alt"></i> @item.Location</div> }
+                    </div>
+                    <a asp-route-eventId="@c.EventId" asp-route-item="@item.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                    <form method="post" asp-page-handler="DeleteSchedule" asp-route-eventId="@c.EventId" asp-route-id="@item.Id" onsubmit="return confirm('Xóa mục này?');">
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </form>
+                </li>
+            }
+            @if (c.Schedule.Count == 0)
+            {
+                <li class="list-group-item text-secondary small">Chưa có mục lịch trình.</li>
+            }
+        </ul>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_RichTextEditorAssets" />
+    <partial name="_ValidationScriptsPartial" />
+}

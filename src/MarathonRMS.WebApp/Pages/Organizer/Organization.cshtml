@@ -1,0 +1,74 @@
+@page
+@model MarathonRMS.WebApp.Pages.Organizer.OrganizationModel
+@{
+    ViewData["Title"] = "Thông tin ban tổ chức";
+    var org = Model.Organization;
+}
+<h1 class="h3 mb-3">Thông tin ban tổ chức</h1>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (org is not null)
+{
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(org.LogoUrl))
+                    {
+                        <img src="@org.LogoUrl" alt="Logo @org.Name" class="img-fluid rounded mb-3" style="max-height:120px" />
+                    }
+                    <h2 class="h5 mb-1">@org.Name</h2>
+                    <div class="small text-secondary mb-2">Mã số thuế: @org.TaxCode</div>
+                    <status-badge status="@(org.IsActive ? "Active" : "Inactive")" />
+                    <dl class="row small mt-3 mb-0">
+                        <dt class="col-7">Thành viên</dt><dd class="col-5 text-end">@org.MemberCount</dd>
+                        <dt class="col-7">Giải chạy</dt><dd class="col-5 text-end">@org.EventCount</dd>
+                        <dt class="col-7">Tham gia từ</dt><dd class="col-5 text-end">@org.CreatedAt.ToString("dd/MM/yyyy")</dd>
+                    </dl>
+                </div>
+                <div class="card-footer small text-secondary">Muốn đổi tên hoặc mã số thuế, vui lòng liên hệ quản trị viên.</div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <form method="post" class="card" novalidate>
+                <div class="card-body">
+                    @if (!org.IsActive)
+                    {
+                        <div class="alert alert-warning small py-2">Ban tổ chức đang bị tạm khóa nên không thể cập nhật thông tin.</div>
+                    }
+                    <fieldset disabled="@(!org.IsActive)">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Input.ContactEmail" class="form-label">Email liên hệ</label>
+                                <input asp-for="Input.ContactEmail" class="form-control" />
+                                <span asp-validation-for="Input.ContactEmail" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.ContactPhone" class="form-label">Điện thoại</label>
+                                <input asp-for="Input.ContactPhone" class="form-control" />
+                                <span asp-validation-for="Input.ContactPhone" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Input.LogoUrl" class="form-label">Địa chỉ logo (URL)</label>
+                                <input asp-for="Input.LogoUrl" class="form-control" placeholder="https://…" />
+                                <span asp-validation-for="Input.LogoUrl" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Input.Description" class="form-label">Giới thiệu</label>
+                                <textarea asp-for="Input.Description" class="form-control" rows="6"></textarea>
+                                <span asp-validation-for="Input.Description" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="card-footer text-end">
+                    <button class="btn btn-primary" disabled="@(!org.IsActive)">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

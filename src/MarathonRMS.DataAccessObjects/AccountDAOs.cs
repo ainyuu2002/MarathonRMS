@@ -57,4 +57,26 @@ public class AuditLogDAO : BaseDAO<AuditLog>
     // Nhật ký chỉ được thêm (BR-36)
     public override void Update(AuditLog entity) => throw new InvalidOperationException("AuditLogs are insert-only.");
     public override void Remove(AuditLog entity) => throw new InvalidOperationException("AuditLogs are insert-only.");
+
+    /// <summary>Nhật ký kèm email/tên người thao tác – nguồn cho OData (UC-17).</summary>
+    public IQueryable<AuditLogRow> QueryWithUser() =>
+        Set.AsNoTracking().Select(a => new AuditLogRow
+        {
+            Log = a,
+            UserEmail = Context.Users.Where(u => u.Id == a.UserId).Select(u => u.Email).FirstOrDefault(),
+            UserName = Context.Users.Where(u => u.Id == a.UserId).Select(u => u.FullName).FirstOrDefault()
+        });
+
+    public Task<List<string>> GetDistinctActionsAsync(CancellationToken ct = default) =>
+        Set.Select(a => a.Action).Distinct().OrderBy(a => a).ToListAsync(ct);
+
+    public Task<List<string>> GetDistinctEntityTypesAsync(CancellationToken ct = default) =>
+        Set.Select(a => a.EntityType).Distinct().OrderBy(a => a).ToListAsync(ct);
+}
+
+public class AuditLogRow
+{
+    public AuditLog Log { get; set; } = null!;
+    public string? UserEmail { get; set; }
+    public string? UserName { get; set; }
 }

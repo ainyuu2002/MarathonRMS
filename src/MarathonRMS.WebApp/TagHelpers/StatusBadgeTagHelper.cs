@@ -43,6 +43,9 @@ public class StatusBadgeTagHelper : TagHelper
         ["DNF"] = ("DNF", "text-bg-warning"),
         ["DNS"] = ("DNS", "text-bg-secondary"),
         ["DSQ"] = ("DSQ", "text-bg-danger"),
+        // Coupon
+        ["Scheduled"] = ("Chưa tới hạn", "text-bg-info"),
+        ["Exhausted"] = ("Hết lượt", "text-bg-secondary"),
     };
 
     public string? Status { get; set; }

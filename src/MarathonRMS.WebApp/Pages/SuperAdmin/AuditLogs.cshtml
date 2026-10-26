@@ -1,0 +1,108 @@
+@page
+@model MarathonRMS.WebApp.Pages.SuperAdmin.AuditLogsModel
+@{
+    ViewData["Title"] = "Nhật ký hệ thống";
+    var pagerRoute = new
+    {
+        from = Model.From?.ToString("yyyy-MM-dd"),
+        to = Model.To?.ToString("yyyy-MM-dd"),
+        op = Model.Operation,
+        entityType = Model.EntityType,
+        keyword = Model.Keyword
+    };
+}
+<h1 class="h3 mb-1">Nhật ký hệ thống</h1>
+<p class="text-secondary small mb-3">Lịch sử thao tác nhạy cảm: khóa tài khoản, đổi quyền, đổi cấu hình, duyệt BTC… Nhật ký chỉ được ghi thêm, không sửa hoặc xóa.</p>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-2">
+            <label for="From" class="form-label small">Từ ngày</label>
+            <input id="From" name="From" type="date" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label for="To" class="form-label small">Đến ngày</label>
+            <input id="To" name="To" type="date" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-3">
+            <label for="op" class="form-label small">Thao tác</label>
+            <select id="op" name="op" class="form-select form-select-sm">
+                <option value="">Tất cả</option>
+                @foreach (var a in Model.Facets.Actions)
+                {
+                    <option value="@a" selected="@(a == Model.Operation)">@a</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="EntityType" class="form-label small">Đối tượng</label>
+            <select id="EntityType" name="EntityType" class="form-select form-select-sm">
+                <option value="">Tất cả</option>
+                @foreach (var e in Model.Facets.EntityTypes)
+                {
+                    <option value="@e" selected="@(e == Model.EntityType)">@e</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <div class="flex-grow-1">
+                <label for="Keyword" class="form-label small">Email / mã đối tượng</label>
+                <input id="Keyword" name="Keyword" value="@Model.Keyword" class="form-control form-control-sm" />
+            </div>
+            <button class="btn btn-sm btn-primary align-self-end" title="Lọc"><i class="bi bi-funnel"></i></button>
+            <a asp-page="/SuperAdmin/AuditLogs" class="btn btn-sm btn-outline-secondary align-self-end" title="Bỏ lọc"><i class="bi bi-x-lg"></i></a>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Thao tác</th><th>Đối tượng</th><th>IP</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var log in Model.Data.Items)
+                {
+                    var hasDetail = log.OldValues is not null || log.NewValues is not null;
+                    <tr>
+                        <td class="text-nowrap small">@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td class="small">
+                            @(log.UserEmail ?? "Hệ thống")
+                            @if (log.UserRole is { Length: > 0 })
+                            {
+                                <div class="text-secondary">@log.UserRole</div>
+                            }
+                        </td>
+                        <td><code>@log.Action</code></td>
+                        <td class="small">@log.EntityType<span class="text-secondary">@(log.EntityId is null ? "" : $" #{log.EntityId}")</span></td>
+                        <td class="small text-secondary">@log.IpAddress</td>
+                        <td class="text-end">
+                            @if (hasDetail)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#log-@log.Id" aria-expanded="false">Chi tiết</button>
+                            }
+                        </td>
+                    </tr>
+                    @if (hasDetail)
+                    {
+                        <tr class="collapse" id="log-@log.Id">
+                            <td colspan="6" class="bg-body-tertiary">
+                                <div class="row g-2">
+                                    <div class="col-md-6"><div class="small fw-semibold">Trước</div><pre class="small mb-0 text-wrap">@AuditLogsModel.Pretty(log.OldValues)</pre></div>
+                                    <div class="col-md-6"><div class="small fw-semibold">Sau</div><pre class="small mb-0 text-wrap">@AuditLogsModel.Pretty(log.NewValues)</pre></div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                @if (Model.Data.Items.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-secondary py-4">Không có bản ghi phù hợp.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="mt-2">
+    <partial name="_Pager" model="PagerModel.From(Model.Data, pagerRoute)" />
+</div>

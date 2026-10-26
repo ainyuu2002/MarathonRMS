@@ -4,6 +4,8 @@ using MarathonRMS.Services.Accounts;
 using MarathonRMS.Services.Admin;
 using MarathonRMS.Services.Auth;
 using MarathonRMS.Services.Common;
+using MarathonRMS.Services.Coupons;
+using MarathonRMS.Services.EventContent;
 using MarathonRMS.Services.Legal;
 using MarathonRMS.Services.Organizations;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +28,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<OrganizationApplicationDAO>();
         services.AddScoped<VenueDAO>();
         services.AddScoped<UserDAO>();
+        services.AddScoped<CouponDAO>();
+        services.AddScoped<EventContentDAO>();
+        services.AddScoped<EventMediaDAO>();
+        services.AddScoped<PenaltyReasonDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -38,6 +44,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrganizationApplicationRepository, OrganizationApplicationRepository>();
         services.AddScoped<IVenueRepository, VenueRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ICouponRepository, CouponRepository>();
+        services.AddScoped<IEventContentRepository, EventContentRepository>();
+        services.AddScoped<IEventMediaRepository, EventMediaRepository>();
+        services.AddScoped<IPenaltyReasonRepository, PenaltyReasonRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -65,6 +75,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserAdminService, UserAdminService>();
         services.AddScoped<IVenueService, VenueService>();
         services.AddScoped<ISystemSettingService, SystemSettingService>();
+        // Phần A – Giai đoạn 2
+        services.AddScoped<ICouponService, CouponService>();
+        // Lưu file tải lên (BR-51). API cấu hình FileStorageOptions (thư mục wwwroot/uploads + địa chỉ công khai).
+        services.AddSingleton<IFileStorage, LocalFileStorage>();
+        services.AddScoped<IEventContentService, EventContentService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<IPenaltyReasonService, PenaltyReasonService>();
 
         // Phần B – giải, đăng ký, thanh toán (thêm bên dưới)
 

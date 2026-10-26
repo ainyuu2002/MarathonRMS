@@ -201,6 +201,68 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.BibTransfer", b =>
+                {
+                    b.Property<int>("TransferId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransferId"));
+
+                    b.Property<decimal>("FeeAmount")
+                        .HasPrecision(12)
+                        .HasColumnType("decimal(12,0)");
+
+                    b.Property<string>("FromUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("NewRegistrationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RegistrationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<int?>("ToParticipantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ToUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("TransferId");
+
+                    b.HasIndex("RegistrationId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_BibTransfers_Registration_Open")
+                        .HasFilter("[Status] IN ('Pending','AwaitingFee')");
+
+                    b.HasIndex("ToUserId", "Status");
+
+                    b.ToTable("BibTransfers", t =>
+                        {
+                            t.HasCheckConstraint("CK_BibTransfers_Fee", "[FeeAmount] >= 0");
+
+                            t.HasCheckConstraint("CK_BibTransfers_Users", "[FromUserId] <> [ToUserId]");
+                        });
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Checkpoint", b =>
                 {
                     b.Property<int>("CheckpointId")
@@ -313,6 +375,108 @@ namespace MarathonRMS.BusinessObjects.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Coupon", b =>
+                {
+                    b.Property<int>("CouponId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CouponId"));
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("CreatedById")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasPrecision(12)
+                        .HasColumnType("decimal(12,0)");
+
+                    b.Property<int?>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasPrecision(12)
+                        .HasColumnType("decimal(12,0)");
+
+                    b.Property<int>("MaxUses")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OwnerMemberId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PartnerName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("UsedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("ValidTo")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.HasKey("CouponId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("OwnerMemberId");
+
+                    b.HasIndex("OrganizationId", "IsActive");
+
+                    b.ToTable("Coupons", t =>
+                        {
+                            t.HasCheckConstraint("CK_Coupons_CategoryNeedsEvent", "[CategoryId] IS NULL OR [EventId] IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_Coupons_MaxDiscount", "[MaxDiscountAmount] IS NULL OR ([MaxDiscountAmount] > 0 AND [MaxDiscountAmount] % 1000 = 0)");
+
+                            t.HasCheckConstraint("CK_Coupons_Range", "[ValidFrom] < [ValidTo]");
+
+                            t.HasCheckConstraint("CK_Coupons_Uses", "[MaxUses] >= 1 AND [UsedCount] >= 0 AND [UsedCount] <= [MaxUses]");
+
+                            t.HasCheckConstraint("CK_Coupons_Value", "([DiscountType] = 'Percent' AND [DiscountValue] BETWEEN 1 AND 100) OR ([DiscountType] = 'Amount' AND [DiscountValue] > 0 AND [DiscountValue] % 1000 = 0)");
+                        });
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Event", b =>
                 {
                     b.Property<int>("EventId")
@@ -401,6 +565,11 @@ namespace MarathonRMS.BusinessObjects.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(30)");
 
+                    b.Property<string>("ThemeColor")
+                        .HasMaxLength(7)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(7)");
+
                     b.Property<int>("VenueId")
                         .HasColumnType("int");
 
@@ -428,7 +597,50 @@ namespace MarathonRMS.BusinessObjects.Migrations
 
                             t.HasCheckConstraint("CK_Events_RegistrationWindow", "[RegistrationOpenAt] < [RegistrationCloseAt] AND CAST([RegistrationCloseAt] AS date) <= [EventDate]");
 
+                            t.HasCheckConstraint("CK_Events_ThemeColor", "[ThemeColor] IS NULL OR [ThemeColor] LIKE '#[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]'");
+
                             t.HasCheckConstraint("CK_Events_WaiverVersion", "[WaiverVersion] >= 1");
+                        });
+                });
+
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.EventContentSection", b =>
+                {
+                    b.Property<int>("SectionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SectionId"));
+
+                    b.Property<string>("BodyHtml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsVisible")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SectionType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("SectionId");
+
+                    b.HasIndex("EventId", "DisplayOrder");
+
+                    b.ToTable("EventContentSections", t =>
+                        {
+                            t.HasCheckConstraint("CK_EventContentSections_Order", "[DisplayOrder] >= 0");
                         });
                 });
 
@@ -587,6 +799,48 @@ namespace MarathonRMS.BusinessObjects.Migrations
                             t.HasCheckConstraint("CK_EventPolicies_MaxDependents", "[MaxDependentsPerAccount] BETWEEN 0 AND 10");
 
                             t.HasCheckConstraint("CK_EventPolicies_PaidTransfer", "[TransferPolicy] <> 'Paid' OR [TransferFee] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.EventScheduleItem", b =>
+                {
+                    b.Property<int>("ItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemId"));
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("ItemId");
+
+                    b.HasIndex("EventId", "StartsAt");
+
+                    b.ToTable("EventScheduleItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_EventScheduleItems_Range", "[EndsAt] IS NULL OR [EndsAt] > [StartsAt]");
                         });
                 });
 
@@ -1163,6 +1417,65 @@ namespace MarathonRMS.BusinessObjects.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Prize", b =>
+                {
+                    b.Property<int>("PrizeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PrizeId"));
+
+                    b.Property<int?>("AgeGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AwardType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<decimal?>("CashAmount")
+                        .HasPrecision(12)
+                        .HasColumnType("decimal(12,0)");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("Nationality")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reward")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("PrizeId");
+
+                    b.HasIndex("AgeGroupId");
+
+                    b.HasIndex("CategoryId", "AwardType", "Gender", "AgeGroupId", "Rank")
+                        .IsUnique();
+
+                    b.ToTable("Prizes", t =>
+                        {
+                            t.HasCheckConstraint("CK_Prizes_AgeGroup", "([AwardType] = 'AgeGroup' AND [AgeGroupId] IS NOT NULL) OR ([AwardType] <> 'AgeGroup' AND [AgeGroupId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_Prizes_Cash", "[CashAmount] IS NULL OR [CashAmount] >= 0");
+
+                            t.HasCheckConstraint("CK_Prizes_Rank", "[Rank] >= 1");
+                        });
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.RaceCategory", b =>
                 {
                     b.Property<int>("CategoryId")
@@ -1323,6 +1636,108 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.ToTable("RaceKitPickups", t =>
                         {
                             t.HasCheckConstraint("CK_RaceKitPickups_Proxy", "[IsProxy] = 0 OR ([ProxyName] IS NOT NULL AND [ProxyIdNumber] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.RaceRoute", b =>
+                {
+                    b.Property<int>("RouteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RouteId"));
+
+                    b.Property<decimal>("CalculatedDistanceKm")
+                        .HasPrecision(7, 3)
+                        .HasColumnType("decimal(7,3)");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RouteGeoJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("UpdatedById")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("RouteId");
+
+                    b.HasIndex("CategoryId")
+                        .IsUnique();
+
+                    b.ToTable("RaceRoutes", t =>
+                        {
+                            t.HasCheckConstraint("CK_RaceRoutes_Distance", "[CalculatedDistanceKm] > 0");
+
+                            t.HasCheckConstraint("CK_RaceRoutes_Json", "ISJSON([RouteGeoJson]) = 1");
+                        });
+                });
+
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Refund", b =>
+                {
+                    b.Property<int>("RefundId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RefundId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12)
+                        .HasColumnType("decimal(12,0)");
+
+                    b.Property<string>("BankInfo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("ProcessedById")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<int>("RegistrationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("TransactionRef")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("RefundId");
+
+                    b.HasIndex("RegistrationId")
+                        .IsUnique();
+
+                    b.ToTable("Refunds", t =>
+                        {
+                            t.HasCheckConstraint("CK_Refunds_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_Refunds_Completed", "[Status] <> 'Completed' OR [TransactionRef] IS NOT NULL");
                         });
                 });
 
@@ -1520,6 +1935,8 @@ namespace MarathonRMS.BusinessObjects.Migrations
 
                     b.HasKey("RegistrationId");
 
+                    b.HasIndex("CouponId");
+
                     b.HasIndex("ParticipantId");
 
                     b.HasIndex("QrToken")
@@ -1636,6 +2053,69 @@ namespace MarathonRMS.BusinessObjects.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.ResultComplaint", b =>
+                {
+                    b.Property<int>("ComplaintId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ComplaintId"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("EvidenceUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("FeeAmount")
+                        .HasPrecision(12)
+                        .HasColumnType("decimal(12,0)");
+
+                    b.Property<DateTime?>("HandledAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("HandledById")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Response")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("ResultId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ComplaintId");
+
+                    b.HasIndex("ResultId", "Status");
+
+                    b.ToTable("ResultComplaints", t =>
+                        {
+                            t.HasCheckConstraint("CK_ResultComplaints_Fee", "[FeeAmount] >= 0");
+
+                            t.HasCheckConstraint("CK_ResultComplaints_Response", "[Status] = 'Open' OR [Response] IS NOT NULL");
+                        });
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.ResultPenalty", b =>
                 {
                     b.Property<int>("PenaltyId")
@@ -1689,6 +2169,50 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.ToTable("ResultPenalties", t =>
                         {
                             t.HasCheckConstraint("CK_ResultPenalties_Minutes", "[Action] <> 'TimePenalty' OR [Minutes] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.RoutePoi", b =>
+                {
+                    b.Property<int>("PoiId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PoiId"));
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DistanceFromStartKm")
+                        .HasPrecision(7, 3)
+                        .HasColumnType("decimal(7,3)");
+
+                    b.Property<decimal>("Latitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("decimal(9,6)");
+
+                    b.Property<decimal>("Longitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("decimal(9,6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.HasKey("PoiId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("RoutePois", t =>
+                        {
+                            t.HasCheckConstraint("CK_RoutePois_Coordinates", "[Latitude] BETWEEN -90 AND 90 AND [Longitude] BETWEEN -180 AND 180");
                         });
                 });
 
@@ -2113,6 +2637,17 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.Navigation("Organization");
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.BibTransfer", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.Registration", "Registration")
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Registration");
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Checkpoint", b =>
                 {
                     b.HasOne("MarathonRMS.BusinessObjects.Entities.RaceCategory", "Category")
@@ -2141,6 +2676,33 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Coupon", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.RaceCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId");
+
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId");
+
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.AppUser", "OwnerMember")
+                        .WithMany()
+                        .HasForeignKey("OwnerMemberId");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Event");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("OwnerMember");
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Event", b =>
                 {
                     b.HasOne("MarathonRMS.BusinessObjects.Entities.Organization", "Organization")
@@ -2160,6 +2722,17 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.Navigation("Venue");
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.EventContentSection", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.Event", "Event")
+                        .WithMany("ContentSections")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.EventMedia", b =>
                 {
                     b.HasOne("MarathonRMS.BusinessObjects.Entities.Event", "Event")
@@ -2176,6 +2749,17 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.HasOne("MarathonRMS.BusinessObjects.Entities.Event", "Event")
                         .WithOne("Policy")
                         .HasForeignKey("MarathonRMS.BusinessObjects.Entities.EventPolicy", "EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.EventScheduleItem", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.Event", "Event")
+                        .WithMany("ScheduleItems")
+                        .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2244,6 +2828,23 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Prize", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.AgeGroup", "AgeGroup")
+                        .WithMany()
+                        .HasForeignKey("AgeGroupId");
+
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.RaceCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AgeGroup");
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.RaceCategory", b =>
                 {
                     b.HasOne("MarathonRMS.BusinessObjects.Entities.Event", "Event")
@@ -2274,6 +2875,28 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.RaceRoute", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.RaceCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Refund", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.Registration", "Registration")
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Registration");
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Registration", b =>
                 {
                     b.HasOne("MarathonRMS.BusinessObjects.Entities.RaceCategory", "Category")
@@ -2281,6 +2904,10 @@ namespace MarathonRMS.BusinessObjects.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.Coupon", null)
+                        .WithMany()
+                        .HasForeignKey("CouponId");
 
                     b.HasOne("MarathonRMS.BusinessObjects.Entities.Event", "Event")
                         .WithMany()
@@ -2332,6 +2959,17 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.Navigation("Registration");
                 });
 
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.ResultComplaint", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.Result", "Result")
+                        .WithMany()
+                        .HasForeignKey("ResultId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Result");
+                });
+
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.ResultPenalty", b =>
                 {
                     b.HasOne("MarathonRMS.BusinessObjects.Entities.PenaltyReason", "Reason")
@@ -2349,6 +2987,17 @@ namespace MarathonRMS.BusinessObjects.Migrations
                     b.Navigation("Reason");
 
                     b.Navigation("Result");
+                });
+
+            modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.RoutePoi", b =>
+                {
+                    b.HasOne("MarathonRMS.BusinessObjects.Entities.RaceCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.TimingRecord", b =>
@@ -2432,10 +3081,14 @@ namespace MarathonRMS.BusinessObjects.Migrations
 
                     b.Navigation("Categories");
 
+                    b.Navigation("ContentSections");
+
                     b.Navigation("Media");
 
                     b.Navigation("Policy")
                         .IsRequired();
+
+                    b.Navigation("ScheduleItems");
                 });
 
             modelBuilder.Entity("MarathonRMS.BusinessObjects.Entities.Organization", b =>

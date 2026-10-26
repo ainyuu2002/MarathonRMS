@@ -31,6 +31,11 @@ public class OrganizationApiClient : ApiClientBase
     public Task<List<OrganizationApplicationDto>> GetMyApplicationsAsync(CancellationToken ct = default) =>
         GetAsync<List<OrganizationApplicationDto>>("api/organization-applications/me", ct);
 
+    /// <summary>UC-16 – BTC của Organizer đang đăng nhập.</summary>
+    public Task<OrganizationDto> GetMineAsync(CancellationToken ct = default) => GetAsync<OrganizationDto>("api/organizations/me", ct);
+    public Task<OrganizationDto> UpdateMineAsync(UpdateMyOrganizationRequest request, CancellationToken ct = default) =>
+        PutAsync<OrganizationDto>("api/organizations/me", request, ct);
+
     public Task<List<StaffMemberDto>> GetStaffAsync(CancellationToken ct = default) => GetAsync<List<StaffMemberDto>>("api/organizations/me/staff", ct);
     public Task<StaffMemberDto> InviteStaffAsync(InviteStaffRequest request, CancellationToken ct = default) =>
         PostAsync<StaffMemberDto>("api/organizations/me/staff", request, ct);
@@ -74,12 +79,28 @@ public class AdminApiClient : ApiClientBase
         GetAsync<PagedResult<UserListItemDto>>(Query("api/admin/users", ("keyword", keyword), ("role", role), ("page", page)), ct);
     public Task<UserListItemDto> SetUserActiveAsync(string id, SetActiveRequest request, CancellationToken ct = default) =>
         PatchAsync<UserListItemDto>($"api/admin/users/{Uri.EscapeDataString(id)}/active", request, ct);
+
+    // UC-85 – danh mục lý do phạt / DSQ
+    public Task<List<PenaltyReasonAdminDto>> GetPenaltyReasonsAsync(CancellationToken ct = default) =>
+        GetAsync<List<PenaltyReasonAdminDto>>("api/admin/penalty-reasons", ct);
+    public Task<PenaltyReasonAdminDto> CreatePenaltyReasonAsync(UpsertPenaltyReasonRequest request, CancellationToken ct = default) =>
+        PostAsync<PenaltyReasonAdminDto>("api/admin/penalty-reasons", request, ct);
+    public Task<PenaltyReasonAdminDto> UpdatePenaltyReasonAsync(string code, UpsertPenaltyReasonRequest request, CancellationToken ct = default) =>
+        PutAsync<PenaltyReasonAdminDto>($"api/admin/penalty-reasons/{Uri.EscapeDataString(code)}", request, ct);
+    public Task DeletePenaltyReasonAsync(string code, CancellationToken ct = default) =>
+        DeleteAsync($"api/admin/penalty-reasons/{Uri.EscapeDataString(code)}", ct);
 }
 
 /// <summary>Chức năng SuperAdmin (UC-14, UC-15, UC-84).</summary>
 public class SuperAdminApiClient : ApiClientBase
 {
     public SuperAdminApiClient(HttpClient http) : base(http) { }
+
+    /// <summary>UC-17 – nhật ký hệ thống qua OData.</summary>
+    public Task<PagedResult<AuditLogDto>> GetAuditLogsAsync(string? filter, int page, int pageSize = 20, CancellationToken ct = default) =>
+        GetODataPageAsync<AuditLogDto>("AuditLogs", filter, "CreatedAt desc,Id desc", page, pageSize, ct);
+    public Task<AuditLogFacetsDto> GetAuditLogFacetsAsync(CancellationToken ct = default) =>
+        GetAsync<AuditLogFacetsDto>("api/superadmin/audit-logs/facets", ct);
 
     public Task<PagedResult<UserListItemDto>> GetAdminsAsync(CancellationToken ct = default) => GetAsync<PagedResult<UserListItemDto>>("api/superadmin/admins", ct);
     public Task<UserListItemDto> CreateAdminAsync(CreateAdminRequest request, CancellationToken ct = default) =>

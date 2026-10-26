@@ -61,3 +61,23 @@ public enum LegalDocType { Terms, Privacy }
 public enum SettingDataType { Int, Decimal, Bool, String }
 
 public enum MediaKind { Inline, Gallery }
+
+// ---------- Giai đoạn 2 ----------
+
+public enum DiscountType { Percent, Amount }
+
+public enum TransferStatus { Pending, AwaitingFee, Accepted, Rejected, Cancelled, Expired }
+
+public enum ComplaintStatus { Open, Accepted, Rejected }
+
+public enum RefundStatus { Pending, Completed, Rejected }
+
+public enum RefundReason { EventCancelled, Other }
+
+public enum AwardType { Overall, AgeGroup, Nationality }
+
+public enum RouteSource { Drawn, Gpx }
+
+public enum PoiType { Water, Medical, Toilet, Baggage, Other }
+
+public enum SectionType { Intro, Schedule, Faq, Custom }

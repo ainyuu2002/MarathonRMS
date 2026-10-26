@@ -1,0 +1,52 @@
+@model IReadOnlyList<MarathonRMS.DTOs.EventContent.EventMediaDto>
+@*
+    Album ảnh giải (UC-89) – dùng chung: <partial name="_EventGallery" model="content.Gallery" />
+    Bấm ảnh mở ảnh lớn trong modal (Bootstrap), không cần thư viện ngoài.
+*@
+@{
+    var modalId = "gallery-" + Guid.NewGuid().ToString("N")[..8];
+}
+@if (Model.Count == 0)
+{
+    <p class="text-secondary">Chưa có ảnh.</p>
+}
+else
+{
+    <div class="row g-2">
+        @foreach (var m in Model)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <a href="@m.FileUrl" class="d-block ratio ratio-4x3 rounded overflow-hidden bg-light"
+                   data-bs-toggle="modal" data-bs-target="#@modalId" data-src="@m.FileUrl" data-caption="@m.Caption">
+                    <img src="@m.FileUrl" alt="@(m.Caption ?? "Ảnh giải")" loading="lazy" class="w-100 h-100" style="object-fit:cover" />
+                </a>
+                @if (m.Caption is not null)
+                {
+                    <div class="small text-secondary text-truncate mt-1" title="@m.Caption">@m.Caption</div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="modal fade" id="@modalId" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content bg-dark border-0">
+                <div class="modal-header border-0 py-2">
+                    <span class="text-white small gallery-caption"></span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body pt-0 text-center">
+                    <img class="img-fluid gallery-image" style="max-height:80vh" alt="" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('@modalId').addEventListener('show.bs.modal', e => {
+            const link = e.relatedTarget, modal = e.currentTarget;
+            modal.querySelector('.gallery-image').src = link.dataset.src;
+            modal.querySelector('.gallery-image').alt = link.dataset.caption || '';
+            modal.querySelector('.gallery-caption').textContent = link.dataset.caption || '';
+        });
+    </script>
+}

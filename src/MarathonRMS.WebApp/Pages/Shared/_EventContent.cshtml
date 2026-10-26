@@ -1,0 +1,54 @@
+@model MarathonRMS.DTOs.EventContent.EventContentDto
+@*
+    Trang giới thiệu giải (UC-88) – dùng chung: B nhúng vào trang chi tiết giải, A dùng ở chế độ xem trước.
+    Cách dùng: var content = await _eventContent.GetPublicAsync(eventId); <partial name="_EventContent" model="content" />
+    BodyHtml đã được API lọc (BR-50) lúc lưu nên được phép Html.Raw.
+    Khối loại "Schedule" hiển thị kèm bảng lịch trình; album dùng partial _EventGallery riêng.
+*@
+@{
+    var theme = Model.ThemeColor ?? "#0D6EFD";
+}
+<div class="event-content" style="--event-theme:@theme">
+    @if (Model.Sections.Count == 0)
+    {
+        <p class="text-secondary">Ban tổ chức chưa đăng nội dung giới thiệu.</p>
+    }
+    @foreach (var s in Model.Sections)
+    {
+        <section class="mb-4" id="section-@s.Id">
+            <h2 class="h5 pb-1 mb-3 border-bottom" style="border-color:var(--event-theme)!important;color:var(--event-theme)">@s.Title</h2>
+            @if (!string.IsNullOrWhiteSpace(s.BodyHtml))
+            {
+                <div class="event-content-body">@Html.Raw(s.BodyHtml)</div>
+            }
+            @if (s.SectionType == "Schedule")
+            {
+                if (Model.Schedule.Count == 0)
+                {
+                    <p class="text-secondary small">Lịch trình sẽ được cập nhật.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <tbody>
+                                @foreach (var day in Model.Schedule.GroupBy(i => i.StartsAt.Date))
+                                {
+                                    <tr class="table-light"><th colspan="3">@day.Key.ToString("dddd, dd/MM/yyyy", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))</th></tr>
+                                    @foreach (var i in day)
+                                    {
+                                        <tr>
+                                            <td class="text-nowrap fw-semibold" style="width:8rem">@i.StartsAt.ToString("HH:mm")@(i.EndsAt is DateTime e ? $" – {e:HH:mm}" : "")</td>
+                                            <td>@i.Title@if (i.Note is not null) { <div class="small text-secondary">@i.Note</div> }</td>
+                                            <td class="small text-secondary">@if (i.Location is not null) { <i class="bi bi-geo-alt"></i> @i.Location }</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+        </section>
+    }
+</div>

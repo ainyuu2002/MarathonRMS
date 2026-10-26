@@ -15,6 +15,8 @@ public class Event
     /// <summary>HTML đã lọc phía server (BR-50).</summary>
     public string? DescriptionHtml { get; set; }
     public string? BannerUrl { get; set; }
+    /// <summary>Màu chủ đạo trang giới thiệu giải (#RRGGBB) – GĐ2.</summary>
+    public string? ThemeColor { get; set; }
     public string WaiverText { get; set; } = "";
     public int WaiverVersion { get; set; } = 1;
 
@@ -39,6 +41,8 @@ public class Event
     public ICollection<RaceCategory> Categories { get; set; } = new List<RaceCategory>();
     public ICollection<AgeGroup> AgeGroups { get; set; } = new List<AgeGroup>();
     public ICollection<EventMedia> Media { get; set; } = new List<EventMedia>();
+    public ICollection<EventContentSection> ContentSections { get; set; } = new List<EventContentSection>();
+    public ICollection<EventScheduleItem> ScheduleItems { get; set; } = new List<EventScheduleItem>();
 }
 
 /// <summary>Chính sách cấu hình theo giải (D15, mục 0.3 BA). Quan hệ 1–1 với Event.</summary>

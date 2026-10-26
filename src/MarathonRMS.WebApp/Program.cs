@@ -37,6 +37,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Staff", AppPolicies.StaffOrOrganizer);
     options.Conventions.AuthorizeFolder("/Member", AppPolicies.MemberOnly);
     options.Conventions.AuthorizePage("/Account/Logout");
+    options.Conventions.AuthorizePage("/Account/ChangePassword");
 });
 
 // ---------- Gọi API: typed HttpClient + tự gắn JWT ----------
@@ -55,6 +56,8 @@ AddApiClient<OrganizationApiClient>();
 AddApiClient<VenueApiClient>();
 AddApiClient<AdminApiClient>();
 AddApiClient<SuperAdminApiClient>();
+AddApiClient<CouponApiClient>();
+AddApiClient<EventContentApiClient>();
 // Phần B
 
 // Phần C

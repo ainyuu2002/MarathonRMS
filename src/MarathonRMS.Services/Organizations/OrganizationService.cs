@@ -17,6 +17,10 @@ public interface IOrganizationService
     /// <summary>Tạm khóa / mở BTC. BTC bị khóa: Organizer/Staff không thao tác được trên giải (B, C kiểm tra Organization.IsActive).</summary>
     Task<OrganizationDto> SetActiveAsync(int organizationId, bool isActive, string? reason, CancellationToken ct = default);
 
+    /// <summary>UC-16 – Organizer xem / cập nhật BTC của mình. Tên và mã số thuế đã được duyệt nên chỉ Admin sửa (UC-10).</summary>
+    Task<OrganizationDto> GetMineAsync(CancellationToken ct = default);
+    Task<OrganizationDto> UpdateMineAsync(UpdateMyOrganizationRequest request, CancellationToken ct = default);
+
     Task<IReadOnlyList<StaffMemberDto>> GetMyStaffAsync(CancellationToken ct = default);
     Task<StaffMemberDto> InviteStaffAsync(InviteStaffRequest request, CancellationToken ct = default);
     Task RemoveStaffAsync(string userId, CancellationToken ct = default);
@@ -71,6 +75,24 @@ public class OrganizationService : IOrganizationService
         org.ContactPhone = request.ContactPhone?.Trim();
         await _audit.LogAsync("Organization.Update", nameof(Organization), organizationId.ToString(), old,
             new { org.Name, org.ContactEmail, org.ContactPhone }, ct);
+        await _uow.SaveChangesAsync(ct);
+        return await GetAsync(organizationId, ct);
+    }
+
+    public Task<OrganizationDto> GetMineAsync(CancellationToken ct = default) => GetAsync(_scope.RequireOrganizationId(), ct);
+
+    public async Task<OrganizationDto> UpdateMineAsync(UpdateMyOrganizationRequest request, CancellationToken ct = default)
+    {
+        var organizationId = _scope.RequireOrganizationId();
+        await _scope.EnsureOrganizationActiveAsync(organizationId, ct);
+        var org = await _organizations.GetTrackedAsync(organizationId, ct) ?? throw new NotFoundException("Không tìm thấy ban tổ chức.");
+        var old = new { org.LogoUrl, org.Description, org.ContactEmail, org.ContactPhone };
+        org.LogoUrl = string.IsNullOrWhiteSpace(request.LogoUrl) ? null : request.LogoUrl.Trim();
+        org.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        org.ContactEmail = request.ContactEmail.Trim();
+        org.ContactPhone = string.IsNullOrWhiteSpace(request.ContactPhone) ? null : request.ContactPhone.Trim();
+        await _audit.LogAsync("Organization.UpdateOwn", nameof(Organization), organizationId.ToString(), old,
+            new { org.LogoUrl, org.Description, org.ContactEmail, org.ContactPhone }, ct);
         await _uow.SaveChangesAsync(ct);
         return await GetAsync(organizationId, ct);
     }

@@ -8,6 +8,7 @@
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><span class="dropdown-item-text small text-secondary">@string.Join(", ", User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value))</span></li>
                 <li><hr class="dropdown-divider" /></li>
+                <li><a class="dropdown-item" asp-page="/Account/ChangePassword"><i class="bi bi-key"></i> Đổi mật khẩu</a></li>
                 <li>
                     <form method="post" asp-page="/Account/Logout">
                         <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Đăng xuất</button>

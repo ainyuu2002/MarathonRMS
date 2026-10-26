@@ -12,6 +12,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         b.Property(x => x.Name).HasMaxLength(200).IsRequired();
         b.Property(x => x.Slug).HasMaxLength(200).IsUnicode(false).IsRequired();
         b.Property(x => x.BannerUrl).HasMaxLength(500);
+        b.Property(x => x.ThemeColor).HasMaxLength(7).IsUnicode(false);
         b.Property(x => x.WaiverText).IsRequired();
         b.Property(x => x.CancelReason).HasMaxLength(1000);
         b.Property(x => x.EmergencyPhone).HasMaxLength(20).IsUnicode(false);
@@ -31,6 +32,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
                 "[RegistrationOpenAt] < [RegistrationCloseAt] AND CAST([RegistrationCloseAt] AS date) <= [EventDate]");
             t.HasCheckConstraint("CK_Events_EndDate", "[EndDate] >= [EventDate]");
             t.HasCheckConstraint("CK_Events_WaiverVersion", "[WaiverVersion] >= 1");
+            t.HasCheckConstraint("CK_Events_ThemeColor", "[ThemeColor] IS NULL OR [ThemeColor] LIKE '#[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]'");
         });
     }
 }

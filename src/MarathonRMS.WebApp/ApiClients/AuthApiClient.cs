@@ -20,6 +20,10 @@ public class AuthApiClient : ApiClientBase
     /// <summary>Cấp lại JWT với quyền hiện tại – gọi rồi đăng nhập lại cookie bằng AuthCookieSignIn.</summary>
     public Task<AuthResponse> RefreshAsync(CancellationToken ct = default) =>
         PostAsync<AuthResponse>("api/auth/refresh", ct);
+
+    /// <summary>UC-06.</summary>
+    public Task ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct = default) =>
+        PostAsync("api/auth/change-password", request, ct);
 }
 
 public class LegalApiClient : ApiClientBase

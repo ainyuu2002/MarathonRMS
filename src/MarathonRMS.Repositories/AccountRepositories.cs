@@ -69,6 +69,9 @@ public class SystemSettingRepository : ISystemSettingRepository
 public interface IAuditLogRepository
 {
     Task AddAsync(AuditLog log, CancellationToken ct = default);
+    IQueryable<AuditLogRow> QueryWithUser();
+    Task<List<string>> GetDistinctActionsAsync(CancellationToken ct = default);
+    Task<List<string>> GetDistinctEntityTypesAsync(CancellationToken ct = default);
 }
 
 public class AuditLogRepository : IAuditLogRepository
@@ -77,6 +80,9 @@ public class AuditLogRepository : IAuditLogRepository
     public AuditLogRepository(AuditLogDAO dao) => _dao = dao;
 
     public Task AddAsync(AuditLog log, CancellationToken ct = default) => _dao.AddAsync(log, ct);
+    public IQueryable<AuditLogRow> QueryWithUser() => _dao.QueryWithUser();
+    public Task<List<string>> GetDistinctActionsAsync(CancellationToken ct = default) => _dao.GetDistinctActionsAsync(ct);
+    public Task<List<string>> GetDistinctEntityTypesAsync(CancellationToken ct = default) => _dao.GetDistinctEntityTypesAsync(ct);
 }
 
 public interface IUserRepository

@@ -33,6 +33,7 @@ public class RegistrationConfiguration : IEntityTypeConfiguration<Registration>
         b.HasOne(x => x.Category).WithMany().HasForeignKey(x => x.CategoryId);
         b.HasOne(x => x.Participant).WithMany().HasForeignKey(x => x.ParticipantId);
         b.HasOne(x => x.RegisteredBy).WithMany().HasForeignKey(x => x.RegisteredByUserId);
+        b.HasOne<Coupon>().WithMany().HasForeignKey(x => x.CouponId);
 
         // BR-01: mỗi người chạy 1 đăng ký còn hiệu lực / giải – theo Participant và theo số giấy tờ
         b.HasIndex(x => new { x.EventId, x.ParticipantId }).IsUnique().HasFilter(Active)

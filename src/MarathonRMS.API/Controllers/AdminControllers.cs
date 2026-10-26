@@ -81,6 +81,35 @@ public class AdminUsersController : ControllerBase
         Ok(await _users.SetUserActiveAsync(id, request, ct));
 }
 
+/// <summary>UC-85 – danh mục lý do phạt / DSQ (BR-28).</summary>
+[ApiController]
+[Route("api/admin/penalty-reasons")]
+[Authorize(Policy = AppPolicies.AdminOrAbove)]
+public class AdminPenaltyReasonsController : ControllerBase
+{
+    private readonly IPenaltyReasonService _reasons;
+    public AdminPenaltyReasonsController(IPenaltyReasonService reasons) => _reasons = reasons;
+
+    /// <summary>UC-85 – toàn bộ danh mục, kể cả lý do đã ngừng dùng, kèm số lần đã dùng.</summary>
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<PenaltyReasonAdminDto>>> GetAll(CancellationToken ct) => Ok(await _reasons.GetAllAsync(ct));
+
+    [HttpPost]
+    public async Task<ActionResult<PenaltyReasonAdminDto>> Create(UpsertPenaltyReasonRequest request, CancellationToken ct) =>
+        Ok(await _reasons.CreateAsync(request, ct));
+
+    [HttpPut("{code}")]
+    public async Task<ActionResult<PenaltyReasonAdminDto>> Update(string code, UpsertPenaltyReasonRequest request, CancellationToken ct) =>
+        Ok(await _reasons.UpdateAsync(code, request, ct));
+
+    [HttpDelete("{code}")]
+    public async Task<IActionResult> Delete(string code, CancellationToken ct)
+    {
+        await _reasons.DeleteAsync(code, ct);
+        return NoContent();
+    }
+}
+
 /// <summary>UC-12 – địa điểm. GET công khai (B dùng cho dropdown tạo giải); ghi: Admin, SuperAdmin, Organizer.</summary>
 [ApiController]
 [Route("api/venues")]

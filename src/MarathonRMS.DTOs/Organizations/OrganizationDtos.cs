@@ -80,6 +80,16 @@ public class UpdateOrganizationRequest
     [Phone, StringLength(20)] public string? ContactPhone { get; set; }
 }
 
+/// <summary>UC-16 – Organizer sửa thông tin BTC của mình (không đổi tên, mã số thuế).</summary>
+public class UpdateMyOrganizationRequest
+{
+    [StringLength(500), Url(ErrorMessage = "Địa chỉ logo phải là URL hợp lệ")] public string? LogoUrl { get; set; }
+    [StringLength(2000)] public string? Description { get; set; }
+    [Required(ErrorMessage = "Vui lòng nhập email liên hệ"), EmailAddress(ErrorMessage = "Email không hợp lệ"), StringLength(256)]
+    public string ContactEmail { get; set; } = "";
+    [Phone(ErrorMessage = "Số điện thoại không hợp lệ"), StringLength(20)] public string? ContactPhone { get; set; }
+}
+
 // ============================ Staff của BTC (UC-13) ============================
 
 public class StaffMemberDto

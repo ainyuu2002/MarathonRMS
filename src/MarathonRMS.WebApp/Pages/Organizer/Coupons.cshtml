@@ -1,0 +1,182 @@
+@page
+@model MarathonRMS.WebApp.Pages.Organizer.CouponsModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Mã giảm giá";
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var locked = Model.Editing is { UsedCount: > 0 };
+    string Describe(MarathonRMS.DTOs.Coupons.CouponDto c) => c.DiscountType == "Percent"
+        ? $"{c.DiscountValue:0}%" + (c.MaxDiscountAmount is decimal cap ? $" (tối đa {cap.ToString("N0", vi)}đ)" : "")
+        : $"{c.DiscountValue.ToString("N0", vi)}đ";
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Mã giảm giá</h1>
+    <a asp-route-new="1" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tạo coupon</a>
+</div>
+<p class="text-secondary small">Mã dùng khi Member đăng ký giải. Coupon của đối tác (ngân hàng, doanh nghiệp) ghi tên đối tác để thống kê.</p>
+
+<div class="row g-4">
+    <div class="@(Model.ShowForm ? "col-lg-7" : "col-12")">
+        <form method="get" class="d-flex gap-2 mb-3">
+            <input name="Keyword" value="@Model.Keyword" class="form-control" placeholder="Mã hoặc tên đối tác" />
+            <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+        </form>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Mã</th><th>Giảm</th><th>Phạm vi</th><th class="text-center">Đã dùng</th><th>Hiệu lực</th><th>Trạng thái</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model.Data.Items)
+                        {
+                            <tr>
+                                <td><code>@c.Code</code>@if (c.PartnerName is not null) { <div class="small text-secondary">@c.PartnerName</div> }</td>
+                                <td>@Describe(c)</td>
+                                <td class="small">@(c.EventName ?? "Mọi giải của BTC")@(c.CategoryName is null ? "" : $" · {c.CategoryName}")</td>
+                                <td class="text-center">@c.UsedCount/@c.MaxUses</td>
+                                <td class="small text-nowrap">@c.ValidFrom.ToString("dd/MM/yy") – @c.ValidTo.ToString("dd/MM/yy")</td>
+                                <td><status-badge status="@c.Status" /></td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-route-edit="@c.Id" asp-route-keyword="@Model.Keyword" asp-route-p="@Model.P" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                    @if (c.UsedCount == 0)
+                                    {
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" class="d-inline" onsubmit="return confirm('Xóa coupon @c.Code?');">
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        @if (Model.Data.Items.Count == 0)
+                        {
+                            <tr><td colspan="7" class="text-center text-secondary py-4">Chưa có coupon.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="mt-2"><partial name="_Pager" model="PagerModel.From(Model.Data, new { keyword = Model.Keyword })" /></div>
+    </div>
+
+    @if (Model.ShowForm)
+    {
+        <div class="col-lg-5">
+            <form method="post" asp-page-handler="Save" asp-route-edit="@Model.Edit" asp-route-keyword="@Model.Keyword" asp-route-p="@Model.P" class="card" novalidate>
+                <div class="card-header">@(Model.Edit is null ? "Tạo coupon" : $"Sửa coupon {Model.Editing?.Code}")</div>
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                    @if (locked)
+                    {
+                        <div class="alert alert-info small py-2">Coupon đã có người dùng: chỉ sửa được hạn kết thúc, số lượt, đối tác và trạng thái.</div>
+                    }
+                    <fieldset disabled="@locked">
+                        <div class="mb-2">
+                            <label asp-for="Input.Code" class="form-label">Mã</label>
+                            <input asp-for="Input.Code" class="form-control text-uppercase" />
+                            <span asp-validation-for="Input.Code" class="text-danger small"></span>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-5">
+                                <label asp-for="Input.DiscountType" class="form-label">Loại</label>
+                                <select asp-for="Input.DiscountType" class="form-select" id="discountType">
+                                    <option value="Percent">Phần trăm</option>
+                                    <option value="Amount">Số tiền</option>
+                                </select>
+                            </div>
+                            <div class="col-7">
+                                <label asp-for="Input.DiscountValue" class="form-label">Giá trị (<span id="unit">%</span>)</label>
+                                <input asp-for="Input.DiscountValue" class="form-control" />
+                                <span asp-validation-for="Input.DiscountValue" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="mb-2" id="maxDiscountGroup">
+                            <label asp-for="Input.MaxDiscountAmount" class="form-label">Giảm tối đa (đ) – tùy chọn</label>
+                            <input asp-for="Input.MaxDiscountAmount" class="form-control" step="1000" />
+                            <span asp-validation-for="Input.MaxDiscountAmount" class="text-danger small"></span>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-7">
+                                <label class="form-label" for="eventSelect">Giải áp dụng</label>
+                                <select name="Input.EventId" id="eventSelect" class="form-select">
+                                    <option value="">Mọi giải của BTC</option>
+                                    @foreach (var e in Model.EventOptions)
+                                    {
+                                        <option value="@e.EventId" selected="@(Model.Input.EventId == e.EventId)">@e.EventName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label" for="categorySelect">Cự ly</label>
+                                <select name="Input.CategoryId" id="categorySelect" class="form-select" data-selected="@Model.Input.CategoryId">
+                                    <option value="">Mọi cự ly</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label asp-for="Input.ValidFrom" class="form-label">Bắt đầu</label>
+                            <input asp-for="Input.ValidFrom" type="datetime-local" class="form-control" />
+                        </div>
+                    </fieldset>
+                    <div class="mb-2">
+                        <label asp-for="Input.ValidTo" class="form-label">Kết thúc</label>
+                        <input asp-for="Input.ValidTo" type="datetime-local" class="form-control" />
+                        <span asp-validation-for="Input.ValidTo" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Input.MaxUses" class="form-label">Số lượt tối đa</label>
+                        <input asp-for="Input.MaxUses" class="form-control" />
+                        <span asp-validation-for="Input.MaxUses" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Input.PartnerName" class="form-label">Đối tác phát hành</label>
+                        <input asp-for="Input.PartnerName" class="form-control" placeholder="VD: Ngân hàng ABC" />
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.IsActive" class="form-check-input" />
+                        <label asp-for="Input.IsActive" class="form-check-label">Đang áp dụng</label>
+                    </div>
+                    @if (locked)
+                    {
+                        @* fieldset disabled không gửi giá trị ⇒ gửi kèm giá trị cũ để API so sánh *@
+                        <input type="hidden" name="Input.Code" value="@Model.Input.Code" />
+                        <input type="hidden" name="Input.DiscountType" value="@Model.Input.DiscountType" />
+                        <input type="hidden" name="Input.DiscountValue" value="@Model.Input.DiscountValue.ToString(CultureInfo.InvariantCulture)" />
+                        <input type="hidden" name="Input.MaxDiscountAmount" value="@Model.Input.MaxDiscountAmount?.ToString(CultureInfo.InvariantCulture)" />
+                        <input type="hidden" name="Input.EventId" value="@Model.Input.EventId" />
+                        <input type="hidden" name="Input.CategoryId" value="@Model.Input.CategoryId" />
+                        <input type="hidden" name="Input.ValidFrom" value="@Model.Input.ValidFrom.ToString("yyyy-MM-ddTHH:mm:ss")" />
+                    }
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a asp-route-keyword="@Model.Keyword" asp-route-p="@Model.P" class="btn btn-link">Đóng</a>
+                    <button class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
+                </div>
+            </form>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const eventOptions = @Json.Serialize(Model.EventOptions);
+        const eventSelect = document.getElementById('eventSelect');
+        const categorySelect = document.getElementById('categorySelect');
+        const typeSelect = document.getElementById('discountType');
+        function fillCategories() {
+            if (!eventSelect) return;
+            const ev = eventOptions.find(e => String(e.eventId) === eventSelect.value);
+            const selected = categorySelect.dataset.selected;
+            categorySelect.innerHTML = '<option value="">Mọi cự ly</option>' +
+                (ev ? ev.categories.map(c => `<option value="${c.categoryId}" ${String(c.categoryId) === selected ? 'selected' : ''}>${c.name}</option>`).join('') : '');
+        }
+        function toggleType() {
+            if (!typeSelect) return;
+            const percent = typeSelect.value === 'Percent';
+            document.getElementById('unit').textContent = percent ? '%' : 'đ';
+            document.getElementById('maxDiscountGroup').style.display = percent ? '' : 'none';
+        }
+        eventSelect?.addEventListener('change', () => { categorySelect.dataset.selected = ''; fillCategories(); });
+        typeSelect?.addEventListener('change', toggleType);
+        fillCategories(); toggleType();
+    </script>
+}

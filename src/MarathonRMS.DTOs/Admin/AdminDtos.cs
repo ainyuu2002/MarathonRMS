@@ -82,3 +82,29 @@ public class PublishLegalDocumentRequest
     [Required(ErrorMessage = "Nội dung không được trống"), StringLength(100_000, MinimumLength = 20)]
     public string Content { get; set; } = "";
 }
+
+// ============================ Danh mục lý do phạt / DSQ (UC-85) ============================
+
+/// <summary>Lý do phạt trong trang quản trị (có cả lý do đã ngừng dùng). C dùng PenaltyReasonDto (Results) cho form phạt.</summary>
+public class PenaltyReasonAdminDto
+{
+    public string Code { get; set; } = "";
+    public string Name { get; set; } = "";
+    /// <summary>Warning | TimePenalty | DSQ.</summary>
+    public string DefaultAction { get; set; } = "";
+    public int? DefaultMinutes { get; set; }
+    public bool IsActive { get; set; }
+    public int UsageCount { get; set; }
+}
+
+/// <summary>Code chỉ dùng khi tạo (không đổi được sau đó). TimePenalty bắt buộc số phút 1–600.</summary>
+public class UpsertPenaltyReasonRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập mã"), StringLength(40, MinimumLength = 3)]
+    [RegularExpression("^[A-Za-z0-9_]+$", ErrorMessage = "Mã chỉ gồm chữ không dấu, số và dấu gạch dưới")]
+    public string Code { get; set; } = "";
+    [Required(ErrorMessage = "Vui lòng nhập tên lý do"), StringLength(200)] public string Name { get; set; } = "";
+    [Required, AllowedValues("Warning", "TimePenalty", "DSQ")] public string DefaultAction { get; set; } = "DSQ";
+    [Range(1, 600, ErrorMessage = "Số phút từ 1 đến 600")] public int? DefaultMinutes { get; set; }
+    public bool IsActive { get; set; } = true;
+}

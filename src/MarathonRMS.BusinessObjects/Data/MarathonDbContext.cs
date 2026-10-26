@@ -32,6 +32,17 @@ public class MarathonDbContext : IdentityDbContext<AppUser>
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // Giai đoạn 2
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<BibTransfer> BibTransfers => Set<BibTransfer>();
+    public DbSet<ResultComplaint> ResultComplaints => Set<ResultComplaint>();
+    public DbSet<Refund> Refunds => Set<Refund>();
+    public DbSet<Prize> Prizes => Set<Prize>();
+    public DbSet<RaceRoute> RaceRoutes => Set<RaceRoute>();
+    public DbSet<RoutePoi> RoutePois => Set<RoutePoi>();
+    public DbSet<EventContentSection> EventContentSections => Set<EventContentSection>();
+    public DbSet<EventScheduleItem> EventScheduleItems => Set<EventScheduleItem>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
     {
         // Thời điểm: datetime2(3), giờ Việt Nam (chạy local)
@@ -78,6 +89,10 @@ public class MarathonDbContext : IdentityDbContext<AppUser>
             _ when principal == typeof(Event) && dependent == typeof(EventPolicy) => true,
             _ when principal == typeof(Event) && dependent == typeof(RaceCategory) => true,
             _ when principal == typeof(Event) && dependent == typeof(EventMedia) => true,
+            _ when principal == typeof(Event) && dependent == typeof(EventContentSection) => true,
+            _ when principal == typeof(Event) && dependent == typeof(EventScheduleItem) => true,
+            _ when principal == typeof(RaceCategory) && dependent == typeof(RaceRoute) => true,
+            _ when principal == typeof(RaceCategory) && dependent == typeof(RoutePoi) => true,
             _ when principal == typeof(RaceCategory) && dependent == typeof(PriceTier) => true,
             _ when principal == typeof(RaceCategory) && dependent == typeof(Checkpoint) => true,
             _ when principal == typeof(Result) && dependent == typeof(ResultPenalty) => true,

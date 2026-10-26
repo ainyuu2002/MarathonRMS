@@ -39,6 +39,15 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponse>> Refresh(CancellationToken ct) =>
         Ok(await _auth.RefreshAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, ct));
 
+    /// <summary>UC-06: đổi mật khẩu.</summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken ct)
+    {
+        await _auth.ChangePasswordAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, request, ct);
+        return NoContent();
+    }
+
     /// <summary>Thông tin tài khoản đang đăng nhập.</summary>
     [HttpGet("me")]
     [Authorize]

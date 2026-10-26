@@ -65,6 +65,23 @@ public class OrganizationApplicationsController : ControllerBase
         Ok(await _applications.GetMineAsync(ct));
 }
 
+/// <summary>UC-16 – Organizer xem / sửa thông tin BTC của mình.</summary>
+[ApiController]
+[Route("api/organizations/me")]
+[Authorize(Policy = AppPolicies.OrganizerOnly)]
+public class MyOrganizationController : ControllerBase
+{
+    private readonly IOrganizationService _organizations;
+    public MyOrganizationController(IOrganizationService organizations) => _organizations = organizations;
+
+    [HttpGet]
+    public async Task<ActionResult<OrganizationDto>> Get(CancellationToken ct) => Ok(await _organizations.GetMineAsync(ct));
+
+    [HttpPut]
+    public async Task<ActionResult<OrganizationDto>> Update(UpdateMyOrganizationRequest request, CancellationToken ct) =>
+        Ok(await _organizations.UpdateMineAsync(request, ct));
+}
+
 /// <summary>UC-13 – Organizer quản lý Staff của BTC mình (BR-34).</summary>
 [ApiController]
 [Route("api/organizations/me/staff")]

@@ -15,6 +15,8 @@ public interface IAuthService
     Task<CurrentUserDto> GetCurrentUserAsync(string userId, CancellationToken ct = default);
     /// <summary>Cấp lại JWT với role/BTC hiện tại – dùng sau khi được duyệt làm BTC, được mời làm Staff, đổi quyền.</summary>
     Task<AuthResponse> RefreshAsync(string userId, CancellationToken ct = default);
+    /// <summary>UC-06: đổi mật khẩu (kiểm tra mật khẩu hiện tại, áp quy tắc độ mạnh của Identity, ghi nhật ký).</summary>
+    Task ChangePasswordAsync(string userId, ChangePasswordRequest request, CancellationToken ct = default);
 }
 
 public class AuthService : IAuthService
@@ -28,11 +30,13 @@ public class AuthService : IAuthService
     private readonly IOrganizationRepository _organizations;
     private readonly IUnitOfWork _uow;
     private readonly IDateTimeProvider _clock;
+    private readonly IAuditLogger _audit;
 
     public AuthService(UserManager<AppUser> users, SignInManager<AppUser> signIn, ITokenService tokens,
         IParticipantRepository participants, IConsentRecordRepository consents, ILegalDocumentRepository legal,
-        IOrganizationRepository organizations, IUnitOfWork uow, IDateTimeProvider clock)
+        IOrganizationRepository organizations, IUnitOfWork uow, IDateTimeProvider clock, IAuditLogger audit)
     {
+        _audit = audit;
         _users = users;
         _signIn = signIn;
         _tokens = tokens;
@@ -120,6 +124,25 @@ public class AuthService : IAuthService
         var roles = await _users.GetRolesAsync(user);
         var (token, expires) = _tokens.CreateToken(user, roles);
         return new AuthResponse { AccessToken = token, ExpiresAt = expires, User = await ToDtoAsync(user, roles, ct) };
+    }
+
+    public async Task ChangePasswordAsync(string userId, ChangePasswordRequest request, CancellationToken ct = default)
+    {
+        var user = await _users.FindByIdAsync(userId) ?? throw new NotFoundException("Không tìm thấy tài khoản.");
+        if (request.NewPassword == request.CurrentPassword)
+            throw new BusinessRuleException(ErrorCodes.Validation, "Mật khẩu mới phải khác mật khẩu hiện tại.", 400);
+
+        var result = await _users.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            var message = result.Errors.Any(e => e.Code == "PasswordMismatch")
+                ? "Mật khẩu hiện tại không đúng."
+                : "Mật khẩu mới chưa đủ mạnh: tối thiểu 8 ký tự, có chữ hoa, chữ thường và chữ số.";
+            throw new BusinessRuleException(ErrorCodes.Validation, message, 400);
+        }
+        // Không lưu mật khẩu vào nhật ký – chỉ ghi nhận sự kiện
+        await _audit.LogAsync("Account.ChangePassword", nameof(AppUser), user.Id, ct: ct);
+        await _uow.SaveChangesAsync(ct);
     }
 
     public async Task<CurrentUserDto> GetCurrentUserAsync(string userId, CancellationToken ct = default)

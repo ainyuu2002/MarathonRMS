@@ -51,3 +51,18 @@ public class CurrentUserDto
     public int? OrganizationId { get; set; }
     public string? OrganizationName { get; set; }
 }
+
+/// <summary>UC-06 – đổi mật khẩu.</summary>
+public class ChangePasswordRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập mật khẩu hiện tại")]
+    public string CurrentPassword { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới")]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "Mật khẩu tối thiểu 8 ký tự")]
+    public string NewPassword { get; set; } = "";
+
+    [Required(ErrorMessage = "Vui lòng nhập lại mật khẩu mới")]
+    [Compare(nameof(NewPassword), ErrorMessage = "Mật khẩu nhập lại không khớp")]
+    public string ConfirmPassword { get; set; } = "";
+}

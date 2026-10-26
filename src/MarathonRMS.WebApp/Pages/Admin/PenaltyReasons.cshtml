@@ -1,0 +1,110 @@
+@page
+@model MarathonRMS.WebApp.Pages.Admin.PenaltyReasonsModel
+@{
+    ViewData["Title"] = "Lý do phạt / DSQ";
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Lý do phạt / DSQ</h1>
+    <a asp-route-edit="new" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm lý do</a>
+</div>
+<p class="text-secondary small">Trọng tài chỉ được chọn lý do trong danh mục khi phạt VĐV. Lý do đã dùng không xóa được – chuyển sang “Ngừng dùng” để ẩn khỏi form phạt.</p>
+@if (!Model.ShowForm)
+{
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+}
+
+<div class="row g-4">
+    <div class="@(Model.ShowForm ? "col-lg-7" : "col-12")">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Mã</th><th>Lý do</th><th>Mặc định</th><th class="text-center">Đã dùng</th><th>Trạng thái</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model.Reasons)
+                        {
+                            <tr class="@(r.IsActive ? "" : "text-secondary")">
+                                <td><code>@r.Code</code></td>
+                                <td>@r.Name</td>
+                                <td class="small text-nowrap">@PenaltyReasonsModel.ActionLabel(r.DefaultAction)@(r.DefaultMinutes is int m ? $" +{m} phút" : "")</td>
+                                <td class="text-center">@r.UsageCount</td>
+                                <td>@(r.IsActive ? "Đang dùng" : "Ngừng dùng")</td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-route-edit="@r.Code" class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    @if (r.UsageCount == 0)
+                                    {
+                                        <form method="post" asp-page-handler="Delete" asp-route-code="@r.Code" class="d-inline" onsubmit="return confirm('Xóa lý do @r.Code?');">
+                                            <button class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        @if (Model.Reasons.Count == 0)
+                        {
+                            <tr><td colspan="6" class="text-center text-secondary py-4">Chưa có lý do nào.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.ShowForm)
+    {
+        <div class="col-lg-5">
+            <form method="post" asp-page-handler="Save" asp-route-edit="@Model.Edit" class="card" novalidate>
+                <div class="card-header">@(Model.IsNew ? "Thêm lý do" : $"Sửa lý do {Model.Edit}")</div>
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                    <div class="mb-2">
+                        <label asp-for="Input.Code" class="form-label">Mã</label>
+                        <input asp-for="Input.Code" class="form-control text-uppercase" readonly="@(!Model.IsNew)" placeholder="VD: LITTERING" />
+                        <span asp-validation-for="Input.Code" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Input.Name" class="form-label">Tên lý do</label>
+                        <input asp-for="Input.Name" class="form-control" />
+                        <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-7">
+                            <label asp-for="Input.DefaultAction" class="form-label">Hình thức mặc định</label>
+                            <select asp-for="Input.DefaultAction" class="form-select" id="defaultAction">
+                                @foreach (var a in PenaltyReasonsModel.Actions)
+                                {
+                                    <option value="@a.Value">@a.Label</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-5" id="minutesGroup">
+                            <label asp-for="Input.DefaultMinutes" class="form-label">Số phút</label>
+                            <input asp-for="Input.DefaultMinutes" type="number" min="1" max="600" class="form-control" />
+                            <span asp-validation-for="Input.DefaultMinutes" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.IsActive" class="form-check-input" />
+                        <label asp-for="Input.IsActive" class="form-check-label">Đang dùng</label>
+                    </div>
+                </div>
+                <div class="card-footer d-flex gap-2 justify-content-end">
+                    <a asp-page="/Admin/PenaltyReasons" class="btn btn-outline-secondary">Hủy</a>
+                    <button class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const select = document.getElementById('defaultAction');
+            const group = document.getElementById('minutesGroup');
+            if (!select) return;
+            const sync = () => group.classList.toggle('d-none', select.value !== 'TimePenalty');
+            select.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}
