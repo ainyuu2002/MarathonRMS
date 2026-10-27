@@ -6,6 +6,7 @@ using MarathonRMS.Services.Auth;
 using MarathonRMS.Services.Common;
 using MarathonRMS.Services.Coupons;
 using MarathonRMS.Services.EventContent;
+using MarathonRMS.Services.Events;
 using MarathonRMS.Services.Legal;
 using MarathonRMS.Services.Organizations;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +33,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<EventContentDAO>();
         services.AddScoped<EventMediaDAO>();
         services.AddScoped<PenaltyReasonDAO>();
+        // Phần B – giải
+        services.AddScoped<EventDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -48,6 +51,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEventContentRepository, EventContentRepository>();
         services.AddScoped<IEventMediaRepository, EventMediaRepository>();
         services.AddScoped<IPenaltyReasonRepository, PenaltyReasonRepository>();
+        // Phần B – giải
+        services.AddScoped<IEventRepository, EventRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -84,6 +89,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPenaltyReasonService, PenaltyReasonService>();
 
         // Phần B – giải, đăng ký, thanh toán (thêm bên dưới)
+        services.AddScoped<IEventService, EventService>();
 
         // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
 

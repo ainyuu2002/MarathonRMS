@@ -83,9 +83,6 @@ public class UpsertEventRequest
     [StringLength(1000)]
     public string? InsuranceNote { get; set; }
 
-    /// <summary>Văn bản miễn trừ. Đổi nội dung ⇒ tăng WaiverVersion (BR-46d).</summary>
-    [Required(ErrorMessage = "Giải phải có văn bản miễn trừ trách nhiệm"), StringLength(20000)]
-    public string WaiverText { get; set; } = "";
 }
 
 /// <summary>UC-20: chuyển trạng thái giải (BR-38 kiểm tra khi mở đăng ký).</summary>
