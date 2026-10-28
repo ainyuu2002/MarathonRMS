@@ -47,6 +47,13 @@ public class EventsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> ChangeStatus(int id, ChangeEventStatusRequest request, CancellationToken ct)
+    {
+        await _events.ChangeStatusAsync(id, request, ct);
+        return NoContent();
+    }
+
     [HttpGet("{id:int}/policies")]
     [AllowAnonymous]
     public async Task<ActionResult<EventPolicyDto>> GetPolicy(int id, CancellationToken ct) =>

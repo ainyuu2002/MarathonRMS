@@ -25,6 +25,12 @@ public class EventDAO : BaseDAO<Event>
             .Include(e => e.Policy)
             .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
+    public Task<Event?> GetForStatusChangeAsync(int eventId, CancellationToken ct = default) =>
+        Set.Include(e => e.Policy)
+            .Include(e => e.Categories).ThenInclude(c => c.PriceTiers)
+            .Include(e => e.Categories).ThenInclude(c => c.Checkpoints)
+            .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
+
     public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) =>
         Set.AnyAsync(e => e.Slug == slug, ct);
 

@@ -38,6 +38,9 @@ public abstract class ApiClientBase
     protected async Task<T> PatchAsync<T>(string url, object body, CancellationToken ct = default) =>
         await ReadAsync<T>(await SendAsync(() => Http.PatchAsJsonAsync(url, body, Json, ct)), ct);
 
+    protected async Task PatchAsync(string url, object body, CancellationToken ct = default) =>
+        await EnsureSuccessAsync(await SendAsync(() => Http.PatchAsJsonAsync(url, body, Json, ct)), ct);
+
     protected async Task DeleteAsync(string url, CancellationToken ct = default) =>
         await EnsureSuccessAsync(await SendAsync(() => Http.DeleteAsync(url, ct)), ct);
 

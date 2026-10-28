@@ -145,8 +145,35 @@ public class EventService : IEventService
         await _uow.SaveChangesAsync(ct);
     }
 
-    public Task ChangeStatusAsync(int eventId, ChangeEventStatusRequest request, CancellationToken ct = default) =>
-        throw new NotSupportedException("Chuyển trạng thái giải thuộc UC-20 và chưa được triển khai.");
+    public async Task ChangeStatusAsync(int eventId, ChangeEventStatusRequest request, CancellationToken ct = default)
+    {
+        var entity = await _events.GetForStatusChangeAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
+        _scope.EnsureCanManage(entity.OrganizationId);
+        await _scope.EnsureOrganizationActiveAsync(entity.OrganizationId, ct);
+
+        var target = Enum.Parse<EventStatus>(request.Status, ignoreCase: true);
+        var expected = entity.Status switch
+        {
+            EventStatus.Draft => EventStatus.Published,
+            EventStatus.Published => EventStatus.RegistrationOpen,
+            EventStatus.RegistrationOpen => EventStatus.RegistrationClosed,
+            EventStatus.RegistrationClosed => EventStatus.Completed,
+            _ => (EventStatus?)null
+        };
+        if (expected != target)
+            throw new BusinessRuleException("VALIDATION",
+                expected is null
+                    ? $"Giải ở trạng thái {entity.Status} không thể chuyển tiếp bằng luồng này."
+                    : $"Giải ở trạng thái {entity.Status} chỉ có thể chuyển sang {expected}.", 400);
+
+        if (target == EventStatus.RegistrationOpen) EnsureReadyToOpen(entity);
+
+        var oldStatus = entity.Status;
+        entity.Status = target;
+        await _audit.LogAsync("Event.StatusChange", nameof(Event), eventId.ToString(),
+            new { Status = oldStatus.ToString() }, new { Status = target.ToString() }, ct);
+        await _uow.SaveChangesAsync(ct);
+    }
 
     private async Task<Event> LoadForWriteAsync(int eventId, CancellationToken ct)
     {
@@ -164,6 +191,40 @@ public class EventService : IEventService
         var suffix = 2;
         while (await _events.SlugExistsAsync(slug, ct)) slug = $"{root}-{suffix++}";
         return slug;
+    }
+
+    private static void EnsureReadyToOpen(Event entity)
+    {
+        var errors = new List<string>();
+        if (entity.Categories.Count == 0)
+            errors.Add("Giải chưa có cự ly.");
+
+        foreach (var category in entity.Categories.OrderBy(c => c.Name))
+        {
+            if (category.BibFrom <= 0 || category.BibTo <= category.BibFrom)
+                errors.Add($"Cự ly {category.Name} chưa có dải BIB hợp lệ.");
+            if (!PriceTiersCoverRegistrationWindow(category.PriceTiers, entity.RegistrationOpenAt, entity.RegistrationCloseAt))
+                errors.Add($"Mức giá của cự ly {category.Name} chưa phủ kín thời gian đăng ký.");
+            if (category.IsTimed &&
+                (!category.Checkpoints.Any(c => c.Type == CheckpointType.Start) ||
+                 !category.Checkpoints.Any(c => c.Type == CheckpointType.Finish)))
+                errors.Add($"Cự ly {category.Name} cần checkpoint Start và Finish.");
+        }
+
+        if (entity.Policy.OverallRankingBasis is null || entity.Policy.AgeGroupRankingBasis is null)
+            errors.Add("Chưa chọn cơ sở xếp hạng chung cuộc và nhóm tuổi.");
+        if (string.IsNullOrWhiteSpace(entity.WaiverText))
+            errors.Add("Chưa có văn bản miễn trừ trách nhiệm.");
+
+        if (errors.Count > 0)
+            throw new BusinessRuleException("BR-38", $"Chưa thể mở đăng ký: {string.Join(" ", errors)}");
+    }
+
+    private static bool PriceTiersCoverRegistrationWindow(IEnumerable<PriceTier> tiers, DateTime openAt, DateTime closeAt)
+    {
+        var ordered = tiers.OrderBy(t => t.ValidFrom).ToList();
+        if (ordered.Count == 0 || ordered[0].ValidFrom != openAt || ordered[^1].ValidTo != closeAt) return false;
+        return ordered.Zip(ordered.Skip(1), (current, next) => current.ValidTo == next.ValidFrom).All(matches => matches);
     }
 
     private async Task<EventPolicy> CreateDefaultPolicyAsync(CancellationToken ct)

@@ -8,6 +8,7 @@ public interface IEventRepository
     IQueryable<Event> QueryWithReferences();
     Task<Event?> GetDetailedAsync(int eventId, CancellationToken ct = default);
     Task<Event?> GetTrackedAsync(int eventId, CancellationToken ct = default);
+    Task<Event?> GetForStatusChangeAsync(int eventId, CancellationToken ct = default);
     Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default);
     Task<bool> HasRegistrationsAsync(int eventId, CancellationToken ct = default);
     Task AddAsync(Event entity, CancellationToken ct = default);
@@ -22,6 +23,7 @@ public class EventRepository : IEventRepository
     public IQueryable<Event> QueryWithReferences() => _dao.QueryWithReferences();
     public Task<Event?> GetDetailedAsync(int eventId, CancellationToken ct = default) => _dao.GetDetailedAsync(eventId, ct);
     public Task<Event?> GetTrackedAsync(int eventId, CancellationToken ct = default) => _dao.GetTrackedAsync(eventId, ct);
+    public Task<Event?> GetForStatusChangeAsync(int eventId, CancellationToken ct = default) => _dao.GetForStatusChangeAsync(eventId, ct);
     public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => _dao.SlugExistsAsync(slug, ct);
     public Task<bool> HasRegistrationsAsync(int eventId, CancellationToken ct = default) => _dao.HasRegistrationsAsync(eventId, ct);
     public Task AddAsync(Event entity, CancellationToken ct = default) => _dao.AddAsync(entity, ct);

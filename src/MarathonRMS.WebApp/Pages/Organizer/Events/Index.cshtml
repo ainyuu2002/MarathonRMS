@@ -2,6 +2,14 @@
 @model MarathonRMS.WebApp.Pages.Organizer.Events.IndexModel
 @{
     ViewData["Title"] = "Giải chạy của tôi";
+    (string? Status, string Label) NextStatus(string status) => status switch
+    {
+        "Draft" => ("Published", "Công bố"),
+        "Published" => ("RegistrationOpen", "Mở đăng ký"),
+        "RegistrationOpen" => ("RegistrationClosed", "Đóng đăng ký"),
+        "RegistrationClosed" => ("Completed", "Hoàn thành"),
+        _ => (null, "")
+    };
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -34,6 +42,7 @@ else
                 <tbody>
                     @foreach (var item in Model.Events)
                     {
+                        var next = NextStatus(item.Status);
                         <tr>
                             <td>
                                 <div class="fw-semibold">@item.Name</div>
@@ -54,6 +63,14 @@ else
                                 <a asp-page="Policy" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Chính sách"><i class="bi bi-sliders"></i></a>
                                 <a asp-page="/Organizer/EventContent" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Nội dung"><i class="bi bi-file-richtext"></i></a>
                                 <a asp-page="/Organizer/EventAlbum" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Album"><i class="bi bi-images"></i></a>
+                                @if (next.Status is not null)
+                                {
+                                    <form method="post" asp-page-handler="ChangeStatus" asp-route-id="@item.Id" class="d-inline"
+                                          onsubmit="return confirm('Xác nhận chuyển trạng thái giải?');">
+                                        <input type="hidden" name="status" value="@next.Status" />
+                                        <button class="btn btn-sm btn-outline-success">@next.Label</button>
+                                    </form>
+                                }
                                 @if (item.Status == "Draft")
                                 {
                                     <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" class="d-inline"
