@@ -7,14 +7,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.API.Controllers;
 
-/// <summary>UC-18 – Organizer tạo, xem, sửa và xóa giải của BTC mình.</summary>
+/// <summary>UC-18/19 – quản lý thông tin, chính sách và văn bản miễn trừ của giải.</summary>
 [ApiController]
 [Route("api/events")]
 [Authorize(Policy = AppPolicies.OrganizerOnly)]
 public class EventsController : ControllerBase
 {
     private readonly IEventService _events;
-    public EventsController(IEventService events) => _events = events;
+    private readonly IEventPolicyService _policies;
+    public EventsController(IEventService events, IEventPolicyService policies)
+    {
+        _events = events;
+        _policies = policies;
+    }
 
     [HttpGet("mine")]
     public async Task<ActionResult<IReadOnlyList<EventSummaryDto>>> GetMine(CancellationToken ct) =>
@@ -41,4 +46,22 @@ public class EventsController : ControllerBase
         await _events.DeleteAsync(id, ct);
         return NoContent();
     }
+
+    [HttpGet("{id:int}/policies")]
+    [AllowAnonymous]
+    public async Task<ActionResult<EventPolicyDto>> GetPolicy(int id, CancellationToken ct) =>
+        Ok(await _policies.GetAsync(id, ct));
+
+    [HttpPut("{id:int}/policies")]
+    public async Task<ActionResult<EventPolicyDto>> UpdatePolicy(int id, UpdateEventPolicyRequest request, CancellationToken ct) =>
+        Ok(await _policies.UpdateAsync(id, request, ct));
+
+    [HttpGet("{id:int}/waiver")]
+    [AllowAnonymous]
+    public async Task<ActionResult<EventWaiverDto>> GetWaiver(int id, CancellationToken ct) =>
+        Ok(await _policies.GetWaiverAsync(id, ct));
+
+    [HttpPut("{id:int}/waiver")]
+    public async Task<ActionResult<EventWaiverDto>> UpdateWaiver(int id, UpdateEventWaiverRequest request, CancellationToken ct) =>
+        Ok(await _policies.UpdateWaiverAsync(id, request, ct));
 }

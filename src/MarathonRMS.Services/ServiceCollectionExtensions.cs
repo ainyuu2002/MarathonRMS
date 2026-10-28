@@ -90,6 +90,7 @@ public static class ServiceCollectionExtensions
 
         // Phần B – giải, đăng ký, thanh toán (thêm bên dưới)
         services.AddScoped<IEventService, EventService>();
+        services.AddScoped<IEventPolicyService, EventPolicyService>();
 
         // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
 

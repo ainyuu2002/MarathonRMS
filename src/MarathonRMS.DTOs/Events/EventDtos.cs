@@ -149,6 +149,19 @@ public class UpdateEventPolicyRequest
     [Required, AllowedValues("NoRefund", "CarryOver", "Refund")] public string ForceMajeurePolicy { get; set; } = "NoRefund";
 }
 
+public class EventWaiverDto
+{
+    public int EventId { get; set; }
+    public string WaiverText { get; set; } = "";
+    public int WaiverVersion { get; set; }
+}
+
+public class UpdateEventWaiverRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập văn bản miễn trừ trách nhiệm"), StringLength(20000)]
+    public string WaiverText { get; set; } = "";
+}
+
 // ============================ Cự ly, giá, nhóm tuổi, checkpoint ============================
 
 public class RaceCategoryDto

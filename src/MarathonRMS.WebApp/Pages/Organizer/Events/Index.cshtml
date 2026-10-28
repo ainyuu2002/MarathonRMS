@@ -51,6 +51,7 @@ else
                             <td><status-badge status="@item.Status" /></td>
                             <td class="text-end text-nowrap">
                                 <a asp-page="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                <a asp-page="Policy" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Chính sách"><i class="bi bi-sliders"></i></a>
                                 <a asp-page="/Organizer/EventContent" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Nội dung"><i class="bi bi-file-richtext"></i></a>
                                 <a asp-page="/Organizer/EventAlbum" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Album"><i class="bi bi-images"></i></a>
                                 @if (item.Status == "Draft")

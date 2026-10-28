@@ -22,4 +22,16 @@ public class EventApiClient : ApiClientBase
 
     public Task DeleteEventAsync(int id, CancellationToken ct = default) =>
         DeleteAsync($"api/events/{id}", ct);
+
+    public Task<EventPolicyDto> GetPolicyAsync(int id, CancellationToken ct = default) =>
+        GetAsync<EventPolicyDto>($"api/events/{id}/policies", ct);
+
+    public Task<EventPolicyDto> UpdatePolicyAsync(int id, UpdateEventPolicyRequest request, CancellationToken ct = default) =>
+        PutAsync<EventPolicyDto>($"api/events/{id}/policies", request, ct);
+
+    public Task<EventWaiverDto> GetWaiverAsync(int id, CancellationToken ct = default) =>
+        GetAsync<EventWaiverDto>($"api/events/{id}/waiver", ct);
+
+    public Task<EventWaiverDto> UpdateWaiverAsync(int id, UpdateEventWaiverRequest request, CancellationToken ct = default) =>
+        PutAsync<EventWaiverDto>($"api/events/{id}/waiver", request, ct);
 }
