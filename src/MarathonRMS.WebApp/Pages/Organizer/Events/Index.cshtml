@@ -1,0 +1,71 @@
+@page
+@model MarathonRMS.WebApp.Pages.Organizer.Events.IndexModel
+@{
+    ViewData["Title"] = "Giải chạy của tôi";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Giải chạy của tôi</h1>
+        <p class="text-secondary mb-0">Tạo và cập nhật thông tin cơ bản của giải.</p>
+    </div>
+    <a asp-page="Edit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tạo giải</a>
+</div>
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (Model.Events.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-trophy fs-1"></i>
+        <p class="mt-2 mb-3">Ban tổ chức chưa có giải nào.</p>
+        <a asp-page="Edit" class="btn btn-primary">Tạo giải đầu tiên</a>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr><th>Giải</th><th>Địa điểm</th><th>Ngày tổ chức</th><th>Đăng ký</th><th>Trạng thái</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Events)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@item.Name</div>
+                                <div class="small text-secondary">@item.Slug</div>
+                            </td>
+                            <td>@item.VenueName<div class="small text-secondary">@item.City</div></td>
+                            <td class="text-nowrap">
+                                @item.EventDate.ToString("dd/MM/yyyy")
+                                @if (item.EndDate != item.EventDate) { <span>– @item.EndDate.ToString("dd/MM/yyyy")</span> }
+                            </td>
+                            <td class="small text-nowrap">
+                                @item.RegistrationOpenAt.ToString("dd/MM/yyyy HH:mm")<br />
+                                đến @item.RegistrationCloseAt.ToString("dd/MM/yyyy HH:mm")
+                            </td>
+                            <td><status-badge status="@item.Status" /></td>
+                            <td class="text-end text-nowrap">
+                                <a asp-page="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                <a asp-page="Policy" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Chính sách"><i class="bi bi-sliders"></i></a>
+                                <a asp-page="/Organizer/EventContent" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Nội dung"><i class="bi bi-file-richtext"></i></a>
+                                <a asp-page="/Organizer/EventAlbum" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Album"><i class="bi bi-images"></i></a>
+                                @if (item.Status == "Draft")
+                                {
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" class="d-inline"
+                                          onsubmit="return confirm('Xóa giải @item.Name?');">
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
