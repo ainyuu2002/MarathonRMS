@@ -47,9 +47,10 @@ public class EventService : IEventService
 
     public async Task<EventDetailDto> GetDetailAsync(int eventId, CancellationToken ct = default)
     {
-        var entity = await _events.GetDetailedAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
+        var entity = await _events.GetWithCategoriesAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
         _scope.EnsureCanManage(entity.OrganizationId);
-        return ToDetail(entity);
+        var activeCounts = await _events.GetActiveRegistrationCountsAsync(eventId, ct);
+        return ToDetail(entity, activeCounts, _clock.Now);
     }
 
     public async Task<EventDetailDto> CreateAsync(UpsertEventRequest request, CancellationToken ct = default)
@@ -282,7 +283,7 @@ public class EventService : IEventService
             MaxDistanceKm = e.Categories.Select(c => (decimal?)c.DistanceKm).Max() ?? 0
         });
 
-    private static EventDetailDto ToDetail(Event e) => new()
+    private static EventDetailDto ToDetail(Event e, IReadOnlyDictionary<int, int> activeCounts, DateTime now) => new()
     {
         Id = e.EventId,
         Name = e.Name,
@@ -304,7 +305,9 @@ public class EventService : IEventService
         EmergencyPhone = e.EmergencyPhone,
         InsuranceNote = e.InsuranceNote,
         WaiverVersion = e.WaiverVersion,
-        Policy = ToPolicyDto(e.Policy)
+        Policy = ToPolicyDto(e.Policy),
+        Categories = e.Categories.OrderBy(c => c.DistanceKm).ThenBy(c => c.Name)
+            .Select(c => RaceCategoryMappings.ToDto(c, activeCounts.GetValueOrDefault(c.CategoryId), now)).ToList()
     };
 
     private static EventPolicyDto ToPolicyDto(EventPolicy p) => new()

@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<PenaltyReasonDAO>();
         // Phần B – giải
         services.AddScoped<EventDAO>();
+        services.AddScoped<RaceCategoryDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -53,6 +54,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPenaltyReasonRepository, PenaltyReasonRepository>();
         // Phần B – giải
         services.AddScoped<IEventRepository, EventRepository>();
+        services.AddScoped<IRaceCategoryRepository, RaceCategoryRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -91,6 +93,7 @@ public static class ServiceCollectionExtensions
         // Phần B – giải, đăng ký, thanh toán (thêm bên dưới)
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IEventPolicyService, EventPolicyService>();
+        services.AddScoped<IRaceCategoryService, RaceCategoryService>();
 
         // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
 

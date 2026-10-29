@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.API.Controllers;
 
-/// <summary>UC-18/19 – quản lý thông tin, chính sách và văn bản miễn trừ của giải.</summary>
+/// <summary>UC-18…21 – quản lý thông tin, chính sách, văn bản miễn trừ và cự ly của giải.</summary>
 [ApiController]
 [Route("api/events")]
 [Authorize(Policy = AppPolicies.OrganizerOnly)]
@@ -15,10 +15,12 @@ public class EventsController : ControllerBase
 {
     private readonly IEventService _events;
     private readonly IEventPolicyService _policies;
-    public EventsController(IEventService events, IEventPolicyService policies)
+    private readonly IRaceCategoryService _categories;
+    public EventsController(IEventService events, IEventPolicyService policies, IRaceCategoryService categories)
     {
         _events = events;
         _policies = policies;
+        _categories = categories;
     }
 
     [HttpGet("mine")]
@@ -71,4 +73,28 @@ public class EventsController : ControllerBase
     [HttpPut("{id:int}/waiver")]
     public async Task<ActionResult<EventWaiverDto>> UpdateWaiver(int id, UpdateEventWaiverRequest request, CancellationToken ct) =>
         Ok(await _policies.UpdateWaiverAsync(id, request, ct));
+
+    [HttpGet("{eventId:int}/categories")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<RaceCategoryDto>>> GetCategories(int eventId, CancellationToken ct) =>
+        Ok(await _categories.GetByEventAsync(eventId, ct));
+
+    [HttpPost("{eventId:int}/categories")]
+    public async Task<ActionResult<RaceCategoryDto>> CreateCategory(int eventId, UpsertRaceCategoryRequest request,
+        CancellationToken ct)
+    {
+        var created = await _categories.CreateAsync(eventId, request, ct);
+        return CreatedAtAction(nameof(GetCategories), new { eventId }, created);
+    }
+
+    [HttpPut("/api/categories/{id:int}")]
+    public async Task<ActionResult<RaceCategoryDto>> UpdateCategory(int id, UpsertRaceCategoryRequest request,
+        CancellationToken ct) => Ok(await _categories.UpdateAsync(id, request, ct));
+
+    [HttpDelete("/api/categories/{id:int}")]
+    public async Task<IActionResult> DeleteCategory(int id, CancellationToken ct)
+    {
+        await _categories.DeleteAsync(id, ct);
+        return NoContent();
+    }
 }

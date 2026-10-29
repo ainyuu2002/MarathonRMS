@@ -37,4 +37,16 @@ public class EventApiClient : ApiClientBase
 
     public Task<EventWaiverDto> UpdateWaiverAsync(int id, UpdateEventWaiverRequest request, CancellationToken ct = default) =>
         PutAsync<EventWaiverDto>($"api/events/{id}/waiver", request, ct);
+
+    public Task<List<RaceCategoryDto>> GetCategoriesAsync(int eventId, CancellationToken ct = default) =>
+        GetAsync<List<RaceCategoryDto>>($"api/events/{eventId}/categories", ct);
+
+    public Task<RaceCategoryDto> CreateCategoryAsync(int eventId, UpsertRaceCategoryRequest request,
+        CancellationToken ct = default) => PostAsync<RaceCategoryDto>($"api/events/{eventId}/categories", request, ct);
+
+    public Task<RaceCategoryDto> UpdateCategoryAsync(int categoryId, UpsertRaceCategoryRequest request,
+        CancellationToken ct = default) => PutAsync<RaceCategoryDto>($"api/categories/{categoryId}", request, ct);
+
+    public Task DeleteCategoryAsync(int categoryId, CancellationToken ct = default) =>
+        DeleteAsync($"api/categories/{categoryId}", ct);
 }
