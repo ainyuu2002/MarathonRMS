@@ -38,6 +38,8 @@ public interface IEventPolicyService
 {
     Task<EventPolicyDto> GetAsync(int eventId, CancellationToken ct = default);
     Task<EventPolicyDto> UpdateAsync(int eventId, UpdateEventPolicyRequest request, CancellationToken ct = default);
+    Task<EventWaiverDto> GetWaiverAsync(int eventId, CancellationToken ct = default);
+    Task<EventWaiverDto> UpdateWaiverAsync(int eventId, UpdateEventWaiverRequest request, CancellationToken ct = default);
 }
 
 /// <summary>UC-21 – cự ly (BR-19 dải BIB không chồng lấn, BR-39 StartAt, BR-46 không giảm Capacity dưới số đăng ký).</summary>

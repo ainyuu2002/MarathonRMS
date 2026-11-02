@@ -83,9 +83,6 @@ public class UpsertEventRequest
     [StringLength(1000)]
     public string? InsuranceNote { get; set; }
 
-    /// <summary>Văn bản miễn trừ. Đổi nội dung ⇒ tăng WaiverVersion (BR-46d).</summary>
-    [Required(ErrorMessage = "Giải phải có văn bản miễn trừ trách nhiệm"), StringLength(20000)]
-    public string WaiverText { get; set; } = "";
 }
 
 /// <summary>UC-20: chuyển trạng thái giải (BR-38 kiểm tra khi mở đăng ký).</summary>
@@ -150,6 +147,19 @@ public class UpdateEventPolicyRequest
     [Range(0, 100_000_000)] public decimal ComplaintFee { get; set; }
     [Required, AllowedValues("AllowAll", "HighestOnly")] public string AwardStackingPolicy { get; set; } = "AllowAll";
     [Required, AllowedValues("NoRefund", "CarryOver", "Refund")] public string ForceMajeurePolicy { get; set; } = "NoRefund";
+}
+
+public class EventWaiverDto
+{
+    public int EventId { get; set; }
+    public string WaiverText { get; set; } = "";
+    public int WaiverVersion { get; set; }
+}
+
+public class UpdateEventWaiverRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập văn bản miễn trừ trách nhiệm"), StringLength(20000)]
+    public string WaiverText { get; set; } = "";
 }
 
 // ============================ Cự ly, giá, nhóm tuổi, checkpoint ============================

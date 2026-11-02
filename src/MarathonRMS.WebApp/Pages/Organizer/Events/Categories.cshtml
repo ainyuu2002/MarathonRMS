@@ -1,0 +1,210 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.Events.CategoriesModel
+@{
+    ViewData["Title"] = "Cự ly của giải";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Cự ly của giải</h1>
+        <p class="text-secondary mb-0">@Model.Event.Name</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
+</div>
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card">
+            <div class="card-header fw-semibold">Danh sách cự ly (@Model.Categories.Count)</div>
+            @if (Model.Categories.Count == 0)
+            {
+                <div class="card-body text-center text-secondary py-5">
+                    <i class="bi bi-signpost-split fs-1"></i>
+                    <p class="mt-2 mb-0">Chưa có cự ly. Hãy thêm cự ly đầu tiên.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>Cự ly</th><th>Xuất phát</th><th>Sức chứa</th><th>Dải BIB</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var item in Model.Categories)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@item.Name <span class="badge text-bg-light">@item.DistanceKm.ToString("0.##") km</span></div>
+                                    <div class="small text-secondary">@(item.Discipline == "Trail" ? "Đường mòn" : "Đường phố") · @item.CategoryType</div>
+                                    <div class="small">
+                                        @if (!item.IsTimed) { <span class="text-secondary">Không bấm giờ</span> }
+                                        else { <span>COT @item.CutOffMinutes phút</span> }
+                                        @if (item.IsRanked) { <span> · Có xếp hạng</span> }
+                                    </div>
+                                </td>
+                                <td class="text-nowrap">@item.StartAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-nowrap">@item.Capacity.ToString("N0")<div class="small text-secondary">Còn @item.RemainingSlots.ToString("N0")</div></td>
+                                <td class="text-nowrap">@item.BibFrom.ToString("N0")–@item.BibTo.ToString("N0")</td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-page="Categories" asp-route-id="@Model.Id" asp-route-categoryId="@item.Id"
+                                       class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id" class="d-inline"
+                                          onsubmit="return confirm('Xóa cự ly @item.Name?');">
+                                        <input type="hidden" name="categoryId" value="@item.Id" />
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <form method="post" asp-page-handler="Save" asp-route-id="@Model.Id" asp-route-categoryId="@Model.CategoryId" class="card" novalidate>
+            <div class="card-header fw-semibold">@(Model.IsEditing ? "Sửa cự ly" : "Thêm cự ly")</div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                <input asp-for="Input.RowVersion" type="hidden" />
+
+                <div class="row g-3">
+                    <div class="col-md-7">
+                        <label asp-for="Input.Name" class="form-label">Tên cự ly</label>
+                        <input asp-for="Input.Name" class="form-control" placeholder="21K" />
+                        <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Input.DistanceKm" class="form-label">Cự ly (km)</label>
+                        <input asp-for="Input.DistanceKm" type="number" min="0.1" max="1000" step="0.01" class="form-control" />
+                        <span asp-validation-for="Input.DistanceKm" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Discipline" class="form-label">Loại đường chạy</label>
+                        <select asp-for="Input.Discipline" class="form-select">
+                            <option value="Road">Đường phố</option>
+                            <option value="Trail">Đường mòn</option>
+                        </select>
+                        <span asp-validation-for="Input.Discipline" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.CategoryType" class="form-label">Loại cự ly</label>
+                        <select asp-for="Input.CategoryType" class="form-select">
+                            <option value="Standard">Tiêu chuẩn</option>
+                            <option value="Kids">Trẻ em</option>
+                            <option value="Elite">Chuyên nghiệp</option>
+                        </select>
+                        <span asp-validation-for="Input.CategoryType" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.ActualDistanceKm" class="form-label">Km thực đo</label>
+                        <input asp-for="Input.ActualDistanceKm" type="number" min="0.1" max="1000" step="0.01" class="form-control" />
+                        <span asp-validation-for="Input.ActualDistanceKm" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.ElevationGainM" class="form-label">Độ cao tích lũy (m)</label>
+                        <input asp-for="Input.ElevationGainM" type="number" min="0" max="20000" class="form-control" />
+                        <span asp-validation-for="Input.ElevationGainM" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.ItraPoints" class="form-label">Điểm ITRA</label>
+                        <input asp-for="Input.ItraPoints" type="number" min="0" max="6" class="form-control" />
+                        <span asp-validation-for="Input.ItraPoints" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Capacity" class="form-label">Sức chứa</label>
+                        <input asp-for="Input.Capacity" type="number" min="1" max="100000" class="form-control" />
+                        <span asp-validation-for="Input.Capacity" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.StartAt" class="form-label">Ngày giờ xuất phát</label>
+                        <input asp-for="Input.StartAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                        <div class="form-text">Cho phép từ một ngày trước ngày giải đến hết ngày kết thúc.</div>
+                        <span asp-validation-for="Input.StartAt" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12 d-flex gap-4 flex-wrap">
+                        <div class="form-check form-switch">
+                            <input asp-for="Input.IsTimed" class="form-check-input" id="isTimed" />
+                            <label asp-for="Input.IsTimed" class="form-check-label">Bấm giờ</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input asp-for="Input.IsRanked" class="form-check-input" id="isRanked" />
+                            <label asp-for="Input.IsRanked" class="form-check-label">Xếp hạng</label>
+                        </div>
+                    </div>
+                    <div class="col-12" id="cutOffGroup">
+                        <label asp-for="Input.CutOffMinutes" class="form-label">Cut-off tổng (phút)</label>
+                        <input asp-for="Input.CutOffMinutes" type="number" min="1" max="6000" class="form-control" />
+                        <span asp-validation-for="Input.CutOffMinutes" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Input.MinAge" class="form-label">Tuổi tối thiểu</label>
+                        <input asp-for="Input.MinAge" type="number" min="0" max="100" class="form-control" />
+                        <span asp-validation-for="Input.MinAge" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.MaxAge" class="form-label">Tuổi tối đa</label>
+                        <input asp-for="Input.MaxAge" type="number" min="0" max="120" class="form-control" />
+                        <span asp-validation-for="Input.MaxAge" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.EscortRequiredUnderAge" class="form-label">Chạy kèm nếu dưới</label>
+                        <input asp-for="Input.EscortRequiredUnderAge" type="number" min="1" max="21" class="form-control" />
+                        <span asp-validation-for="Input.EscortRequiredUnderAge" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Input.BibFrom" class="form-label">BIB từ</label>
+                        <input asp-for="Input.BibFrom" type="number" min="1" max="999999" class="form-control" />
+                        <span asp-validation-for="Input.BibFrom" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.BibTo" class="form-label">BIB đến</label>
+                        <input asp-for="Input.BibTo" type="number" min="1" max="999999" class="form-control" />
+                        <span asp-validation-for="Input.BibTo" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Input.BibColor" class="form-label">Màu BIB</label>
+                        <input asp-for="Input.BibColor" class="form-control" placeholder="#0d6efd" />
+                        <span asp-validation-for="Input.BibColor" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-7">
+                        <label asp-for="Input.MedalImageUrl" class="form-label">URL ảnh huy chương</label>
+                        <input asp-for="Input.MedalImageUrl" class="form-control" placeholder="https://..." />
+                        <span asp-validation-for="Input.MedalImageUrl" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                @if (Model.IsEditing)
+                {
+                    <a asp-page="Categories" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Hủy sửa</a>
+                }
+                <button class="btn btn-primary"><i class="bi bi-check-lg"></i> @(Model.IsEditing ? "Lưu thay đổi" : "Thêm cự ly")</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const timed = document.getElementById('isTimed');
+            const ranked = document.getElementById('isRanked');
+            const cutOff = document.getElementById('cutOffGroup');
+            function syncTiming() {
+                cutOff.classList.toggle('d-none', !timed.checked);
+                if (!timed.checked) ranked.checked = false;
+                ranked.disabled = !timed.checked;
+            }
+            timed.addEventListener('change', syncTiming);
+            syncTiming();
+        })();
+    </script>
+}

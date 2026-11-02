@@ -1,0 +1,191 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.Events.PolicyModel
+@{
+    ViewData["Title"] = "Chính sách giải";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Chính sách giải</h1>
+        <p class="text-secondary mb-0">@Model.Event.Name</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
+</div>
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<form method="post" asp-page-handler="Policy" asp-route-id="@Model.Id" class="card mb-4">
+    <div class="card-header fw-semibold">Quy định áp dụng cho giải</div>
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        @if (Model.Event.ResultsStatus != "Draft")
+        {
+            <div class="alert alert-warning py-2">Kết quả đã được công bố tạm. Cơ sở xếp hạng, quy tắc hòa và cộng dồn giải thưởng đã bị khóa.</div>
+        }
+
+        <h2 class="h6 text-uppercase text-secondary mt-1">Người tham gia</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.AgeCalculationMode" class="form-label">Cách tính tuổi</label>
+                <select asp-for="PolicyInput.AgeCalculationMode" class="form-select">
+                    <option value="RaceDate">Tuổi tại ngày thi</option>
+                    <option value="CalendarYear">Năm thi − năm sinh</option>
+                </select>
+                <span asp-validation-for="PolicyInput.AgeCalculationMode" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.GuardianConsentUnderAge" class="form-label">Cần giám hộ khi dưới tuổi</label>
+                <input asp-for="PolicyInput.GuardianConsentUnderAge" type="number" min="0" max="21" class="form-control" />
+                <span asp-validation-for="PolicyInput.GuardianConsentUnderAge" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.MaxDependentsPerAccount" class="form-label">Người phụ thuộc tối đa/tài khoản</label>
+                <input asp-for="PolicyInput.MaxDependentsPerAccount" type="number" min="0" max="10" class="form-control" />
+                <span asp-validation-for="PolicyInput.MaxDependentsPerAccount" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.InfoEditDeadline" class="form-label">Hạn tự sửa thông tin</label>
+                <input asp-for="PolicyInput.InfoEditDeadline" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                <span asp-validation-for="PolicyInput.InfoEditDeadline" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <h2 class="h6 text-uppercase text-secondary">Chuyển nhượng và đổi cự ly</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.TransferPolicy" class="form-label">Chuyển nhượng</label>
+                <select asp-for="PolicyInput.TransferPolicy" class="form-select">
+                    <option value="Forbidden">Không cho phép</option>
+                    <option value="Free">Miễn phí</option>
+                    <option value="Paid">Có phí</option>
+                </select>
+                <span asp-validation-for="PolicyInput.TransferPolicy" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.TransferFee" class="form-label">Phí chuyển nhượng (đ)</label>
+                <input asp-for="PolicyInput.TransferFee" type="number" min="0" step="1000" class="form-control" />
+                <span asp-validation-for="PolicyInput.TransferFee" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.MaxTransfers" class="form-label">Số lần chuyển tối đa</label>
+                <input asp-for="PolicyInput.MaxTransfers" type="number" min="0" max="10" class="form-control" />
+                <span asp-validation-for="PolicyInput.MaxTransfers" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.TransferDeadline" class="form-label">Hạn chuyển nhượng</label>
+                <input asp-for="PolicyInput.TransferDeadline" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                <span asp-validation-for="PolicyInput.TransferDeadline" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.CategoryChangeFee" class="form-label">Phí đổi cự ly (đ)</label>
+                <input asp-for="PolicyInput.CategoryChangeFee" type="number" min="0" step="1000" class="form-control" />
+                <span asp-validation-for="PolicyInput.CategoryChangeFee" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.MaxCategoryChanges" class="form-label">Số lần đổi cự ly tối đa</label>
+                <input asp-for="PolicyInput.MaxCategoryChanges" type="number" min="0" max="10" class="form-control" />
+                <span asp-validation-for="PolicyInput.MaxCategoryChanges" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.CategoryChangeDeadline" class="form-label">Hạn đổi cự ly</label>
+                <input asp-for="PolicyInput.CategoryChangeDeadline" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                <span asp-validation-for="PolicyInput.CategoryChangeDeadline" class="text-danger small"></span>
+            </div>
+            <div class="col-md-8 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                    <input asp-for="PolicyInput.LockSpecialEntries" class="form-check-input" />
+                    <label asp-for="PolicyInput.LockSpecialEntries" class="form-check-label">Khóa chuyển nhượng/đổi cự ly với suất đặc biệt</label>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="h6 text-uppercase text-secondary">Kết quả và khiếu nại</h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.OverallRankingBasis" class="form-label">Xếp hạng chung cuộc</label>
+                <select asp-for="PolicyInput.OverallRankingBasis" class="form-select" disabled="@(Model.Event.ResultsStatus != "Draft")">
+                    <option value="">-- Chưa chọn --</option>
+                    <option value="GunTime">Gun Time</option>
+                    <option value="ChipTime">Chip Time</option>
+                </select>
+                @if (Model.Event.ResultsStatus != "Draft") { <input type="hidden" name="PolicyInput.OverallRankingBasis" value="@Model.PolicyInput.OverallRankingBasis" /> }
+                <span asp-validation-for="PolicyInput.OverallRankingBasis" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.AgeGroupRankingBasis" class="form-label">Xếp hạng nhóm tuổi</label>
+                <select asp-for="PolicyInput.AgeGroupRankingBasis" class="form-select" disabled="@(Model.Event.ResultsStatus != "Draft")">
+                    <option value="">-- Chưa chọn --</option>
+                    <option value="GunTime">Gun Time</option>
+                    <option value="ChipTime">Chip Time</option>
+                </select>
+                @if (Model.Event.ResultsStatus != "Draft") { <input type="hidden" name="PolicyInput.AgeGroupRankingBasis" value="@Model.PolicyInput.AgeGroupRankingBasis" /> }
+                <span asp-validation-for="PolicyInput.AgeGroupRankingBasis" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.TieBreakRule" class="form-label">Quy tắc hòa</label>
+                <select asp-for="PolicyInput.TieBreakRule" class="form-select" disabled="@(Model.Event.ResultsStatus != "Draft")">
+                    <option value="Shared">Đồng hạng</option>
+                    <option value="ChipTime">Phá hòa bằng Chip Time</option>
+                </select>
+                @if (Model.Event.ResultsStatus != "Draft") { <input type="hidden" name="PolicyInput.TieBreakRule" value="@Model.PolicyInput.TieBreakRule" /> }
+                <span asp-validation-for="PolicyInput.TieBreakRule" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.LateStartToleranceMinutes" class="form-label">Cho phép xuất phát muộn (phút)</label>
+                <input asp-for="PolicyInput.LateStartToleranceMinutes" type="number" min="1" max="240" class="form-control" />
+                <span asp-validation-for="PolicyInput.LateStartToleranceMinutes" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.ComplaintWindowMinutes" class="form-label">Thời gian khiếu nại (phút)</label>
+                <input asp-for="PolicyInput.ComplaintWindowMinutes" type="number" min="10" max="20160" class="form-control" />
+                <span asp-validation-for="PolicyInput.ComplaintWindowMinutes" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PolicyInput.ComplaintFee" class="form-label">Phí khiếu nại (đ)</label>
+                <input asp-for="PolicyInput.ComplaintFee" type="number" min="0" step="1000" class="form-control" />
+                <span asp-validation-for="PolicyInput.ComplaintFee" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PolicyInput.AwardStackingPolicy" class="form-label">Cộng dồn giải thưởng</label>
+                <select asp-for="PolicyInput.AwardStackingPolicy" class="form-select" disabled="@(Model.Event.ResultsStatus != "Draft")">
+                    <option value="AllowAll">Cho phép nhận nhiều giải</option>
+                    <option value="HighestOnly">Chỉ nhận giải cao nhất</option>
+                </select>
+                @if (Model.Event.ResultsStatus != "Draft") { <input type="hidden" name="PolicyInput.AwardStackingPolicy" value="@Model.PolicyInput.AwardStackingPolicy" /> }
+                <span asp-validation-for="PolicyInput.AwardStackingPolicy" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PolicyInput.ForceMajeurePolicy" class="form-label">Khi hủy do bất khả kháng</label>
+                <select asp-for="PolicyInput.ForceMajeurePolicy" class="form-select">
+                    <option value="NoRefund">Không hoàn phí</option>
+                    <option value="CarryOver">Bảo lưu sang ngày mới</option>
+                    <option value="Refund">Hoàn phí</option>
+                </select>
+                <span asp-validation-for="PolicyInput.ForceMajeurePolicy" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu chính sách</button>
+    </div>
+</form>
+
+<form method="post" asp-page-handler="Waiver" asp-route-id="@Model.Id" class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Văn bản miễn trừ trách nhiệm</span>
+        <span class="badge text-bg-secondary">Phiên bản @Model.WaiverVersion</span>
+    </div>
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <textarea asp-for="WaiverInput.WaiverText" class="form-control" rows="10" maxlength="20000"></textarea>
+        <div class="form-text">Nội dung thay đổi sẽ tạo phiên bản mới; người đã đồng ý phiên bản cũ không phải đồng ý lại.</div>
+        <span asp-validation-for="WaiverInput.WaiverText" class="text-danger small"></span>
+    </div>
+    <div class="card-footer text-end">
+        <button class="btn btn-primary"><i class="bi bi-file-earmark-check"></i> Lưu văn bản</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

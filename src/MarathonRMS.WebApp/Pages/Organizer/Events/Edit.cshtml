@@ -1,0 +1,88 @@
+@page "{id:int?}"
+@model MarathonRMS.WebApp.Pages.Organizer.Events.EditModel
+@{
+    ViewData["Title"] = Model.IsEditing ? "Sửa giải" : "Tạo giải";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">@(Model.IsEditing ? "Sửa giải" : "Tạo giải mới")</h1>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách</a>
+</div>
+
+<form method="post" class="card" novalidate>
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <label asp-for="Input.Name" class="form-label">Tên giải</label>
+                <input asp-for="Input.Name" class="form-control" />
+                <span asp-validation-for="Input.Name" class="text-danger small"></span>
+            </div>
+            <div class="col-lg-4">
+                <label asp-for="Input.VenueId" class="form-label">Địa điểm</label>
+                <select asp-for="Input.VenueId" class="form-select">
+                    <option value="">-- Chọn địa điểm --</option>
+                    @foreach (var venue in Model.Venues)
+                    {
+                        <option value="@venue.Id">@venue.Name – @venue.City</option>
+                    }
+                </select>
+                <span asp-validation-for="Input.VenueId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Input.EventDate" class="form-label">Ngày bắt đầu</label>
+                <input asp-for="Input.EventDate" type="date" class="form-control" />
+                <span asp-validation-for="Input.EventDate" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.EndDate" class="form-label">Ngày kết thúc</label>
+                <input asp-for="Input.EndDate" type="date" class="form-control" />
+                <span asp-validation-for="Input.EndDate" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.RegistrationOpenAt" class="form-label">Mở đăng ký</label>
+                <input asp-for="Input.RegistrationOpenAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                <span asp-validation-for="Input.RegistrationOpenAt" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.RegistrationCloseAt" class="form-label">Đóng đăng ký</label>
+                <input asp-for="Input.RegistrationCloseAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                <span asp-validation-for="Input.RegistrationCloseAt" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Input.BannerUrl" class="form-label">URL banner</label>
+                <input asp-for="Input.BannerUrl" class="form-control" placeholder="https://..." />
+                <span asp-validation-for="Input.BannerUrl" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.EmergencyPhone" class="form-label">Số điện thoại khẩn cấp</label>
+                <input asp-for="Input.EmergencyPhone" class="form-control" />
+                <span asp-validation-for="Input.EmergencyPhone" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Input.InsuranceNote" class="form-label">Thông tin bảo hiểm</label>
+                <textarea asp-for="Input.InsuranceNote" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="Input.InsuranceNote" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Mô tả giải</label>
+                <partial name="_RichTextEditor" model="new RichTextEditorModel(Html.NameFor(m => m.Input.DescriptionHtml), Model.Input.DescriptionHtml, 240)" />
+                <span asp-validation-for="Input.DescriptionHtml" class="text-danger small"></span>
+            </div>
+
+        </div>
+    </div>
+    <div class="card-footer d-flex justify-content-end gap-2">
+        <a asp-page="Index" class="btn btn-outline-secondary">Hủy</a>
+        <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu giải</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_RichTextEditorAssets" />
+    <partial name="_ValidationScriptsPartial" />
+}

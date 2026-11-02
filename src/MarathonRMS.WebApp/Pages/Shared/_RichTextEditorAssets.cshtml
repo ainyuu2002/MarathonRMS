@@ -6,7 +6,20 @@
         const input = document.getElementById(el.dataset.target);
         const quill = new Quill(el, {
             theme: 'snow',
-            modules: { toolbar: [[{ header: [2, 3, false] }], ['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'blockquote'], ['clean']] }
+            modules: { toolbar: [[{ header: [2, 3, false] }], ['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'image', 'blockquote'], ['clean']] }
+        });
+        quill.getModule('toolbar').addHandler('image', () => {
+            const value = window.prompt('Dán URL ảnh đã tải lên kho ảnh của giải:');
+            if (!value) return;
+            try {
+                const url = new URL(value, window.location.origin);
+                if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error();
+                const range = quill.getSelection(true);
+                quill.insertEmbed(range.index, 'image', url.href, 'user');
+                quill.setSelection(range.index + 1, 0, 'silent');
+            } catch {
+                window.alert('URL ảnh không hợp lệ. Chỉ chấp nhận địa chỉ http hoặc https.');
+            }
         });
         if (input.value) quill.clipboard.dangerouslyPasteHTML(input.value); // nội dung đã được server lọc khi lưu
         // Quill 2 getSemanticHTML() đổi mọi dấu cách thành &nbsp; khiến đoạn dài không xuống dòng – trả lại dấu cách thường
