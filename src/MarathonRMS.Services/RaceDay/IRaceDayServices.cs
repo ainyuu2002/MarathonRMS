@@ -49,6 +49,12 @@ public interface ITimingService
 
     /// <summary>Organizer xóa bản ghi nhập sai (ghi nhật ký – BR-36). Không áp dụng khi kết quả đã chính thức.</summary>
     Task DeleteAsync(int timingRecordId, CancellationToken ct = default);
+
+    /// <summary>Danh sách VĐV đã ghi nhận bỏ cuộc (UC-58).</summary>
+    Task<IReadOnlyList<WithdrawalDto>> GetWithdrawalsAsync(int eventId, CancellationToken ct = default);
+
+    /// <summary>Organizer hủy ghi nhận bỏ cuộc nhập nhầm (ghi nhật ký). Lần tính kết quả sau sẽ xét lại VĐV.</summary>
+    Task CancelWithdrawalAsync(int registrationId, CancellationToken ct = default);
 }
 
 /// <summary>UC-59 → UC-63 – tính, công bố, xem kết quả; DSQ/phạt.</summary>

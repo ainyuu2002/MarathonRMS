@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MarathonRMS.WebApp.Pages.Staff;
 
-/// <summary>UC-57 – nhập thời gian tại checkpoint theo số BIB.</summary>
+/// <summary>UC-57 – nhập thời gian tại checkpoint theo số BIB; UC-58 – ghi nhận bỏ cuộc.</summary>
 public class TimingModel : BasePageModel
 {
     private readonly RaceDayApiClient _raceDay;
@@ -24,11 +24,13 @@ public class TimingModel : BasePageModel
     [BindProperty] public int? BibNumber { get; set; }
     /// <summary>Để trống = giờ hiện tại.</summary>
     [BindProperty] public DateTime? RecordedAt { get; set; }
+    [BindProperty] public RecordWithdrawalRequest Withdrawal { get; set; } = new();
 
     public List<EventSummaryDto> Events { get; private set; } = new();
     public List<RaceCategoryDto> Categories { get; private set; } = new();
     public List<TimingRecordDto> Recent { get; private set; } = new();
     public List<TimingRecordDto> BibRecords { get; private set; } = new();
+    public List<WithdrawalDto> Withdrawals { get; private set; } = new();
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
@@ -67,6 +69,46 @@ public class TimingModel : BasePageModel
         }
     }
 
+    public async Task<IActionResult> OnPostWithdrawAsync(CancellationToken ct)
+    {
+        ModelState.Clear();
+        if (EventId is not int eventId || Withdrawal.BibNumber <= 0 || Withdrawal.CheckpointId <= 0)
+        {
+            ModelState.AddModelError(string.Empty, "Nhập số BIB và chọn trạm nơi VĐV bỏ cuộc.");
+            return await ReloadAsync(ct);
+        }
+        Withdrawal.EventId = eventId;
+        try
+        {
+            await _raceDay.RecordWithdrawalAsync(Withdrawal, ct);
+            StatusMessage = $"Đã ghi nhận BIB {Withdrawal.BibNumber} bỏ cuộc ({(Withdrawal.Reason == "Medical" ? "lý do y tế" : "tự nguyện")}).";
+            return RedirectToPage(new { EventId, CheckpointId });
+        }
+        catch (ApiException ex)
+        {
+            var redirect = await HandleApiErrorAsync(ex);
+            if (redirect is not null) return redirect;
+            foreach (var message in ex.ValidationErrors.SelectMany(e => e.Value))
+                ModelState.AddModelError(string.Empty, message);
+            return await ReloadAsync(ct);
+        }
+    }
+
+    public async Task<IActionResult> OnPostCancelWithdrawalAsync(int registrationId, CancellationToken ct)
+    {
+        try
+        {
+            await _raceDay.CancelWithdrawalAsync(registrationId, ct);
+            StatusMessage = "Đã hủy ghi nhận bỏ cuộc. Hãy tính lại kết quả để cập nhật thành tích của VĐV.";
+            return RedirectToPage(new { EventId, CheckpointId });
+        }
+        catch (ApiException ex)
+        {
+            var redirect = await HandleApiErrorAsync(ex);
+            return redirect ?? await ReloadAsync(ct);
+        }
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync(int recordId, CancellationToken ct)
     {
         try
@@ -99,6 +141,7 @@ public class TimingModel : BasePageModel
         if (CheckpointId is int cp && !Categories.SelectMany(c => c.Checkpoints).Any(p => p.Id == cp))
             CheckpointId = null;
         Recent = await _raceDay.GetRecentTimingAsync(eventId, CheckpointId, ct);
+        Withdrawals = await _raceDay.GetWithdrawalsAsync(eventId, ct);
         if (LookupBib is int bib)
         {
             try { BibRecords = await _raceDay.GetTimingByBibAsync(eventId, bib, ct); }

@@ -51,4 +51,15 @@ public class RaceDayApiClient : ApiClientBase
 
     public Task DeleteTimingAsync(int timingRecordId, CancellationToken ct = default) =>
         DeleteAsync($"api/race-day/timing/{timingRecordId}", ct);
+
+    // ---------- UC-58 bỏ cuộc ----------
+
+    public Task RecordWithdrawalAsync(RecordWithdrawalRequest request, CancellationToken ct = default) =>
+        PostAsync("api/race-day/withdrawals", request, ct);
+
+    public Task<List<WithdrawalDto>> GetWithdrawalsAsync(int eventId, CancellationToken ct = default) =>
+        GetAsync<List<WithdrawalDto>>($"api/race-day/events/{eventId}/withdrawals", ct);
+
+    public Task CancelWithdrawalAsync(int registrationId, CancellationToken ct = default) =>
+        DeleteAsync($"api/race-day/withdrawals/{registrationId}", ct);
 }

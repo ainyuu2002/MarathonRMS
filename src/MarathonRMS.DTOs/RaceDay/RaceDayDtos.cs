@@ -130,3 +130,16 @@ public class RecordWithdrawalRequest
     [Required, AllowedValues("Voluntary", "Medical")] public string Reason { get; set; } = "Voluntary";
     [StringLength(500)] public string? Note { get; set; }
 }
+
+/// <summary>VĐV đã ghi nhận bỏ cuộc trong giải (UC-58).</summary>
+public class WithdrawalDto
+{
+    public int RegistrationId { get; set; }
+    public int? BibNumber { get; set; }
+    public string FullName { get; set; } = "";
+    public string CategoryName { get; set; } = "";
+    public string? CheckpointName { get; set; }
+    /// <summary>"Voluntary" hoặc "Medical".</summary>
+    public string Reason { get; set; } = "";
+    public DateTime RecordedAt { get; set; }
+}

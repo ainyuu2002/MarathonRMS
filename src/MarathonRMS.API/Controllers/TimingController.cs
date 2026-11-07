@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MarathonRMS.API.Controllers;
 
-/// <summary>UC-57 – bấm giờ tại checkpoint.</summary>
+/// <summary>UC-57 – bấm giờ tại checkpoint; UC-58 – ghi nhận bỏ cuộc.</summary>
 [ApiController]
 [Route("api/race-day")]
 [Authorize(Policy = AppPolicies.StaffOrOrganizer)]
@@ -36,6 +36,25 @@ public class TimingController : ControllerBase
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await _timing.DeleteAsync(id, ct);
+        return NoContent();
+    }
+
+    [HttpPost("withdrawals")]
+    public async Task<IActionResult> RecordWithdrawal(RecordWithdrawalRequest request, CancellationToken ct)
+    {
+        await _timing.RecordWithdrawalAsync(request, ct);
+        return NoContent();
+    }
+
+    [HttpGet("events/{eventId:int}/withdrawals")]
+    public async Task<ActionResult<IReadOnlyList<WithdrawalDto>>> GetWithdrawals(int eventId, CancellationToken ct) =>
+        Ok(await _timing.GetWithdrawalsAsync(eventId, ct));
+
+    [HttpDelete("withdrawals/{registrationId:int}")]
+    [Authorize(Policy = AppPolicies.OrganizerOnly)]
+    public async Task<IActionResult> CancelWithdrawal(int registrationId, CancellationToken ct)
+    {
+        await _timing.CancelWithdrawalAsync(registrationId, ct);
         return NoContent();
     }
 }

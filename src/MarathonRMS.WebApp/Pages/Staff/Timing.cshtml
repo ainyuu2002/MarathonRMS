@@ -126,6 +126,44 @@ else
                         <div class="card-body pt-0 text-secondary small">BIB @Model.LookupBib chưa có thời gian nào.</div>
                     }
                 </div>
+
+                <form method="post" asp-page-handler="Withdraw" asp-route-eventId="@Model.EventId" asp-route-checkpointId="@Model.CheckpointId"
+                      class="card mt-3" autocomplete="off">
+                    <div class="card-header fw-semibold"><i class="bi bi-person-x"></i> Ghi nhận bỏ cuộc</div>
+                    <div class="card-body">
+                        <div class="row g-2 mb-2">
+                            <div class="col-5">
+                                <input name="Withdrawal.BibNumber" type="number" min="1" class="form-control" placeholder="Số BIB" aria-label="Số BIB bỏ cuộc" />
+                            </div>
+                            <div class="col-7">
+                                <select name="Withdrawal.CheckpointId" class="form-select" aria-label="Trạm bỏ cuộc">
+                                    <option value="">— Trạm bỏ cuộc —</option>
+                                    @foreach (var c in Model.Categories)
+                                    {
+                                        <optgroup label="@c.Name">
+                                            @foreach (var p in c.Checkpoints.Where(p => p.Type != "Finish").OrderBy(p => p.Sequence))
+                                            {
+                                                <option value="@p.Id">@c.Name – @p.Name</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="Withdrawal.Reason" value="Voluntary" id="reason-voluntary" checked />
+                                <label class="form-check-label" for="reason-voluntary">Tự nguyện</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="Withdrawal.Reason" value="Medical" id="reason-medical" />
+                                <label class="form-check-label" for="reason-medical">Y tế</label>
+                            </div>
+                        </div>
+                        <input name="Withdrawal.Note" class="form-control mb-2" maxlength="500" placeholder="Ghi chú (không bắt buộc)" />
+                        <button class="btn btn-outline-danger w-100">Ghi nhận bỏ cuộc</button>
+                    </div>
+                </form>
             </div>
 
             <div class="col-lg-7">
@@ -138,6 +176,44 @@ else
                     else
                     {
                         await Records(Model.Recent);
+                    }
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header fw-semibold">VĐV bỏ cuộc (@Model.Withdrawals.Count)</div>
+                    @if (Model.Withdrawals.Count == 0)
+                    {
+                        <div class="card-body text-secondary">Chưa có VĐV nào bỏ cuộc.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead><tr><th>BIB</th><th>Họ tên</th><th>Trạm</th><th>Lý do</th><th>Lúc</th>@if (isOrganizer) { <th></th> }</tr></thead>
+                                <tbody>
+                                @foreach (var w in Model.Withdrawals)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@w.BibNumber</td>
+                                        <td>@w.FullName<div class="small text-secondary">@w.CategoryName</div></td>
+                                        <td class="small">@w.CheckpointName</td>
+                                        <td>@(w.Reason == "Medical" ? "Y tế" : "Tự nguyện")</td>
+                                        <td class="small text-nowrap">@w.RecordedAt.ToString("HH:mm")</td>
+                                        @if (isOrganizer)
+                                        {
+                                            <td class="text-end">
+                                                <form method="post" asp-page-handler="CancelWithdrawal" asp-route-registrationId="@w.RegistrationId"
+                                                      asp-route-eventId="@Model.EventId" asp-route-checkpointId="@Model.CheckpointId" class="d-inline"
+                                                      onsubmit="return confirm('Hủy ghi nhận bỏ cuộc của BIB @w.BibNumber?');">
+                                                    <button class="btn btn-sm btn-outline-secondary" title="Hủy ghi nhận nhập nhầm"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                                </form>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
                     }
                 </div>
             </div>

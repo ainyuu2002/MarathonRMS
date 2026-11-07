@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.Services.RaceDay;
 
-/// <summary>UC-57 – ghi thời gian tại checkpoint theo BIB (BR-21, BR-32).</summary>
+/// <summary>UC-57 – ghi thời gian tại checkpoint theo BIB (BR-21, BR-32); UC-58 – ghi nhận bỏ cuộc (BR-23).</summary>
 public class TimingService : ITimingService
 {
     private readonly ITimingRepository _timing;
@@ -104,8 +104,100 @@ public class TimingService : ITimingService
         };
     }
 
-    public Task RecordWithdrawalAsync(RecordWithdrawalRequest request, CancellationToken ct = default) =>
-        throw new NotImplementedException();
+    public async Task RecordWithdrawalAsync(RecordWithdrawalRequest request, CancellationToken ct = default)
+    {
+        var ev = await LoadEventForWriteAsync(request.EventId, ct);
+        var r = await _timing.GetConfirmedByBibAsync(ev.EventId, request.BibNumber, ct)
+                ?? throw new NotFoundException($"Không có VĐV mang BIB {request.BibNumber} trong giải.");
+        _scope.EnsureNotOwnRegistration(r.Participant.LinkedUserId, r.RegisteredByUserId);
+
+        var category = r.Category;
+        if (!category.IsTimed)
+            throw new BusinessRuleException("BR-26", $"Cự ly {category.Name} không bấm giờ, không ghi nhận bỏ cuộc.");
+        var checkpoint = category.Checkpoints.FirstOrDefault(c => c.CheckpointId == request.CheckpointId)
+                         ?? throw new BusinessRuleException(ErrorCodes.Validation,
+                             $"Checkpoint không thuộc cự ly {category.Name} của BIB {request.BibNumber}.", 400);
+        if (checkpoint.Type == CheckpointType.Finish)
+            throw new BusinessRuleException(ErrorCodes.Validation, "Không ghi nhận bỏ cuộc tại vạch đích.", 400);
+
+        var records = await _timing.GetByRegistrationAsync(r.RegistrationId, ct);
+        if (records.Any(t => t.Checkpoint.Type == CheckpointType.Finish))
+            throw new BusinessRuleException("BR-23", $"BIB {request.BibNumber} đã có thời gian về đích.");
+        var after = records.Where(t => t.Checkpoint.Sequence > checkpoint.Sequence).MinBy(t => t.Checkpoint.Sequence);
+        if (after is not null)
+            throw new BusinessRuleException("BR-23",
+                $"BIB {request.BibNumber} đã có thời gian tại {after.Checkpoint.Name}, sau {checkpoint.Name}.");
+
+        var result = await _timing.GetResultTrackedAsync(r.RegistrationId, ct);
+        if (result?.Status == ResultStatus.DSQ)
+            throw new BusinessRuleException("BR-23", $"BIB {request.BibNumber} đã bị truất quyền thi đấu (DSQ).");
+
+        var reason = Enum.Parse<DnfReason>(request.Reason, ignoreCase: true);
+        var old = result is null
+            ? null
+            : new { Status = result.Status.ToString(), DnfReason = result.DnfReason?.ToString(), result.DnfCheckpointId };
+        if (result is null)
+        {
+            result = new Result { RegistrationId = r.RegistrationId };
+            await _timing.AddResultAsync(result, ct);
+        }
+        result.Status = ResultStatus.DNF;
+        result.DnfReason = reason;
+        result.DnfCheckpointId = checkpoint.CheckpointId;
+        result.GunTimeMs = result.ChipTimeMs = result.FinalTimeMs = null;
+        result.OverallRank = result.GenderRank = result.AgeGroupRank = null;
+        result.UpdatedAt = _clock.Now;
+
+        await _audit.LogAsync("Result.Withdrawal", nameof(Registration), r.RegistrationId.ToString(), old,
+            new { Status = "DNF", DnfReason = reason.ToString(), Checkpoint = checkpoint.Name, request.BibNumber, Note = request.Note?.Trim() },
+            ct);
+        await _uow.SaveChangesAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<WithdrawalDto>> GetWithdrawalsAsync(int eventId, CancellationToken ct = default)
+    {
+        var ev = await _timing.GetEventAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
+        _scope.EnsureCanOperate(ev.OrganizationId);
+        return (await _timing.GetWithdrawalsAsync(eventId, ct)).Select(w => new WithdrawalDto
+        {
+            RegistrationId = w.RegistrationId,
+            BibNumber = w.Registration.BibNumber,
+            FullName = w.Registration.FullName,
+            CategoryName = w.Registration.Category.Name,
+            CheckpointName = w.DnfCheckpoint?.Name,
+            Reason = w.DnfReason?.ToString() ?? "",
+            RecordedAt = w.UpdatedAt
+        }).ToList();
+    }
+
+    public async Task CancelWithdrawalAsync(int registrationId, CancellationToken ct = default)
+    {
+        var r = await _timing.GetRegistrationAsync(registrationId, ct) ?? throw new NotFoundException("Không tìm thấy đăng ký.");
+        _scope.EnsureCanManage(r.Event.OrganizationId);
+        await _scope.EnsureOrganizationActiveAsync(r.Event.OrganizationId, ct);
+        if (r.Event.ResultsStatus == ResultsStatus.Official)
+            throw new BusinessRuleException("BR-27", "Kết quả của giải đã chính thức – không thể thay đổi.");
+
+        var result = await _timing.GetResultTrackedAsync(registrationId, ct);
+        if (result is not { Status: ResultStatus.DNF, DnfReason: DnfReason.Voluntary or DnfReason.Medical })
+            throw new BusinessRuleException(ErrorCodes.Conflict, "VĐV không ở trạng thái bỏ cuộc.");
+
+        await _audit.LogAsync("Result.WithdrawalCancel", nameof(Registration), registrationId.ToString(),
+            new { Status = "DNF", DnfReason = result.DnfReason?.ToString(), result.DnfCheckpointId }, null, ct);
+        if (result.Penalties.Count == 0)
+        {
+            _timing.RemoveResult(result);
+        }
+        else
+        {
+            // Giữ dòng kết quả vì đã có quyết định phạt gắn vào; lần tính kết quả sau sẽ xét lại
+            result.Status = ResultStatus.DNS;
+            result.DnfReason = null;
+            result.DnfCheckpointId = null;
+            result.UpdatedAt = _clock.Now;
+        }
+        await _uow.SaveChangesAsync(ct);
+    }
 
     public async Task<IReadOnlyList<TimingRecordDto>> GetByRegistrationAsync(int registrationId, CancellationToken ct = default)
     {

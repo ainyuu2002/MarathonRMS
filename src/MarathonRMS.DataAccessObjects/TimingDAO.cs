@@ -50,4 +50,24 @@ public class TimingDAO : BaseDAO<TimingRecord>
         Set.Include(t => t.Checkpoint)
             .Include(t => t.Registration).ThenInclude(r => r.Event)
             .FirstOrDefaultAsync(t => t.TimingRecordId == timingRecordId, ct);
+
+    // ---------- Bỏ cuộc (UC-58) ----------
+
+    public Task<Result?> GetResultTrackedAsync(int registrationId, CancellationToken ct = default) =>
+        Context.Results.Include(r => r.Penalties).FirstOrDefaultAsync(r => r.RegistrationId == registrationId, ct);
+
+    public async Task AddResultAsync(Result result, CancellationToken ct = default) =>
+        await Context.Results.AddAsync(result, ct);
+
+    public void RemoveResult(Result result) => Context.Results.Remove(result);
+
+    /// <summary>Kết quả DNF do VĐV tự bỏ cuộc hoặc rút vì lý do y tế.</summary>
+    public Task<List<Result>> GetWithdrawalsAsync(int eventId, CancellationToken ct = default) =>
+        Context.Results.AsNoTracking()
+            .Include(r => r.Registration).ThenInclude(g => g.Category)
+            .Include(r => r.DnfCheckpoint)
+            .Where(r => r.Registration.EventId == eventId && r.Status == ResultStatus.DNF &&
+                        (r.DnfReason == DnfReason.Voluntary || r.DnfReason == DnfReason.Medical))
+            .OrderByDescending(r => r.UpdatedAt)
+            .ToListAsync(ct);
 }

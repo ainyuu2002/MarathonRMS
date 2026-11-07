@@ -13,6 +13,10 @@ public interface ITimingRepository
     Task<TimingRecord?> GetTrackedAsync(int timingRecordId, CancellationToken ct = default);
     Task AddAsync(TimingRecord record, CancellationToken ct = default);
     void Remove(TimingRecord record);
+    Task<Result?> GetResultTrackedAsync(int registrationId, CancellationToken ct = default);
+    Task AddResultAsync(Result result, CancellationToken ct = default);
+    void RemoveResult(Result result);
+    Task<List<Result>> GetWithdrawalsAsync(int eventId, CancellationToken ct = default);
 }
 
 public class TimingRepository : ITimingRepository
@@ -33,4 +37,10 @@ public class TimingRepository : ITimingRepository
         _dao.GetTrackedAsync(timingRecordId, ct);
     public Task AddAsync(TimingRecord record, CancellationToken ct = default) => _dao.AddAsync(record, ct);
     public void Remove(TimingRecord record) => _dao.Remove(record);
+    public Task<Result?> GetResultTrackedAsync(int registrationId, CancellationToken ct = default) =>
+        _dao.GetResultTrackedAsync(registrationId, ct);
+    public Task AddResultAsync(Result result, CancellationToken ct = default) => _dao.AddResultAsync(result, ct);
+    public void RemoveResult(Result result) => _dao.RemoveResult(result);
+    public Task<List<Result>> GetWithdrawalsAsync(int eventId, CancellationToken ct = default) =>
+        _dao.GetWithdrawalsAsync(eventId, ct);
 }
