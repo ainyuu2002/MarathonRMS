@@ -1,0 +1,48 @@
+@page
+@model MarathonRMS.WebApp.Pages.Organizer.RaceDay.IndexModel
+@{
+    ViewData["Title"] = "Ngày thi";
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Ngày thi</h1>
+        <p class="text-secondary mb-0">Chọn giải để gán BIB và xử lý kết quả.</p>
+    </div>
+    <a asp-page="/Organizer/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Ban tổ chức</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (Model.Events.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-flag fs-1"></i>
+        <p class="mt-2 mb-0">Chưa có giải nào đã công bố.</p>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Giải</th><th>Ngày tổ chức</th><th>Trạng thái</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var e in Model.Events)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@e.Name</div>
+                            <div class="small text-secondary">@e.VenueName · @e.City</div>
+                        </td>
+                        <td class="text-nowrap">@e.EventDate.ToString("dd/MM/yyyy")</td>
+                        <td><status-badge status="@e.Status" /></td>
+                        <td class="text-end text-nowrap">
+                            <a asp-page="Bibs" asp-route-eventId="@e.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-123"></i> Gán BIB</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

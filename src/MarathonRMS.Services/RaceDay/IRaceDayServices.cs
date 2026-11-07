@@ -1,15 +1,22 @@
+using MarathonRMS.DTOs.Common;
 using MarathonRMS.DTOs.RaceDay;
 using MarathonRMS.DTOs.Results;
 
 namespace MarathonRMS.Services.RaceDay;
 
-// Phần C – Ngày thi & kết quả (Giai đoạn 1). Chỉ có interface; C viết implementation, DAO/Repository
-// tương ứng và đăng ký DI trong ServiceCollectionExtensions.
+// Phần C – Ngày thi & kết quả (Giai đoạn 1).
 // Mọi thao tác: Staff/Organizer chỉ trên giải của BTC mình (BR-30) và KHÔNG thao tác trên đăng ký của chính mình (BR-32).
 
-/// <summary>UC-49 – gán BIB hàng loạt theo dải số của cự ly (BR-19). Gợi ý: tách IBibAllocator để test riêng.</summary>
+/// <summary>UC-49 – gán BIB hàng loạt theo dải số của cự ly (BR-19). Việc chọn số tách vào IBibAllocator.</summary>
 public interface IBibService
 {
+    /// <summary>Số đăng ký đã xác nhận / đã có BIB / số còn trống theo từng cự ly.</summary>
+    Task<BibOverviewDto> GetOverviewAsync(int eventId, CancellationToken ct = default);
+
+    /// <summary>Danh sách đã gán BIB; keyword là số BIB hoặc một phần họ tên.</summary>
+    Task<PagedResult<BibListItemDto>> GetAssignmentsAsync(int eventId, int? categoryId, string? keyword, int page, int pageSize,
+        CancellationToken ct = default);
+
     Task<BibAssignmentResultDto> AssignAsync(int eventId, AssignBibsRequest request, CancellationToken ct = default);
 }
 

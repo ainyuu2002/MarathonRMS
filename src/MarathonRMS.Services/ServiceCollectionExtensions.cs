@@ -9,6 +9,7 @@ using MarathonRMS.Services.EventContent;
 using MarathonRMS.Services.Events;
 using MarathonRMS.Services.Legal;
 using MarathonRMS.Services.Organizations;
+using MarathonRMS.Services.RaceDay;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -36,6 +37,8 @@ public static class ServiceCollectionExtensions
         // Phần B – giải
         services.AddScoped<EventDAO>();
         services.AddScoped<RaceCategoryDAO>();
+        // Phần C – ngày thi & kết quả
+        services.AddScoped<BibDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -55,6 +58,8 @@ public static class ServiceCollectionExtensions
         // Phần B – giải
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IRaceCategoryRepository, RaceCategoryRepository>();
+        // Phần C – ngày thi & kết quả
+        services.AddScoped<IBibRepository, BibRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -96,6 +101,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRaceCategoryService, RaceCategoryService>();
 
         // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
+        services.AddSingleton<IBibAllocator, BibAllocator>();
+        services.AddScoped<IBibService, BibService>();
 
         return services;
     }

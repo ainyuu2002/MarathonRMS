@@ -62,6 +62,7 @@ AddApiClient<EventContentApiClient>();
 AddApiClient<EventApiClient>();
 
 // Phần C
+AddApiClient<RaceDayApiClient>();
 
 
 var app = builder.Build();
