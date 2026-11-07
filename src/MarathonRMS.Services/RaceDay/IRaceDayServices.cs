@@ -40,6 +40,15 @@ public interface ITimingService
     Task RecordWithdrawalAsync(RecordWithdrawalRequest request, CancellationToken ct = default);
 
     Task<IReadOnlyList<TimingRecordDto>> GetByRegistrationAsync(int registrationId, CancellationToken ct = default);
+
+    /// <summary>Mọi thời gian đã ghi của VĐV mang BIB trong giải.</summary>
+    Task<IReadOnlyList<TimingRecordDto>> GetByBibAsync(int eventId, int bibNumber, CancellationToken ct = default);
+
+    /// <summary>Bản ghi mới nhất (theo checkpoint nếu có) – để Staff đối chiếu khi nhập liên tục.</summary>
+    Task<IReadOnlyList<TimingRecordDto>> GetRecentAsync(int eventId, int? checkpointId, int take, CancellationToken ct = default);
+
+    /// <summary>Organizer xóa bản ghi nhập sai (ghi nhật ký – BR-36). Không áp dụng khi kết quả đã chính thức.</summary>
+    Task DeleteAsync(int timingRecordId, CancellationToken ct = default);
 }
 
 /// <summary>UC-59 → UC-63 – tính, công bố, xem kết quả; DSQ/phạt.</summary>

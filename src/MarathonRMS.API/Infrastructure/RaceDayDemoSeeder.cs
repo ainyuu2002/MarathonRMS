@@ -16,6 +16,9 @@ public static class RaceDayDemoSeeder
     /// <summary>Giải đã đóng đăng ký, đăng ký đã xác nhận nhưng chưa có BIB – thử UC-49, UC-52, UC-53.</summary>
     public const string PrepEventSlug = "demo-ho-guom-night-run-2026";
 
+    /// <summary>Giải diễn ra hôm nay: đã gán BIB, đã phát kit, có sẵn thời gian bấm giờ – thử UC-57 trở đi.</summary>
+    public const string RaceEventSlug = "demo-cuc-phuong-trail-2026";
+
     public static async Task SeedAsync(IServiceProvider services, IConfiguration config, ILogger logger)
     {
         if (!config.GetValue<bool>("Seed:Enabled")) return;
@@ -35,6 +38,126 @@ public static class RaceDayDemoSeeder
             var count = await SeedPrepEventAsync(db, context, org, now);
             logger.LogInformation("Đã nạp giải demo {Slug}: {Count} đăng ký đã xác nhận.", PrepEventSlug, count);
         }
+
+        if (!await db.Events.AnyAsync(e => e.Slug == RaceEventSlug))
+        {
+            var count = await SeedRaceEventAsync(db, context, org, now);
+            logger.LogInformation("Đã nạp giải demo {Slug}: {Count} VĐV có dữ liệu bấm giờ.", RaceEventSlug, count);
+        }
+    }
+
+    private static async Task<int> SeedRaceEventAsync(MarathonDbContext db, DemoContext ctx, Organization org, DateTime now)
+    {
+        var raceDay = DateOnly.FromDateTime(now);
+        var dayStart = raceDay.ToDateTime(TimeOnly.MinValue);
+        var openAt = now.Date.AddDays(-40);
+        var closeAt = now.Date.AddDays(-3).AddHours(22);
+
+        var ev = NewEvent(ctx, org, "Cúc Phương Trail 2026 (demo)", RaceEventSlug, "VQG Cúc Phương", raceDay, openAt, closeAt, now);
+        var trail21 = NewCategory(ev, "21K Trail", 21, dayStart.AddHours(5).AddMinutes(30), 300, 18, 2001, 2300, "Xanh lá",
+            650_000, openAt, closeAt, Discipline.Trail);
+        AddCheckpoint(trail21, "Xuất phát", 0, 1, CheckpointType.Start);
+        AddCheckpoint(trail21, "CP1 – Bản Khanh", 7, 2, CheckpointType.Split, cutOffAt: dayStart.AddHours(7).AddMinutes(30),
+            station: StationType.Water);
+        AddCheckpoint(trail21, "CP2 – Đỉnh Mây Bạc", 14, 3, CheckpointType.Split, cutOffAt: dayStart.AddHours(9),
+            station: StationType.Full);
+        AddCheckpoint(trail21, "Về đích", 21, 4, CheckpointType.Finish);
+        var trail10 = NewCategory(ev, "10K Trail", 10, dayStart.AddHours(6).AddMinutes(30), 180, 15, 3001, 3300, "Vàng",
+            450_000, openAt, closeAt, Discipline.Trail);
+        AddCheckpoint(trail10, "Xuất phát", 0, 1, CheckpointType.Start);
+        AddCheckpoint(trail10, "CP1 – Cây Chò Ngàn Năm", 5, 2, CheckpointType.Split, station: StationType.Water);
+        AddCheckpoint(trail10, "Về đích", 10, 3, CheckpointType.Finish);
+        foreach (var (name, min, max) in new (string Name, int Min, int? Max)[]
+                     { ("18–29", 18, 29), ("30–39", 30, 39), ("40–49", 40, 49), ("50+", 50, null) })
+            ev.AgeGroups.Add(new AgeGroup { Name = name, MinAge = min, MaxAge = max });
+        ev.AgeGroups.Add(new AgeGroup { Name = "U18", MinAge = 0, MaxAge = 17, Category = trail10 });
+        db.Events.Add(ev);
+        await db.SaveChangesAsync();
+
+        // Mốc thời gian: số giây tính từ giờ xuất phát của cự ly, theo thứ tự checkpoint; null = không có bản ghi
+        var entries21 = new (RunnerSeed Runner, double?[] Splits)[]
+        {
+            (new("member1@mrms.local", null, "M", new(1990, 3, 12), trail21, "0913000201", TShirtSize.L, "Hanoi Runners"), new double?[] { 12, 3258, 7690, 10905 }),
+            (new("member2@mrms.local", null, "F", new(1994, 7, 2), trail21, "0913000202", TShirtSize.S), new double?[] { 25, 3930, 8410, 12020 }),
+            (new("member3@mrms.local", null, "M", new(1987, 11, 25), trail21, "0913000203", TShirtSize.M, "Long Biên Running Club"), new double?[] { 9, 2985, 6850, 9640 }),
+            (new("staff.hn@mrms.local", null, "F", new(1996, 1, 9), trail21, "0913000204", TShirtSize.S), new double?[] { 31, 4120, 8890, 12950 }),
+            (new("organizer.sg@mrms.local", null, "M", new(1985, 5, 30), trail21, "0913000205", TShirtSize.XL), new double?[] { 15, 3405, 7920, 11410 }),
+            (new("staff.sg@mrms.local", null, "F", new(1999, 10, 10), trail21, "0913000206", TShirtSize.S), new double?[] { 44, 4410, 9300, 13680 }),
+            // Bỏ qua CP2 bắt buộc nhưng vẫn về đích
+            (new("member1@mrms.local", "Nguyễn Văn Tuấn", "M", new(1984, 4, 4), trail21, "0913000207", TShirtSize.L), new double?[] { 18, 3300, null, 10120 }),
+            // Tới CP1 sau giờ cut-off của trạm (07:30)
+            (new("member1@mrms.local", "Trần Thị Mai", "F", new(1991, 6, 19), trail21, "0913000208", TShirtSize.M), new double?[] { 22, 7920, null, null }),
+            // Về đích quá COT 300 phút tính theo giờ súng
+            (new("member2@mrms.local", "Lê Hoàng Nam", "M", new(1978, 9, 9), trail21, "0913000209", TShirtSize.L), new double?[] { 35, 5600, 11800, 18900 }),
+            // Không có thời gian nào
+            (new("member2@mrms.local", "Phạm Minh Đức", "M", new(1993, 2, 2), trail21, "0913000210", TShirtSize.M), new double?[] { null, null, null, null }),
+            // Qua thảm xuất phát muộn 21 phút (chính sách cho phép 15 phút)
+            (new("member2@mrms.local", "Hoàng Thị Lan", "F", new(1988, 12, 12), trail21, "0913000211", TShirtSize.S), new double?[] { 1260, 4900, 9800, 14200 }),
+            // Cùng giờ súng khi làm tròn giây, khác giờ chip
+            (new("member3@mrms.local", "Vũ Đức Anh", "M", new(1995, 8, 1), trail21, "0913000212", TShirtSize.M), new double?[] { 40, 3150, 6400, 9310.2 }),
+            (new("member3@mrms.local", "Đinh Quang Vinh", "M", new(1992, 3, 27), trail21, "0913000213", TShirtSize.L), new double?[] { 8, 3160, 6420, 9310.7 }),
+            // Không có bản ghi tại thảm xuất phát
+            (new("member3@mrms.local", "Ngô Thanh Hương", "F", new(1983, 10, 5), trail21, "0913000214", TShirtSize.S), new double?[] { null, 3700, 8000, 11850 }),
+            (new("organizer.sg@mrms.local", "Bùi Văn Hải", "M", new(1975, 1, 15), trail21, "0913000215", TShirtSize.XL), new double?[] { 20, 3800, 8300, 12400 }),
+            (new("organizer.sg@mrms.local", "Đặng Thu Trang", "F", new(1998, 5, 21), trail21, "0913000216", TShirtSize.XS, Hide: true), new double?[] { 28, 3520, 7600, 11200 }),
+            (new("staff.sg@mrms.local", "Phan Văn Lộc", "M", new(1969, 7, 30), trail21, "0913000217", TShirtSize.L), new double?[] { 50, 4300, 9050, 13300 }),
+            (new("staff.sg@mrms.local", "Lý Thị Hoa", "F", new(1972, 11, 3), trail21, "0913000218", TShirtSize.M), new double?[] { 33, 4000, 8700, 12800 }),
+            // Còn trên đường chạy: dùng để thử nhập thời gian về đích / ghi nhận bỏ cuộc
+            (new("member1@mrms.local", "Trương Minh Khang", "M", new(2000, 2, 29), trail21, "0913000219", TShirtSize.M), new double?[] { 14, 3350, 7400, null }),
+            (new("member2@mrms.local", "Mai Anh Thư", "F", new(1997, 4, 14), trail21, "0913000220", TShirtSize.S), new double?[] { 38, 4200, null, null }),
+        };
+        var entries10 = new (RunnerSeed Runner, double?[] Splits)[]
+        {
+            // 16 tuổi: nhóm U18, tên được ẩn trên trang công khai
+            (new("member1@mrms.local", "Hoàng Gia Huy", "M", new(2010, 6, 1), trail10, "0913000301", TShirtSize.S, Child: true), new double?[] { 10, 1650, 3600 }),
+            (new("member1@mrms.local", "Nguyễn Thảo Vy", "F", new(2001, 9, 9), trail10, "0913000302", TShirtSize.XS), new double?[] { 18, 1820, 3960 }),
+            (new("member2@mrms.local", "Trần Quốc Bảo", "M", new(1990, 12, 30), trail10, "0913000303", TShirtSize.L), new double?[] { 6, 1500, 3240 }),
+            (new("member2@mrms.local", "Lê Thu Hằng", "F", new(1986, 3, 8), trail10, "0913000304", TShirtSize.M), new double?[] { 25, 2100, 4500 }),
+            (new("member3@mrms.local", "Phạm Văn Sơn", "M", new(1965, 10, 20), trail10, "0913000305", TShirtSize.L), new double?[] { 30, 2050, 4410 }),
+            (new("member3@mrms.local", "Đỗ Thị Ngọc", "F", new(1979, 1, 1), trail10, "0913000306", TShirtSize.S), new double?[] { 21, 1950, 4200 }),
+            (new("organizer.sg@mrms.local", "Vũ Minh Tâm", "M", new(1999, 5, 5), trail10, "0913000307", TShirtSize.M), new double?[] { 12, null, 3500 }),
+            (new("organizer.sg@mrms.local", "Hồ Thị Thanh", "F", new(1994, 8, 18), trail10, "0913000308", TShirtSize.S), new double?[] { null, null, null }),
+            (new("staff.sg@mrms.local", "Kiều Văn Đạt", "M", new(1989, 4, 25), trail10, "0913000309", TShirtSize.L), new double?[] { 16, 1880, null }),
+            (new("staff.sg@mrms.local", "Lâm Quỳnh Như", "F", new(2003, 7, 7), trail10, "0913000310", TShirtSize.XS), new double?[] { 19, 1700, 3700 }),
+        };
+
+        var staffId = ctx.Users["staff.hn@mrms.local"].Id;
+        var organizerId = ctx.Users["organizer.hn@mrms.local"].Id;
+        var registeredAt = now.Date.AddDays(-35).AddHours(8);
+        var index = 0;
+        foreach (var (category, entries) in new[] { (trail21, entries21), (trail10, entries10) })
+        {
+            var bib = category.BibFrom;
+            var checkpoints = category.Checkpoints.OrderBy(c => c.Sequence).ToList();
+            foreach (var (runner, splits) in entries)
+            {
+                index++;
+                // Nhân viên không tự thao tác trên đăng ký của mình (BR-32)
+                var operatorId = runner.OwnerEmail == "staff.hn@mrms.local" ? organizerId : staffId;
+                var registration = await AddConfirmedRegistrationAsync(db, ctx, ev, runner, registeredAt.AddHours(index * 5), index);
+                registration.BibNumber = bib++;
+                registration.RaceKitPickup = new RaceKitPickup
+                {
+                    PickedUpAt = dayStart.AddDays(-1).AddHours(9).AddMinutes(index * 7),
+                    StaffId = operatorId,
+                    IdChecked = true
+                };
+                for (var i = 0; i < checkpoints.Count; i++)
+                {
+                    if (splits[i] is not double seconds) continue;
+                    var jitterMs = seconds % 1 == 0 ? index * 37 % 1000 : 0;
+                    registration.TimingRecords.Add(new TimingRecord
+                    {
+                        Checkpoint = checkpoints[i],
+                        RecordedAt = category.StartAt.AddMilliseconds(Math.Round(seconds * 1000) + jitterMs),
+                        Source = TimingSource.Import,
+                        RecordedById = operatorId
+                    });
+                }
+            }
+        }
+        await db.SaveChangesAsync();
+        return index;
     }
 
     private static async Task<int> SeedPrepEventAsync(MarathonDbContext db, DemoContext ctx, Organization org, DateTime now)

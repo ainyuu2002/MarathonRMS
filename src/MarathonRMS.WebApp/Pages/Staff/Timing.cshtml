@@ -1,0 +1,146 @@
+@page
+@model MarathonRMS.WebApp.Pages.Staff.TimingModel
+@using MarathonRMS.DTOs.RaceDay
+@{
+    ViewData["Title"] = "Bấm giờ";
+    var isOrganizer = User.IsInRole(AppRoles.Organizer);
+
+    async Task Records(IEnumerable<TimingRecordDto> rows)
+    {
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr><th>Thời điểm</th><th>BIB</th><th>Họ tên</th><th>Checkpoint</th>@if (isOrganizer) { <th></th> }</tr>
+                </thead>
+                <tbody>
+                @foreach (var t in rows)
+                {
+                    <tr>
+                        <td class="text-nowrap">@t.RecordedAt.ToString("HH:mm:ss.fff")</td>
+                        <td class="fw-semibold">@t.BibNumber</td>
+                        <td>@t.FullName</td>
+                        <td class="small">
+                            @t.CheckpointName
+                            @if (t.Source == "Import") { <span class="badge text-bg-light">nhập từ file</span> }
+                        </td>
+                        @if (isOrganizer)
+                        {
+                            <td class="text-end">
+                                <form method="post" asp-page-handler="Delete" asp-route-recordId="@t.Id" asp-route-eventId="@Model.EventId"
+                                      asp-route-checkpointId="@Model.CheckpointId" asp-route-lookupBib="@Model.LookupBib" class="d-inline"
+                                      onsubmit="return confirm('Xóa thời gian của BIB @t.BibNumber tại @t.CheckpointName?');">
+                                    <button class="btn btn-sm btn-outline-danger" title="Xóa bản ghi nhập sai"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Bấm giờ</h1>
+        <p class="text-secondary mb-0">Nhập thời gian VĐV đi qua checkpoint theo số BIB.</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Vận hành</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (Model.Events.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-stopwatch fs-1"></i>
+        <p class="mt-2 mb-0">Ban tổ chức chưa có giải nào đã công bố.</p>
+    </div>
+}
+else
+{
+    <form method="get" class="mb-3">
+        <select name="EventId" class="form-select" onchange="this.form.submit()" aria-label="Giải">
+            @foreach (var e in Model.Events)
+            {
+                <option value="@e.Id" selected="@(Model.EventId == e.Id)">@e.Name – @e.EventDate.ToString("dd/MM/yyyy")</option>
+            }
+        </select>
+    </form>
+
+    @if (Model.Categories.Count == 0)
+    {
+        <div class="alert alert-secondary">Giải chưa có cự ly bấm giờ.</div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <form method="post" asp-page-handler="Record" asp-route-eventId="@Model.EventId" class="card" autocomplete="off">
+                    <div class="card-header fw-semibold"><i class="bi bi-stopwatch"></i> Ghi thời gian</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="CheckpointId">Checkpoint</label>
+                            <select name="CheckpointId" id="CheckpointId" class="form-select">
+                                <option value="">— Chọn checkpoint —</option>
+                                @foreach (var c in Model.Categories)
+                                {
+                                    <optgroup label="@c.Name">
+                                        @foreach (var p in c.Checkpoints.OrderBy(p => p.Sequence))
+                                        {
+                                            <option value="@p.Id" selected="@(Model.CheckpointId == p.Id)">@c.Name – @p.Name (km @p.DistanceKm.ToString("0.##"))</option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="BibNumber">Số BIB</label>
+                            <input name="BibNumber" id="BibNumber" type="number" min="1" class="form-control form-control-lg" autofocus />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="RecordedAt">Thời điểm</label>
+                            <input name="RecordedAt" id="RecordedAt" type="datetime-local" step="0.001" class="form-control" />
+                            <div class="form-text">Để trống để lấy giờ hiện tại.</div>
+                        </div>
+                        <button class="btn btn-primary w-100"><i class="bi bi-check2"></i> Ghi nhận</button>
+                    </div>
+                </form>
+
+                <div class="card mt-3">
+                    <div class="card-header fw-semibold">Tra cứu theo BIB</div>
+                    <div class="card-body">
+                        <form method="get" class="d-flex gap-2">
+                            <input type="hidden" name="EventId" value="@Model.EventId" />
+                            <input type="hidden" name="CheckpointId" value="@Model.CheckpointId" />
+                            <input name="LookupBib" value="@Model.LookupBib" type="number" min="1" class="form-control" placeholder="Số BIB" aria-label="Số BIB" />
+                            <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+                        </form>
+                    </div>
+                    @if (Model.BibRecords.Count > 0)
+                    {
+                        await Records(Model.BibRecords);
+                    }
+                    else if (Model.LookupBib is not null && ModelState.IsValid)
+                    {
+                        <div class="card-body pt-0 text-secondary small">BIB @Model.LookupBib chưa có thời gian nào.</div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header fw-semibold">Vừa ghi@(Model.CheckpointId is null ? "" : " tại checkpoint đang chọn")</div>
+                    @if (Model.Recent.Count == 0)
+                    {
+                        <div class="card-body text-secondary">Chưa có bản ghi.</div>
+                    }
+                    else
+                    {
+                        await Records(Model.Recent);
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}

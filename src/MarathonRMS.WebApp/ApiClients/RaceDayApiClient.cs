@@ -37,4 +37,18 @@ public class RaceDayApiClient : ApiClientBase
 
     public Task<RaceKitPickupDto> PickupRaceKitAsync(int registrationId, RaceKitPickupRequest request, CancellationToken ct = default) =>
         PostAsync<RaceKitPickupDto>($"api/race-day/race-kit/{registrationId}/pickup", request, ct);
+
+    // ---------- UC-57 bấm giờ ----------
+
+    public Task<TimingRecordDto> RecordTimingAsync(RecordTimingRequest request, CancellationToken ct = default) =>
+        PostAsync<TimingRecordDto>("api/race-day/timing", request, ct);
+
+    public Task<List<TimingRecordDto>> GetTimingByBibAsync(int eventId, int bibNumber, CancellationToken ct = default) =>
+        GetAsync<List<TimingRecordDto>>(Query($"api/race-day/events/{eventId}/timing", ("bib", bibNumber)), ct);
+
+    public Task<List<TimingRecordDto>> GetRecentTimingAsync(int eventId, int? checkpointId, CancellationToken ct = default) =>
+        GetAsync<List<TimingRecordDto>>(Query($"api/race-day/events/{eventId}/timing", ("checkpointId", checkpointId), ("take", 15)), ct);
+
+    public Task DeleteTimingAsync(int timingRecordId, CancellationToken ct = default) =>
+        DeleteAsync($"api/race-day/timing/{timingRecordId}", ct);
 }
