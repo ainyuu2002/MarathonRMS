@@ -1,4 +1,5 @@
 using MarathonRMS.DTOs.Common;
+using MarathonRMS.DTOs.Events;
 using MarathonRMS.DTOs.RaceDay;
 using MarathonRMS.WebApp.Infrastructure;
 
@@ -21,4 +22,14 @@ public class RaceDayApiClient : ApiClientBase
 
     public Task<BibAssignmentResultDto> AssignBibsAsync(int eventId, int? categoryId, CancellationToken ct = default) =>
         PostAsync<BibAssignmentResultDto>($"api/events/{eventId}/bibs/assign", new AssignBibsRequest { CategoryId = categoryId }, ct);
+
+    // ---------- Vận hành ngày thi (Staff/Organizer) ----------
+
+    public Task<List<EventSummaryDto>> GetOperationalEventsAsync(CancellationToken ct = default) =>
+        GetAsync<List<EventSummaryDto>>("api/race-day/events", ct);
+
+    // ---------- UC-52 tra cứu race kit ----------
+
+    public Task<List<RaceKitLookupItemDto>> LookupRaceKitAsync(int eventId, string keyword, CancellationToken ct = default) =>
+        GetAsync<List<RaceKitLookupItemDto>>(Query($"api/race-day/events/{eventId}/race-kit", ("keyword", keyword)), ct);
 }

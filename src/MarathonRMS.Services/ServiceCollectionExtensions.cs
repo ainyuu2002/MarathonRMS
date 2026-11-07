@@ -39,6 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RaceCategoryDAO>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<BibDAO>();
+        services.AddScoped<RaceKitDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -60,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRaceCategoryRepository, RaceCategoryRepository>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<IBibRepository, BibRepository>();
+        services.AddScoped<IRaceKitRepository, RaceKitRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -103,6 +105,7 @@ public static class ServiceCollectionExtensions
         // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
         services.AddSingleton<IBibAllocator, BibAllocator>();
         services.AddScoped<IBibService, BibService>();
+        services.AddScoped<IRaceKitService, RaceKitService>();
 
         return services;
     }
