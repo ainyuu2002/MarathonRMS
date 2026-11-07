@@ -1,0 +1,109 @@
+@page
+@model MarathonRMS.WebApp.Pages.Results.IndexModel
+@{
+    ViewData["Title"] = "Kết quả";
+    var ev = Model.Event;
+}
+<h1 class="h3 mb-3">Kết quả</h1>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (ev is null)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-trophy fs-1"></i>
+        <p class="mt-2 mb-0">Chưa có giải nào công bố kết quả.</p>
+    </div>
+}
+else
+{
+    <form method="get" class="mb-3">
+        <select name="EventId" class="form-select" onchange="this.form.submit()" aria-label="Giải">
+            @foreach (var e in Model.Events)
+            {
+                <option value="@e.EventId" selected="@(e.EventId == ev.EventId)">@e.EventName – @e.EventDate.ToString("dd/MM/yyyy") – @e.OrganizationName</option>
+            }
+        </select>
+    </form>
+
+    <ul class="nav nav-pills mb-3">
+        @foreach (var c in ev.Categories)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(c.Id == Model.CategoryId ? "active" : "")" asp-route-eventId="@ev.EventId" asp-route-categoryId="@c.Id">@c.Name</a>
+            </li>
+        }
+    </ul>
+
+    @if (ev.ResultsStatus == "Provisional")
+    {
+        <div class="alert alert-warning small">
+            <i class="bi bi-hourglass-split"></i> Kết quả <strong>tạm thời</strong> – có thể thay đổi sau thời gian nhận khiếu nại.
+        </div>
+    }
+
+    <form method="get" class="row g-2 mb-3">
+        <input type="hidden" name="EventId" value="@ev.EventId" />
+        <input type="hidden" name="CategoryId" value="@Model.CategoryId" />
+        <div class="col-6 col-md-3">
+            <select name="Gender" class="form-select" aria-label="Giới tính">
+                <option value="">Nam & nữ</option>
+                <option value="M" selected="@(Model.Gender == "M")">Nam</option>
+                <option value="F" selected="@(Model.Gender == "F")">Nữ</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <select name="AgeGroupId" class="form-select" aria-label="Nhóm tuổi">
+                <option value="">Mọi nhóm tuổi</option>
+                @foreach (var g in Model.AgeGroups)
+                {
+                    <option value="@g.Id" selected="@(Model.AgeGroupId == g.Id)">@g.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4"><input name="Keyword" value="@Model.Keyword" class="form-control" placeholder="Số BIB hoặc tên" /></div>
+        <div class="col-md-2 d-grid"><button class="btn btn-primary"><i class="bi bi-search"></i> Xem</button></div>
+    </form>
+
+    @if (Model.Rows.Items.Count == 0)
+    {
+        <p class="text-secondary">Không có kết quả phù hợp.</p>
+    }
+    else
+    {
+        <div class="card mb-2">
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Hạng</th><th>BIB</th><th>VĐV</th><th>Giới tính</th><th>Nhóm tuổi</th>
+                            <th class="text-end">Thành tích</th><th class="text-end">Giờ chip</th><th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var r in Model.Rows.Items)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@(r.OverallRank?.ToString() ?? "—")</td>
+                            <td>@r.BibNumber</td>
+                            <td>
+                                @r.DisplayName
+                                @if (r.ClubName is not null) { <div class="small text-secondary">@r.ClubName</div> }
+                            </td>
+                            <td class="small">@RaceTime.GenderLabel(r.Gender)@if (r.GenderRank is int g) { <span class="text-secondary"> #@g</span> }</td>
+                            <td class="small">@(r.AgeGroupName ?? "—")@if (r.AgeGroupRank is int a) { <span class="text-secondary"> #@a</span> }</td>
+                            <td class="text-end font-monospace fw-semibold">
+                                @RaceTime.Format(r.FinalTimeMs)
+                                @if (r.PenaltySeconds > 0) { <div class="small text-danger">gồm phạt +@(r.PenaltySeconds / 60)′</div> }
+                            </td>
+                            <td class="text-end font-monospace small">@RaceTime.Format(r.ChipTimeMs)</td>
+                            <td><status-badge status="@r.Status" /></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <partial name="_Pager" model="PagerModel.From(Model.Rows, new { Model.EventId, Model.CategoryId, Model.Gender, Model.AgeGroupId, Model.Keyword })" />
+    }
+}

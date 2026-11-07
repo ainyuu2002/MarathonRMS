@@ -29,6 +29,28 @@ public class LeaderboardRowDto
     public int? AgeGroupRank { get; set; }
     /// <summary>True khi kết quả của giải còn "Tạm thời" (BR-27).</summary>
     public bool IsProvisional { get; set; }
+    /// <summary>Khóa sắp xếp bảng xếp hạng: VĐV hoàn thành theo hạng, sau đó DNF, DSQ, DNS ($orderby=SortOrder).</summary>
+    public int SortOrder { get; set; }
+}
+
+/// <summary>Giải đã công bố kết quả – để chọn trên trang bảng xếp hạng công khai (UC-62).</summary>
+public class ResultsEventDto
+{
+    public int EventId { get; set; }
+    public string EventName { get; set; } = "";
+    public string OrganizationName { get; set; } = "";
+    public DateOnly EventDate { get; set; }
+    public string ResultsStatus { get; set; } = "";
+    public IReadOnlyList<ResultCategoryOptionDto> Categories { get; set; } = Array.Empty<ResultCategoryOptionDto>();
+    public IReadOnlyList<AgeGroupOptionDto> AgeGroups { get; set; } = Array.Empty<AgeGroupOptionDto>();
+}
+
+public class AgeGroupOptionDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    /// <summary>Null = áp dụng cho mọi cự ly.</summary>
+    public int? CategoryId { get; set; }
 }
 
 /// <summary>Kết quả cá nhân + split (UC-63).</summary>

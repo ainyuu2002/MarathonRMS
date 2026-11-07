@@ -21,6 +21,7 @@
                 <div class="collapse navbar-collapse" id="mainNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item"><a class="nav-link" asp-page="/Index">Giải chạy</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-page="/Results/Index">Kết quả</a></li>
                         @if (User.IsInRole(AppRoles.Member))
                         {
                             <li class="nav-item"><a class="nav-link" asp-page="/Member/Index">Của tôi</a></li>

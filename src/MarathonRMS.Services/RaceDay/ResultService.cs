@@ -10,7 +10,7 @@ namespace MarathonRMS.Services.RaceDay;
 
 /// <summary>
 /// UC-59 – tính kết quả của giải; UC-60 – công bố tạm thời / chính thức (BR-27);
-/// UC-61 – DSQ, phạt cộng phút (UC-67), thu hồi phạt (BR-28, BR-32, BR-36).
+/// UC-61 – DSQ, phạt cộng phút (UC-67), thu hồi phạt (BR-28, BR-32, BR-36); UC-62 – bảng xếp hạng công khai (BR-37).
 /// </summary>
 public class ResultService : IResultService
 {
@@ -171,7 +171,65 @@ public class ResultService : IResultService
         return ToStatusDto(ev);
     }
 
-    public IQueryable<LeaderboardRowDto> QueryLeaderboard() => throw new NotImplementedException();
+    // ============================ Bảng xếp hạng công khai (UC-62) ============================
+
+    /// <summary>
+    /// Chỉ giải đã công bố kết quả. Tên công khai theo cùng quy tắc với IPrivacyFilter.PublicDisplayName (BR-37), viết dạng
+    /// biểu thức (CASE) để OData dịch $filter/$orderby ra SQL – kể cả Gender/Status (không dùng ToString() của enum).
+    /// </summary>
+    public IQueryable<LeaderboardRowDto> QueryLeaderboard() =>
+        _results.QueryPublished().Select(r => new LeaderboardRowDto
+        {
+            ResultId = r.ResultId,
+            RegistrationId = r.RegistrationId,
+            EventId = r.Registration.EventId,
+            CategoryId = r.Registration.CategoryId,
+            CategoryName = r.Registration.Category.Name,
+            BibNumber = r.Registration.BibNumber,
+            DisplayName = r.Registration.HideFromPublicList ||
+                          r.Registration.DateOfBirth > r.Registration.Event.EventDate.AddYears(-PrivacyFilter.AdultAge)
+                ? (r.Registration.BibNumber != null ? "VĐV #" + r.Registration.BibNumber.ToString() : "VĐV ẩn danh")
+                : r.Registration.FullName,
+            Gender = r.Registration.Gender == Gender.F ? "F" : "M",
+            AgeGroupId = r.AgeGroupId,
+            AgeGroupName = r.AgeGroup != null ? r.AgeGroup.Name : null,
+            ClubName = r.Registration.HideFromPublicList ||
+                       r.Registration.DateOfBirth > r.Registration.Event.EventDate.AddYears(-PrivacyFilter.AdultAge)
+                ? null
+                : r.Registration.ClubName,
+            GunTimeMs = r.GunTimeMs,
+            ChipTimeMs = r.ChipTimeMs,
+            FinalTimeMs = r.FinalTimeMs,
+            PenaltySeconds = r.PenaltySeconds,
+            Status = r.Status == ResultStatus.Finished ? "Finished"
+                : r.Status == ResultStatus.DNF ? "DNF"
+                : r.Status == ResultStatus.DSQ ? "DSQ"
+                : "DNS",
+            OverallRank = r.OverallRank,
+            GenderRank = r.GenderRank,
+            AgeGroupRank = r.AgeGroupRank,
+            IsProvisional = r.Registration.Event.ResultsStatus == ResultsStatus.Provisional,
+            SortOrder = r.Status == ResultStatus.Finished ? (r.OverallRank ?? 999_999)
+                : r.Status == ResultStatus.DNF ? 1_000_000
+                : r.Status == ResultStatus.DSQ ? 2_000_000
+                : 3_000_000
+        });
+
+    public async Task<IReadOnlyList<ResultsEventDto>> GetPublishedEventsAsync(CancellationToken ct = default) =>
+        (await _results.GetPublishedEventsAsync(ct)).Select(e => new ResultsEventDto
+        {
+            EventId = e.EventId,
+            EventName = e.Name,
+            OrganizationName = e.Organization.Name,
+            EventDate = e.EventDate,
+            ResultsStatus = e.ResultsStatus.ToString(),
+            Categories = e.Categories.Where(c => c.IsTimed).OrderBy(c => c.StartAt).ThenBy(c => c.Name)
+                .Select(c => new ResultCategoryOptionDto { Id = c.CategoryId, Name = c.Name, IsTimed = c.IsTimed, IsRanked = c.IsRanked })
+                .ToList(),
+            AgeGroups = e.AgeGroups.OrderBy(g => g.CategoryId != null).ThenBy(g => g.MinAge)
+                .Select(g => new AgeGroupOptionDto { Id = g.AgeGroupId, Name = g.Name, CategoryId = g.CategoryId })
+                .ToList()
+        }).ToList();
 
     public Task<ResultDetailDto> GetDetailAsync(int registrationId, CancellationToken ct = default) =>
         throw new NotImplementedException();

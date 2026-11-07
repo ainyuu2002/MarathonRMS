@@ -43,4 +43,25 @@ public class ResultApiClient : ApiClientBase
 
     public Task RevokePenaltyAsync(int penaltyId, CancellationToken ct = default) =>
         PostAsync($"api/penalties/{penaltyId}/revoke", new { }, ct);
+
+    // ---------- UC-62 bảng xếp hạng công khai ----------
+
+    public Task<List<ResultsEventDto>> GetPublishedEventsAsync(CancellationToken ct = default) =>
+        GetAsync<List<ResultsEventDto>>("api/results/events", ct);
+
+    /// <summary>keyword: số BIB hoặc một phần tên công khai.</summary>
+    public Task<PagedResult<LeaderboardRowDto>> GetLeaderboardAsync(int eventId, int? categoryId, string? gender, int? ageGroupId,
+        string? keyword, int page, CancellationToken ct = default)
+    {
+        var k = keyword?.Trim();
+        var filter = ODataQuery.And(
+            $"EventId eq {eventId}",
+            categoryId is int c ? $"CategoryId eq {c}" : null,
+            gender is "M" or "F" ? $"Gender eq {ODataQuery.Str(gender)}" : null,
+            ageGroupId is int a ? $"AgeGroupId eq {a}" : null,
+            string.IsNullOrEmpty(k) ? null
+                : int.TryParse(k, out var bib) ? $"BibNumber eq {bib}"
+                : $"contains(DisplayName,{ODataQuery.Str(k)})");
+        return GetODataPageAsync<LeaderboardRowDto>("Results", filter, "SortOrder,BibNumber", page, 50, ct);
+    }
 }

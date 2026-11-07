@@ -75,4 +75,20 @@ public class ResultDAO : BaseDAO<Result>
 
     public async Task AddPenaltyAsync(ResultPenalty penalty, CancellationToken ct = default) =>
         await Context.ResultPenalties.AddAsync(penalty, ct);
+
+    // ---------- Bảng xếp hạng công khai (UC-62) ----------
+
+    /// <summary>Kết quả của các giải đã công bố (tạm thời hoặc chính thức).</summary>
+    public IQueryable<Result> QueryPublished() =>
+        Set.AsNoTracking().Where(r => r.Registration.Event.ResultsStatus == ResultsStatus.Provisional ||
+                                      r.Registration.Event.ResultsStatus == ResultsStatus.Official);
+
+    public Task<List<Event>> GetPublishedEventsAsync(CancellationToken ct = default) =>
+        Context.Events.AsNoTracking().AsSplitQuery()
+            .Include(e => e.Organization)
+            .Include(e => e.Categories)
+            .Include(e => e.AgeGroups)
+            .Where(e => e.ResultsStatus == ResultsStatus.Provisional || e.ResultsStatus == ResultsStatus.Official)
+            .OrderByDescending(e => e.EventDate).ThenBy(e => e.Name)
+            .ToListAsync(ct);
 }

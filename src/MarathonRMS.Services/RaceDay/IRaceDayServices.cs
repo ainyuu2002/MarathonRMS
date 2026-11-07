@@ -84,6 +84,9 @@ public interface IResultService
     /// <summary>Nguồn cho GET /odata/Results: chỉ giải có ResultsStatus Provisional/Official; áp IPrivacyFilter (BR-37).</summary>
     IQueryable<LeaderboardRowDto> QueryLeaderboard();
 
+    /// <summary>Giải đã công bố kết quả kèm cự ly, nhóm tuổi – cho bộ lọc của bảng xếp hạng công khai.</summary>
+    Task<IReadOnlyList<ResultsEventDto>> GetPublishedEventsAsync(CancellationToken ct = default);
+
     /// <summary>Kết quả cá nhân + splits + phạt (UC-63).</summary>
     Task<ResultDetailDto> GetDetailAsync(int registrationId, CancellationToken ct = default);
 
