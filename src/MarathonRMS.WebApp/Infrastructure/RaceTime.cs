@@ -21,4 +21,8 @@ public static class RaceTime
     };
 
     public static string GenderLabel(string gender) => gender == "F" ? "Nữ" : "Nam";
+
+    /// <summary>Pace (giây/km) ⇒ "5:42 /km".</summary>
+    public static string Pace(int? secondsPerKm) =>
+        secondsPerKm is int s && s > 0 ? $"{s / 60}:{s % 60:00} /km" : "—";
 }

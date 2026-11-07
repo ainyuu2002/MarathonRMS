@@ -83,6 +83,17 @@ public class ResultDAO : BaseDAO<Result>
         Set.AsNoTracking().Where(r => r.Registration.Event.ResultsStatus == ResultsStatus.Provisional ||
                                       r.Registration.Event.ResultsStatus == ResultsStatus.Official);
 
+    /// <summary>Kết quả cá nhân kèm thời gian từng checkpoint, nhóm tuổi, quyết định phạt (UC-63).</summary>
+    public Task<Result?> GetDetailByRegistrationAsync(int registrationId, CancellationToken ct = default) =>
+        Set.AsNoTracking().AsSplitQuery()
+            .Include(r => r.Registration).ThenInclude(g => g.Event).ThenInclude(e => e.Policy)
+            .Include(r => r.Registration).ThenInclude(g => g.Category).ThenInclude(c => c.Checkpoints)
+            .Include(r => r.Registration).ThenInclude(g => g.TimingRecords)
+            .Include(r => r.Registration).ThenInclude(g => g.Participant)
+            .Include(r => r.AgeGroup)
+            .Include(r => r.Penalties).ThenInclude(p => p.Reason)
+            .FirstOrDefaultAsync(r => r.RegistrationId == registrationId, ct);
+
     public Task<List<Event>> GetPublishedEventsAsync(CancellationToken ct = default) =>
         Context.Events.AsNoTracking().AsSplitQuery()
             .Include(e => e.Organization)

@@ -126,7 +126,10 @@ else
                     <tr>
                         <td class="fw-semibold">@(r.OverallRank?.ToString() ?? "—")</td>
                         <td>@r.BibNumber</td>
-                        <td>@r.DisplayName@if (r.ClubName is not null) { <div class="small text-secondary">@r.ClubName</div> }</td>
+                        <td>
+                            <a asp-page="/Results/Detail" asp-route-registrationId="@r.RegistrationId">@r.DisplayName</a>
+                            @if (r.ClubName is not null) { <div class="small text-secondary">@r.ClubName</div> }
+                        </td>
                         <td class="small">@r.CategoryName</td>
                         <td class="small">@RaceTime.GenderLabel(r.Gender)@if (r.GenderRank is int g) { <span class="text-secondary"> #@g</span> }</td>
                         <td class="small">@(r.AgeGroupName ?? "—")@if (r.AgeGroupRank is int a) { <span class="text-secondary"> #@a</span> }</td>

@@ -21,6 +21,7 @@ public interface IResultRepository
     Task AddPenaltyAsync(ResultPenalty penalty, CancellationToken ct = default);
     IQueryable<Result> QueryPublished();
     Task<List<Event>> GetPublishedEventsAsync(CancellationToken ct = default);
+    Task<Result?> GetDetailByRegistrationAsync(int registrationId, CancellationToken ct = default);
 }
 
 public class ResultRepository : IResultRepository
@@ -51,4 +52,6 @@ public class ResultRepository : IResultRepository
     public Task AddPenaltyAsync(ResultPenalty penalty, CancellationToken ct = default) => _dao.AddPenaltyAsync(penalty, ct);
     public IQueryable<Result> QueryPublished() => _dao.QueryPublished();
     public Task<List<Event>> GetPublishedEventsAsync(CancellationToken ct = default) => _dao.GetPublishedEventsAsync(ct);
+    public Task<Result?> GetDetailByRegistrationAsync(int registrationId, CancellationToken ct = default) =>
+        _dao.GetDetailByRegistrationAsync(registrationId, ct);
 }

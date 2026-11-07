@@ -64,4 +64,9 @@ public class ResultApiClient : ApiClientBase
                 : $"contains(DisplayName,{ODataQuery.Str(k)})");
         return GetODataPageAsync<LeaderboardRowDto>("Results", filter, "SortOrder,BibNumber", page, 50, ct);
     }
+
+    // ---------- UC-63 kết quả cá nhân ----------
+
+    public Task<ResultDetailDto> GetDetailAsync(int registrationId, CancellationToken ct = default) =>
+        GetAsync<ResultDetailDto>($"api/results/registrations/{registrationId}", ct);
 }

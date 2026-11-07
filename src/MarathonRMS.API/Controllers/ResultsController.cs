@@ -23,7 +23,7 @@ public class ResultsController : ODataController
     public IQueryable<LeaderboardRowDto> Get() => _results.QueryLeaderboard();
 }
 
-/// <summary>Giải đã công bố kết quả – dữ liệu cho bộ lọc của bảng xếp hạng (REST).</summary>
+/// <summary>Giải đã công bố kết quả (bộ lọc bảng xếp hạng) và kết quả cá nhân – UC-63 (REST).</summary>
 [ApiController]
 [Route("api/results")]
 [AllowAnonymous]
@@ -35,4 +35,8 @@ public class PublicResultsController : ControllerBase
     [HttpGet("events")]
     public async Task<ActionResult<IReadOnlyList<ResultsEventDto>>> GetEvents(CancellationToken ct) =>
         Ok(await _results.GetPublishedEventsAsync(ct));
+
+    [HttpGet("registrations/{registrationId:int}")]
+    public async Task<ActionResult<ResultDetailDto>> GetDetail(int registrationId, CancellationToken ct) =>
+        Ok(await _results.GetDetailAsync(registrationId, ct));
 }

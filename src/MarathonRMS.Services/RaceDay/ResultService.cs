@@ -10,7 +10,8 @@ namespace MarathonRMS.Services.RaceDay;
 
 /// <summary>
 /// UC-59 – tính kết quả của giải; UC-60 – công bố tạm thời / chính thức (BR-27);
-/// UC-61 – DSQ, phạt cộng phút (UC-67), thu hồi phạt (BR-28, BR-32, BR-36); UC-62 – bảng xếp hạng công khai (BR-37).
+/// UC-61 – DSQ, phạt cộng phút (UC-67), thu hồi phạt (BR-28, BR-32, BR-36); UC-62 – bảng xếp hạng công khai (BR-37);
+/// UC-63 – kết quả cá nhân, splits.
 /// </summary>
 public class ResultService : IResultService
 {
@@ -19,18 +20,21 @@ public class ResultService : IResultService
     private readonly IResultCalculator _calculator;
     private readonly IOrganizationScope _scope;
     private readonly ICurrentUserService _currentUser;
+    private readonly IPrivacyFilter _privacy;
     private readonly IDateTimeProvider _clock;
     private readonly IAuditLogger _audit;
     private readonly IUnitOfWork _uow;
 
     public ResultService(IResultRepository results, IPenaltyReasonRepository reasons, IResultCalculator calculator,
-        IOrganizationScope scope, ICurrentUserService currentUser, IDateTimeProvider clock, IAuditLogger audit, IUnitOfWork uow)
+        IOrganizationScope scope, ICurrentUserService currentUser, IPrivacyFilter privacy, IDateTimeProvider clock,
+        IAuditLogger audit, IUnitOfWork uow)
     {
         _results = results;
         _reasons = reasons;
         _calculator = calculator;
         _scope = scope;
         _currentUser = currentUser;
+        _privacy = privacy;
         _clock = clock;
         _audit = audit;
         _uow = uow;
@@ -231,8 +235,101 @@ public class ResultService : IResultService
                 .ToList()
         }).ToList();
 
-    public Task<ResultDetailDto> GetDetailAsync(int registrationId, CancellationToken ct = default) =>
-        throw new NotImplementedException();
+    // ============================ Kết quả cá nhân (UC-63) ============================
+
+    /// <summary>
+    /// Công khai khi giải đã công bố kết quả. Chính VĐV (hoặc người đăng ký hộ) và Staff/Organizer của BTC xem đầy đủ;
+    /// người xem khác: tên theo BR-37, không lộ lý do y tế và ghi chú của quyết định phạt.
+    /// </summary>
+    public async Task<ResultDetailDto> GetDetailAsync(int registrationId, CancellationToken ct = default)
+    {
+        var result = await _results.GetDetailByRegistrationAsync(registrationId, ct)
+                     ?? throw new NotFoundException("Chưa có kết quả của VĐV này.");
+        var registration = result.Registration;
+        var ev = registration.Event;
+        var me = _currentUser.UserId;
+        var isOwner = me is not null && (me == registration.Participant.LinkedUserId || me == registration.RegisteredByUserId);
+        var privileged = isOwner || IsOperatorOf(ev.OrganizationId);
+        if (ev.ResultsStatus == ResultsStatus.Draft && !privileged)
+            throw new NotFoundException("Chưa có kết quả của VĐV này.");
+
+        var summary = ToOrganizerRow(result);
+        if (!privileged)
+        {
+            summary.DisplayName = _privacy.PublicDisplayName(registration.FullName, registration.HideFromPublicList,
+                registration.DateOfBirth, ev.EventDate, registration.BibNumber);
+            if (summary.DisplayName != registration.FullName) summary.ClubName = null;
+        }
+
+        var checkpoints = registration.Category.Checkpoints.ToDictionary(c => c.CheckpointId);
+        var showReason = privileged || result.DnfReason != DnfReason.Medical;
+        return new ResultDetailDto
+        {
+            Summary = summary,
+            EventName = ev.Name,
+            DnfReason = showReason ? result.DnfReason?.ToString() : null,
+            DnfCheckpointName = result.DnfCheckpointId is int dnfAt && checkpoints.TryGetValue(dnfAt, out var dnfCheckpoint)
+                ? dnfCheckpoint.Name
+                : null,
+            Splits = BuildSplits(registration, ev.Policy, checkpoints),
+            Penalties = result.Penalties.Where(p => p.RevokedAt == null).OrderBy(p => p.IssuedAt)
+                .Select(p =>
+                {
+                    var dto = ToPenaltyDto(p, p.Reason.Name,
+                        p.CheckpointId is int at && checkpoints.TryGetValue(at, out var c) ? c.Name : null);
+                    if (!privileged) dto.Note = null;
+                    return dto;
+                })
+                .ToList()
+        };
+    }
+
+    /// <summary>
+    /// Thời gian tại từng checkpoint (trừ thảm xuất phát) tính từ mốc theo cơ sở xếp hạng chung của giải:
+    /// giờ chip ⇒ từ thảm xuất phát của VĐV; giờ súng ⇒ từ giờ xuất phát của cự ly. Pace đoạn = giây/km.
+    /// </summary>
+    private static IReadOnlyList<SplitDto> BuildSplits(Registration registration, EventPolicy policy,
+        IReadOnlyDictionary<int, Checkpoint> checkpoints)
+    {
+        var records = registration.TimingRecords
+            .Where(t => checkpoints.ContainsKey(t.CheckpointId))
+            .OrderBy(t => checkpoints[t.CheckpointId].Sequence)
+            .ToList();
+        var startRecord = records.FirstOrDefault(t => checkpoints[t.CheckpointId].Type == CheckpointType.Start);
+        var origin = policy.OverallRankingBasis == RankingBasis.ChipTime && startRecord is not null
+            ? startRecord.RecordedAt
+            : registration.Category.StartAt;
+
+        var splits = new List<SplitDto>();
+        long previousElapsed = 0;
+        decimal previousDistance = 0;
+        foreach (var record in records.Where(t => checkpoints[t.CheckpointId].Type != CheckpointType.Start))
+        {
+            var checkpoint = checkpoints[record.CheckpointId];
+            var elapsed = (long)(record.RecordedAt - origin).TotalMilliseconds;
+            var segmentKm = checkpoint.DistanceKm - previousDistance;
+            splits.Add(new SplitDto
+            {
+                CheckpointId = checkpoint.CheckpointId,
+                CheckpointName = checkpoint.Name,
+                DistanceKm = checkpoint.DistanceKm,
+                Sequence = checkpoint.Sequence,
+                RecordedAt = record.RecordedAt,
+                ElapsedMs = elapsed,
+                SegmentPaceSecondsPerKm = segmentKm > 0
+                    ? (int)Math.Round((elapsed - previousElapsed) / 1000m / segmentKm)
+                    : null
+            });
+            previousElapsed = elapsed;
+            previousDistance = checkpoint.DistanceKm;
+        }
+        return splits;
+    }
+
+    private bool IsOperatorOf(int organizationId) =>
+        _currentUser.IsAdminOrAbove ||
+        ((_currentUser.IsInRole(AppRoles.Organizer) || _currentUser.IsInRole(AppRoles.Staff)) &&
+         _currentUser.OrganizationId == organizationId);
 
     // ============================ Phạt / DSQ ============================
 

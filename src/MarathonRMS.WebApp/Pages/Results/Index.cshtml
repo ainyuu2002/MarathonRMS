@@ -87,7 +87,7 @@ else
                             <td class="fw-semibold">@(r.OverallRank?.ToString() ?? "—")</td>
                             <td>@r.BibNumber</td>
                             <td>
-                                @r.DisplayName
+                                <a asp-page="Detail" asp-route-registrationId="@r.RegistrationId">@r.DisplayName</a>
                                 @if (r.ClubName is not null) { <div class="small text-secondary">@r.ClubName</div> }
                             </td>
                             <td class="small">@RaceTime.GenderLabel(r.Gender)@if (r.GenderRank is int g) { <span class="text-secondary"> #@g</span> }</td>
