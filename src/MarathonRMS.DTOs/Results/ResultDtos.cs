@@ -138,4 +138,21 @@ public class PenaltyDto
     public string? CheckpointName { get; set; }
     public string? Note { get; set; }
     public DateTime IssuedAt { get; set; }
+    /// <summary>Có giá trị khi quyết định đã bị thu hồi (chỉ xuất hiện ở màn hình quản lý phạt).</summary>
+    public DateTime? RevokedAt { get; set; }
+}
+
+/// <summary>Màn hình quản lý phạt của một kết quả (UC-61): thông tin VĐV, checkpoint của cự ly, mọi quyết định đã ban hành.</summary>
+public class ResultPenaltiesDto
+{
+    public LeaderboardRowDto Result { get; set; } = new();
+    public string ResultsStatus { get; set; } = "";
+    public IReadOnlyList<ResultCheckpointOptionDto> Checkpoints { get; set; } = Array.Empty<ResultCheckpointOptionDto>();
+    public IReadOnlyList<PenaltyDto> Penalties { get; set; } = Array.Empty<PenaltyDto>();
+}
+
+public class ResultCheckpointOptionDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
 }

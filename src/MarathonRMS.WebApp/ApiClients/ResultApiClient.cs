@@ -29,4 +29,18 @@ public class ResultApiClient : ApiClientBase
 
     public Task<ResultsStatusDto> FinalizeAsync(int eventId, CancellationToken ct = default) =>
         PostAsync<ResultsStatusDto>($"api/events/{eventId}/results/official", ct);
+
+    // ---------- UC-61 DSQ / phạt ----------
+
+    public Task<List<PenaltyReasonDto>> GetPenaltyReasonsAsync(CancellationToken ct = default) =>
+        GetAsync<List<PenaltyReasonDto>>("api/results/penalty-reasons", ct);
+
+    public Task<ResultPenaltiesDto> GetPenaltiesAsync(int resultId, CancellationToken ct = default) =>
+        GetAsync<ResultPenaltiesDto>($"api/results/{resultId}/penalties", ct);
+
+    public Task<PenaltyDto> IssuePenaltyAsync(int resultId, IssuePenaltyRequest request, CancellationToken ct = default) =>
+        PostAsync<PenaltyDto>($"api/results/{resultId}/penalties", request, ct);
+
+    public Task RevokePenaltyAsync(int penaltyId, CancellationToken ct = default) =>
+        PostAsync($"api/penalties/{penaltyId}/revoke", new { }, ct);
 }

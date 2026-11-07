@@ -16,6 +16,9 @@ public interface IResultRepository
     Task<Event?> GetEventTrackedAsync(int eventId, CancellationToken ct = default);
     Task<bool> AnyForEventAsync(int eventId, CancellationToken ct = default);
     Task<int> CountOpenComplaintsAsync(int eventId, CancellationToken ct = default);
+    Task<Result?> GetWithPenaltiesAsync(int resultId, CancellationToken ct = default);
+    Task<ResultPenalty?> GetPenaltyTrackedAsync(int penaltyId, CancellationToken ct = default);
+    Task AddPenaltyAsync(ResultPenalty penalty, CancellationToken ct = default);
 }
 
 public class ResultRepository : IResultRepository
@@ -39,4 +42,9 @@ public class ResultRepository : IResultRepository
     public Task<bool> AnyForEventAsync(int eventId, CancellationToken ct = default) => _dao.AnyForEventAsync(eventId, ct);
     public Task<int> CountOpenComplaintsAsync(int eventId, CancellationToken ct = default) =>
         _dao.CountOpenComplaintsAsync(eventId, ct);
+    public Task<Result?> GetWithPenaltiesAsync(int resultId, CancellationToken ct = default) =>
+        _dao.GetWithPenaltiesAsync(resultId, ct);
+    public Task<ResultPenalty?> GetPenaltyTrackedAsync(int penaltyId, CancellationToken ct = default) =>
+        _dao.GetPenaltyTrackedAsync(penaltyId, ct);
+    public Task AddPenaltyAsync(ResultPenalty penalty, CancellationToken ct = default) => _dao.AddPenaltyAsync(penalty, ct);
 }

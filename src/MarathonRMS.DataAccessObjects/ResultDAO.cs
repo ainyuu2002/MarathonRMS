@@ -54,4 +54,25 @@ public class ResultDAO : BaseDAO<Result>
     /// <summary>Khiếu nại kết quả chưa xử lý của giải (BR-27).</summary>
     public Task<int> CountOpenComplaintsAsync(int eventId, CancellationToken ct = default) =>
         Context.ResultComplaints.CountAsync(c => c.Result.Registration.EventId == eventId && c.Status == ComplaintStatus.Open, ct);
+
+    // ---------- Phạt / DSQ (UC-61) ----------
+
+    /// <summary>Kết quả kèm đăng ký, giải, cự ly + checkpoint, nhóm tuổi và mọi quyết định phạt (kèm lý do).</summary>
+    public Task<Result?> GetWithPenaltiesAsync(int resultId, CancellationToken ct = default) =>
+        Set.AsNoTracking().AsSplitQuery()
+            .Include(r => r.Registration).ThenInclude(g => g.Event)
+            .Include(r => r.Registration).ThenInclude(g => g.Participant)
+            .Include(r => r.Registration).ThenInclude(g => g.Category).ThenInclude(c => c.Checkpoints)
+            .Include(r => r.AgeGroup)
+            .Include(r => r.Penalties).ThenInclude(p => p.Reason)
+            .FirstOrDefaultAsync(r => r.ResultId == resultId, ct);
+
+    public Task<ResultPenalty?> GetPenaltyTrackedAsync(int penaltyId, CancellationToken ct = default) =>
+        Context.ResultPenalties
+            .Include(p => p.Result).ThenInclude(r => r.Registration).ThenInclude(g => g.Event)
+            .Include(p => p.Result).ThenInclude(r => r.Registration).ThenInclude(g => g.Participant)
+            .FirstOrDefaultAsync(p => p.PenaltyId == penaltyId, ct);
+
+    public async Task AddPenaltyAsync(ResultPenalty penalty, CancellationToken ct = default) =>
+        await Context.ResultPenalties.AddAsync(penalty, ct);
 }

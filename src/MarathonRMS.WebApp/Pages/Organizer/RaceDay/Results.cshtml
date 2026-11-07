@@ -117,7 +117,7 @@ else
                     <tr>
                         <th>Hạng</th><th>BIB</th><th>Họ tên</th><th>Cự ly</th><th>Giới tính</th><th>Nhóm tuổi</th>
                         <th class="text-end">Giờ súng</th><th class="text-end">Giờ chip</th><th class="text-end">Phạt</th>
-                        <th class="text-end">Thành tích</th><th>Trạng thái</th>
+                        <th class="text-end">Thành tích</th><th>Trạng thái</th><th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -135,6 +135,9 @@ else
                         <td class="text-end small">@(r.PenaltySeconds > 0 ? $"+{r.PenaltySeconds / 60}′" : "")</td>
                         <td class="text-end font-monospace fw-semibold">@RaceTime.Format(r.FinalTimeMs)</td>
                         <td><status-badge status="@r.Status" /></td>
+                        <td class="text-end">
+                            <a asp-page="Penalties" asp-route-resultId="@r.ResultId" class="btn btn-sm btn-outline-danger" title="Phạt / DSQ"><i class="bi bi-flag"></i></a>
+                        </td>
                     </tr>
                 }
                 </tbody>

@@ -8,22 +8,29 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.Services.RaceDay;
 
-/// <summary>UC-59 – tính kết quả của giải; UC-60 – công bố tạm thời / chính thức (BR-27).</summary>
+/// <summary>
+/// UC-59 – tính kết quả của giải; UC-60 – công bố tạm thời / chính thức (BR-27);
+/// UC-61 – DSQ, phạt cộng phút (UC-67), thu hồi phạt (BR-28, BR-32, BR-36).
+/// </summary>
 public class ResultService : IResultService
 {
     private readonly IResultRepository _results;
+    private readonly IPenaltyReasonRepository _reasons;
     private readonly IResultCalculator _calculator;
     private readonly IOrganizationScope _scope;
+    private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
     private readonly IAuditLogger _audit;
     private readonly IUnitOfWork _uow;
 
-    public ResultService(IResultRepository results, IResultCalculator calculator, IOrganizationScope scope,
-        IDateTimeProvider clock, IAuditLogger audit, IUnitOfWork uow)
+    public ResultService(IResultRepository results, IPenaltyReasonRepository reasons, IResultCalculator calculator,
+        IOrganizationScope scope, ICurrentUserService currentUser, IDateTimeProvider clock, IAuditLogger audit, IUnitOfWork uow)
     {
         _results = results;
+        _reasons = reasons;
         _calculator = calculator;
         _scope = scope;
+        _currentUser = currentUser;
         _clock = clock;
         _audit = audit;
         _uow = uow;
@@ -169,13 +176,159 @@ public class ResultService : IResultService
     public Task<ResultDetailDto> GetDetailAsync(int registrationId, CancellationToken ct = default) =>
         throw new NotImplementedException();
 
-    public Task<IReadOnlyList<PenaltyReasonDto>> GetPenaltyReasonsAsync(CancellationToken ct = default) =>
-        throw new NotImplementedException();
+    // ============================ Phạt / DSQ ============================
 
-    public Task<PenaltyDto> IssuePenaltyAsync(int resultId, IssuePenaltyRequest request, CancellationToken ct = default) =>
-        throw new NotImplementedException();
+    public async Task<IReadOnlyList<PenaltyReasonDto>> GetPenaltyReasonsAsync(CancellationToken ct = default) =>
+        (await _reasons.Query().Where(r => r.IsActive).OrderBy(r => r.Name).ToListAsync(ct))
+        .Select(r => new PenaltyReasonDto
+        {
+            Code = r.Code,
+            Name = r.Name,
+            DefaultAction = r.DefaultAction.ToString(),
+            DefaultMinutes = r.DefaultMinutes
+        }).ToList();
 
-    public Task RevokePenaltyAsync(int penaltyId, CancellationToken ct = default) => throw new NotImplementedException();
+    public async Task<ResultPenaltiesDto> GetPenaltiesAsync(int resultId, CancellationToken ct = default)
+    {
+        var result = await _results.GetWithPenaltiesAsync(resultId, ct) ?? throw new NotFoundException("Không tìm thấy kết quả.");
+        _scope.EnsureCanManage(result.Registration.Event.OrganizationId);
+        var checkpoints = result.Registration.Category.Checkpoints.OrderBy(c => c.Sequence).ToList();
+
+        return new ResultPenaltiesDto
+        {
+            Result = ToOrganizerRow(result),
+            ResultsStatus = result.Registration.Event.ResultsStatus.ToString(),
+            Checkpoints = checkpoints.Select(c => new ResultCheckpointOptionDto { Id = c.CheckpointId, Name = c.Name }).ToList(),
+            Penalties = result.Penalties.OrderByDescending(p => p.IssuedAt)
+                .Select(p => ToPenaltyDto(p, p.Reason.Name, checkpoints.FirstOrDefault(c => c.CheckpointId == p.CheckpointId)?.Name))
+                .ToList()
+        };
+    }
+
+    public async Task<PenaltyDto> IssuePenaltyAsync(int resultId, IssuePenaltyRequest request, CancellationToken ct = default)
+    {
+        var result = await _results.GetWithPenaltiesAsync(resultId, ct) ?? throw new NotFoundException("Không tìm thấy kết quả.");
+        var registration = result.Registration;
+        var ev = registration.Event;
+        _scope.EnsureCanManage(ev.OrganizationId);
+        await _scope.EnsureOrganizationActiveAsync(ev.OrganizationId, ct);
+        _scope.EnsureNotOwnRegistration(registration.Participant.LinkedUserId, registration.RegisteredByUserId);
+        if (ev.ResultsStatus == ResultsStatus.Official)
+            throw new BusinessRuleException("BR-27", "Kết quả của giải đã chính thức – không thể ban hành quyết định phạt.");
+
+        var reason = await _reasons.GetTrackedAsync(request.ReasonCode.Trim(), ct);
+        if (reason is null || !reason.IsActive)
+            throw new BusinessRuleException("BR-28", "Lý do phạt phải chọn trong danh mục đang áp dụng.", 400);
+
+        var action = Enum.Parse<PenaltyAction>(request.Action, ignoreCase: true);
+        int? minutes = null;
+        if (action == PenaltyAction.TimePenalty)
+        {
+            minutes = request.Minutes ?? reason.DefaultMinutes;
+            if (minutes is null or <= 0)
+                throw new BusinessRuleException(ErrorCodes.Validation, "Phạt cộng giờ phải ghi số phút.", 400);
+        }
+        if (action == PenaltyAction.DSQ && result.Penalties.Any(p => p.RevokedAt == null && p.Action == PenaltyAction.DSQ))
+            throw new BusinessRuleException("BR-28", "VĐV đã bị truất quyền thi đấu (DSQ).");
+
+        var checkpoints = registration.Category.Checkpoints;
+        if (request.CheckpointId is int checkpointId && checkpoints.All(c => c.CheckpointId != checkpointId))
+            throw new BusinessRuleException(ErrorCodes.Validation, "Checkpoint không thuộc cự ly của VĐV.", 400);
+
+        var penalty = new ResultPenalty
+        {
+            ResultId = result.ResultId,
+            ReasonCode = reason.Code,
+            Action = action,
+            Minutes = minutes,
+            CheckpointId = request.CheckpointId,
+            Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+            IssuedById = _currentUser.UserId!,
+            IssuedAt = _clock.Now
+        };
+
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        await _results.AddPenaltyAsync(penalty, ct);
+        await _uow.SaveChangesAsync(ct);
+        await _audit.LogAsync("Result.Penalty", nameof(ResultPenalty), penalty.PenaltyId.ToString(), null,
+            new { result.ResultId, registration.BibNumber, penalty.ReasonCode, Action = action.ToString(), penalty.Minutes, penalty.Note }, ct);
+        if (action != PenaltyAction.Warning)
+            await RecalculateEventAsync(ev.EventId, ct);
+        await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        return ToPenaltyDto(penalty, reason.Name, checkpoints.FirstOrDefault(c => c.CheckpointId == penalty.CheckpointId)?.Name);
+    }
+
+    public async Task RevokePenaltyAsync(int penaltyId, CancellationToken ct = default)
+    {
+        var penalty = await _results.GetPenaltyTrackedAsync(penaltyId, ct)
+                      ?? throw new NotFoundException("Không tìm thấy quyết định phạt.");
+        var registration = penalty.Result.Registration;
+        var ev = registration.Event;
+        _scope.EnsureCanManage(ev.OrganizationId);
+        await _scope.EnsureOrganizationActiveAsync(ev.OrganizationId, ct);
+        _scope.EnsureNotOwnRegistration(registration.Participant.LinkedUserId, registration.RegisteredByUserId);
+        if (ev.ResultsStatus == ResultsStatus.Official)
+            throw new BusinessRuleException("BR-27", "Kết quả của giải đã chính thức – không thể thu hồi quyết định phạt.");
+        if (penalty.RevokedAt is not null)
+            throw new BusinessRuleException(ErrorCodes.Conflict, "Quyết định phạt đã được thu hồi.");
+
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        penalty.RevokedAt = _clock.Now;
+        await _audit.LogAsync("Result.PenaltyRevoke", nameof(ResultPenalty), penaltyId.ToString(),
+            new { penalty.ReasonCode, Action = penalty.Action.ToString(), penalty.Minutes },
+            new { penalty.RevokedAt }, ct);
+        await _uow.SaveChangesAsync(ct);
+        if (penalty.Action != PenaltyAction.Warning)
+            await RecalculateEventAsync(ev.EventId, ct);
+        await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+    }
+
+    /// <summary>Sau khi phạt / thu hồi phạt: tính lại trạng thái, thời gian và hạng của toàn giải.</summary>
+    private async Task RecalculateEventAsync(int eventId, CancellationToken ct)
+    {
+        var ev = await _results.GetEventForResultsAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
+        await RecalculateAsync(ev, ct);
+    }
+
+    private static PenaltyDto ToPenaltyDto(ResultPenalty p, string reasonName, string? checkpointName) => new()
+    {
+        Id = p.PenaltyId,
+        ReasonCode = p.ReasonCode,
+        ReasonName = reasonName,
+        Action = p.Action.ToString(),
+        Minutes = p.Minutes,
+        CheckpointName = checkpointName,
+        Note = p.Note,
+        IssuedAt = p.IssuedAt,
+        RevokedAt = p.RevokedAt
+    };
+
+    private static LeaderboardRowDto ToOrganizerRow(Result r) => new()
+    {
+        ResultId = r.ResultId,
+        RegistrationId = r.RegistrationId,
+        EventId = r.Registration.EventId,
+        CategoryId = r.Registration.CategoryId,
+        CategoryName = r.Registration.Category.Name,
+        BibNumber = r.Registration.BibNumber,
+        DisplayName = r.Registration.FullName,
+        Gender = r.Registration.Gender.ToString(),
+        AgeGroupId = r.AgeGroupId,
+        AgeGroupName = r.AgeGroup?.Name,
+        ClubName = r.Registration.ClubName,
+        GunTimeMs = r.GunTimeMs,
+        ChipTimeMs = r.ChipTimeMs,
+        FinalTimeMs = r.FinalTimeMs,
+        PenaltySeconds = r.PenaltySeconds,
+        Status = r.Status.ToString(),
+        OverallRank = r.OverallRank,
+        GenderRank = r.GenderRank,
+        AgeGroupRank = r.AgeGroupRank,
+        IsProvisional = r.Registration.Event.ResultsStatus == ResultsStatus.Provisional
+    };
 
     // ============================ Tính kết quả ============================
 

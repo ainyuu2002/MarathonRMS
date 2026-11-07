@@ -89,6 +89,9 @@ public interface IResultService
 
     Task<IReadOnlyList<PenaltyReasonDto>> GetPenaltyReasonsAsync(CancellationToken ct = default);
 
+    /// <summary>Thông tin VĐV + mọi quyết định phạt (kể cả đã thu hồi) cho màn hình quản lý phạt.</summary>
+    Task<ResultPenaltiesDto> GetPenaltiesAsync(int resultId, CancellationToken ct = default);
+
     /// <summary>UC-61 (DSQ) / UC-67 (phạt cộng phút – GĐ2). BR-28, BR-32, ghi nhật ký (BR-36). Sau đó tính lại hạng.</summary>
     Task<PenaltyDto> IssuePenaltyAsync(int resultId, IssuePenaltyRequest request, CancellationToken ct = default);
 
