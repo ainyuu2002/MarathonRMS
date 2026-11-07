@@ -21,4 +21,12 @@ public class ResultApiClient : ApiClientBase
 
     public Task<ResultCalculationSummaryDto> CalculateAsync(int eventId, CancellationToken ct = default) =>
         PostAsync<ResultCalculationSummaryDto>($"api/events/{eventId}/results/calculate", ct);
+
+    // ---------- UC-60 công bố ----------
+
+    public Task<ResultsStatusDto> PublishProvisionalAsync(int eventId, CancellationToken ct = default) =>
+        PostAsync<ResultsStatusDto>($"api/events/{eventId}/results/provisional", ct);
+
+    public Task<ResultsStatusDto> FinalizeAsync(int eventId, CancellationToken ct = default) =>
+        PostAsync<ResultsStatusDto>($"api/events/{eventId}/results/official", ct);
 }

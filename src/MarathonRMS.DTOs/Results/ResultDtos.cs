@@ -84,6 +84,11 @@ public class ResultsOverviewDto
     /// <summary>Lần cập nhật kết quả gần nhất (tính lại, ghi nhận bỏ cuộc…).</summary>
     public DateTime? LastUpdatedAt { get; set; }
     public bool CanCalculate { get; set; }
+    public bool CanPublishProvisional { get; set; }
+    public bool CanFinalize { get; set; }
+    /// <summary>Hết hạn nhận khiếu nại = lúc công bố tạm thời + ComplaintWindowMinutes (BR-27).</summary>
+    public DateTime? ComplaintWindowEndsAt { get; set; }
+    public int OpenComplaints { get; set; }
     public IReadOnlyList<ResultCategoryOptionDto> Categories { get; set; } = Array.Empty<ResultCategoryOptionDto>();
 }
 

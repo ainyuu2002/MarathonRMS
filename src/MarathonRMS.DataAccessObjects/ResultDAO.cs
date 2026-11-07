@@ -42,4 +42,16 @@ public class ResultDAO : BaseDAO<Result>
 
     public Task<DateTime?> GetLastUpdatedAtAsync(int eventId, CancellationToken ct = default) =>
         Set.AsNoTracking().Where(r => r.Registration.EventId == eventId).MaxAsync(r => (DateTime?)r.UpdatedAt, ct);
+
+    // ---------- Công bố (UC-60) ----------
+
+    public Task<Event?> GetEventTrackedAsync(int eventId, CancellationToken ct = default) =>
+        Context.Events.Include(e => e.Policy).FirstOrDefaultAsync(e => e.EventId == eventId, ct);
+
+    public Task<bool> AnyForEventAsync(int eventId, CancellationToken ct = default) =>
+        Set.AnyAsync(r => r.Registration.EventId == eventId, ct);
+
+    /// <summary>Khiếu nại kết quả chưa xử lý của giải (BR-27).</summary>
+    public Task<int> CountOpenComplaintsAsync(int eventId, CancellationToken ct = default) =>
+        Context.ResultComplaints.CountAsync(c => c.Result.Registration.EventId == eventId && c.Status == ComplaintStatus.Open, ct);
 }

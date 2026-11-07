@@ -34,15 +34,44 @@
         </div>
     </div>
     <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span class="small text-secondary">
-            @(o.LastUpdatedAt is DateTime updated ? $"Cập nhật lần cuối {updated:HH:mm dd/MM/yyyy}" : "Chưa tính kết quả")
-        </span>
-        <div class="d-flex gap-2">
+        <div class="small text-secondary">
+            <div>@(o.LastUpdatedAt is DateTime updated ? $"Cập nhật lần cuối {updated:HH:mm dd/MM/yyyy}" : "Chưa tính kết quả")</div>
+            @if (o.ProvisionalAt is DateTime provisional)
+            {
+                <div>Công bố tạm thời @provisional.ToString("HH:mm dd/MM/yyyy")@(o.ComplaintWindowEndsAt is DateTime ends && o.ResultsStatus == "Provisional" ? $" · nhận khiếu nại đến {ends:HH:mm dd/MM/yyyy}" : "")</div>
+            }
+            @if (o.OfficialAt is DateTime official)
+            {
+                <div>Công bố chính thức @official.ToString("HH:mm dd/MM/yyyy")</div>
+            }
+            @if (o.OpenComplaints > 0)
+            {
+                <div class="text-danger">Còn @o.OpenComplaints khiếu nại chưa xử lý.</div>
+            }
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
             @if (o.CanCalculate)
             {
                 <form method="post" asp-page-handler="Calculate" asp-route-eventId="@Model.EventId" class="d-inline"
                       onsubmit="return confirm('Tính lại kết quả của toàn bộ giải từ dữ liệu bấm giờ hiện có?');">
-                    <button class="btn btn-primary btn-sm"><i class="bi bi-calculator"></i> Tính kết quả</button>
+                    <button class="btn btn-outline-primary btn-sm"><i class="bi bi-calculator"></i> Tính kết quả</button>
+                </form>
+            }
+            @if (o.CanPublishProvisional)
+            {
+                <form method="post" asp-page-handler="Provisional" asp-route-eventId="@Model.EventId" class="d-inline"
+                      onsubmit="return confirm('Công bố kết quả TẠM THỜI? VĐV sẽ xem được và có thể khiếu nại.');">
+                    <button class="btn btn-warning btn-sm"><i class="bi bi-megaphone"></i> Công bố tạm thời</button>
+                </form>
+            }
+            @if (o.ResultsStatus == "Provisional")
+            {
+                <form method="post" asp-page-handler="Official" asp-route-eventId="@Model.EventId" class="d-inline"
+                      onsubmit="return confirm('Công bố kết quả CHÍNH THỨC? Sau đó không thể tính lại hay thay đổi kết quả.');">
+                    <button class="btn btn-success btn-sm" disabled="@(!o.CanFinalize)"
+                            title="@(o.CanFinalize ? "" : "Chỉ công bố chính thức sau khi hết hạn khiếu nại và mọi khiếu nại đã xử lý")">
+                        <i class="bi bi-patch-check"></i> Công bố chính thức
+                    </button>
                 </form>
             }
         </div>

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MarathonRMS.WebApp.Pages.Organizer.RaceDay;
 
-/// <summary>UC-59 – tính và rà soát kết quả của giải.</summary>
+/// <summary>UC-59 – tính và rà soát kết quả; UC-60 – công bố tạm thời / chính thức.</summary>
 public class ResultsModel : BasePageModel
 {
     private readonly ResultApiClient _results;
@@ -36,6 +36,28 @@ public class ResultsModel : BasePageModel
             var summary = await _results.CalculateAsync(EventId, ct);
             StatusMessage = $"Đã tính kết quả: {summary.Finished} hoàn thành, {summary.Dnf} DNF, {summary.Dns} DNS, {summary.Dsq} DSQ.";
             Notes = summary.Warnings.Count > 0 ? string.Join("\n", summary.Warnings) : null;
+            return RedirectToPage(new { eventId = EventId });
+        }
+        catch (ApiException ex) { return await HandleAndReloadAsync(ex, ct); }
+    }
+
+    public async Task<IActionResult> OnPostProvisionalAsync(CancellationToken ct)
+    {
+        try
+        {
+            var status = await _results.PublishProvisionalAsync(EventId, ct);
+            StatusMessage = $"Đã công bố kết quả tạm thời lúc {status.ProvisionalAt:HH:mm dd/MM/yyyy}. VĐV có thể xem và khiếu nại.";
+            return RedirectToPage(new { eventId = EventId });
+        }
+        catch (ApiException ex) { return await HandleAndReloadAsync(ex, ct); }
+    }
+
+    public async Task<IActionResult> OnPostOfficialAsync(CancellationToken ct)
+    {
+        try
+        {
+            var status = await _results.FinalizeAsync(EventId, ct);
+            StatusMessage = $"Đã công bố kết quả chính thức lúc {status.OfficialAt:HH:mm dd/MM/yyyy}.";
             return RedirectToPage(new { eventId = EventId });
         }
         catch (ApiException ex) { return await HandleAndReloadAsync(ex, ct); }

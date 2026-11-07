@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.Services.RaceDay;
 
-/// <summary>UC-59 – tính kết quả của giải; Organizer rà soát kết quả trước khi công bố.</summary>
+/// <summary>UC-59 – tính kết quả của giải; UC-60 – công bố tạm thời / chính thức (BR-27).</summary>
 public class ResultService : IResultService
 {
     private readonly IResultRepository _results;
@@ -48,6 +48,8 @@ public class ResultService : IResultService
     {
         var ev = await LoadEventAsync(eventId, ct);
         var counts = await _results.CountByStatusAsync(eventId, ct);
+        var windowEndsAt = ev.ResultsProvisionalAt?.AddMinutes(ev.Policy.ComplaintWindowMinutes);
+        var openComplaints = ev.ResultsStatus == ResultsStatus.Provisional ? await _results.CountOpenComplaintsAsync(eventId, ct) : 0;
         return new ResultsOverviewDto
         {
             EventId = ev.EventId,
@@ -63,6 +65,10 @@ public class ResultService : IResultService
             Dsq = counts.GetValueOrDefault(ResultStatus.DSQ),
             LastUpdatedAt = await _results.GetLastUpdatedAtAsync(eventId, ct),
             CanCalculate = CanCalculate(ev),
+            CanPublishProvisional = ev.ResultsStatus == ResultsStatus.Draft && counts.Values.Sum() > 0,
+            CanFinalize = ev.ResultsStatus == ResultsStatus.Provisional && _clock.Now >= windowEndsAt && openComplaints == 0,
+            ComplaintWindowEndsAt = windowEndsAt,
+            OpenComplaints = openComplaints,
             Categories = ev.Categories.OrderBy(c => c.StartAt).ThenBy(c => c.Name)
                 .Select(c => new ResultCategoryOptionDto { Id = c.CategoryId, Name = c.Name, IsTimed = c.IsTimed, IsRanked = c.IsRanked })
                 .ToList()
@@ -120,11 +126,43 @@ public class ResultService : IResultService
         return new PagedResult<LeaderboardRowDto> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
     }
 
-    public Task<ResultsStatusDto> PublishProvisionalAsync(int eventId, CancellationToken ct = default) =>
-        throw new NotImplementedException();
+    public async Task<ResultsStatusDto> PublishProvisionalAsync(int eventId, CancellationToken ct = default)
+    {
+        var ev = await LoadEventForStatusChangeAsync(eventId, ct);
+        if (ev.ResultsStatus != ResultsStatus.Draft)
+            throw new BusinessRuleException("BR-27", "Kết quả của giải đã được công bố.");
+        if (!await _results.AnyForEventAsync(eventId, ct))
+            throw new BusinessRuleException("BR-27", "Chưa có kết quả – hãy tính kết quả trước khi công bố.");
 
-    public Task<ResultsStatusDto> FinalizeAsync(int eventId, CancellationToken ct = default) =>
-        throw new NotImplementedException();
+        ev.ResultsStatus = ResultsStatus.Provisional;
+        ev.ResultsProvisionalAt = _clock.Now;
+        await _audit.LogAsync("Result.PublishProvisional", nameof(Event), eventId.ToString(),
+            new { ResultsStatus = nameof(ResultsStatus.Draft) },
+            new { ResultsStatus = nameof(ResultsStatus.Provisional), ev.ResultsProvisionalAt }, ct);
+        await _uow.SaveChangesAsync(ct);
+        return ToStatusDto(ev);
+    }
+
+    public async Task<ResultsStatusDto> FinalizeAsync(int eventId, CancellationToken ct = default)
+    {
+        var ev = await LoadEventForStatusChangeAsync(eventId, ct);
+        if (ev.ResultsStatus != ResultsStatus.Provisional)
+            throw new BusinessRuleException("BR-27", "Chỉ công bố chính thức khi kết quả đang ở trạng thái tạm thời.");
+        var windowEndsAt = ev.ResultsProvisionalAt!.Value.AddMinutes(ev.Policy.ComplaintWindowMinutes);
+        if (_clock.Now < windowEndsAt)
+            throw new BusinessRuleException("BR-27", $"Còn trong thời gian nhận khiếu nại (đến {windowEndsAt:HH:mm dd/MM/yyyy}).");
+        var openComplaints = await _results.CountOpenComplaintsAsync(eventId, ct);
+        if (openComplaints > 0)
+            throw new BusinessRuleException("BR-27", $"Còn {openComplaints} khiếu nại chưa xử lý.");
+
+        ev.ResultsStatus = ResultsStatus.Official;
+        ev.ResultsOfficialAt = _clock.Now;
+        await _audit.LogAsync("Result.Finalize", nameof(Event), eventId.ToString(),
+            new { ResultsStatus = nameof(ResultsStatus.Provisional) },
+            new { ResultsStatus = nameof(ResultsStatus.Official), ev.ResultsOfficialAt }, ct);
+        await _uow.SaveChangesAsync(ct);
+        return ToStatusDto(ev);
+    }
 
     public IQueryable<LeaderboardRowDto> QueryLeaderboard() => throw new NotImplementedException();
 
@@ -270,6 +308,22 @@ public class ResultService : IResultService
         _scope.EnsureCanManage(ev.OrganizationId);
         return ev;
     }
+
+    private async Task<Event> LoadEventForStatusChangeAsync(int eventId, CancellationToken ct)
+    {
+        var ev = await _results.GetEventTrackedAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
+        _scope.EnsureCanManage(ev.OrganizationId);
+        await _scope.EnsureOrganizationActiveAsync(ev.OrganizationId, ct);
+        return ev;
+    }
+
+    private static ResultsStatusDto ToStatusDto(Event ev) => new()
+    {
+        EventId = ev.EventId,
+        ResultsStatus = ev.ResultsStatus.ToString(),
+        ProvisionalAt = ev.ResultsProvisionalAt,
+        OfficialAt = ev.ResultsOfficialAt
+    };
 
     private bool CanCalculate(Event ev) =>
         ev.ResultsStatus != ResultsStatus.Official &&

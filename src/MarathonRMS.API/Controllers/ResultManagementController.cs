@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MarathonRMS.API.Controllers;
 
-/// <summary>UC-59 – Organizer tính và rà soát kết quả của giải.</summary>
+/// <summary>UC-59 – Organizer tính và rà soát kết quả; UC-60 – công bố tạm thời / chính thức.</summary>
 [ApiController]
 [Route("api/events/{eventId:int}/results")]
 [Authorize(Policy = AppPolicies.OrganizerOnly)]
@@ -28,4 +28,12 @@ public class ResultManagementController : ControllerBase
     [HttpPost("calculate")]
     public async Task<ActionResult<ResultCalculationSummaryDto>> Calculate(int eventId, CancellationToken ct) =>
         Ok(await _results.CalculateAsync(eventId, ct));
+
+    [HttpPost("provisional")]
+    public async Task<ActionResult<ResultsStatusDto>> PublishProvisional(int eventId, CancellationToken ct) =>
+        Ok(await _results.PublishProvisionalAsync(eventId, ct));
+
+    [HttpPost("official")]
+    public async Task<ActionResult<ResultsStatusDto>> Finalize(int eventId, CancellationToken ct) =>
+        Ok(await _results.FinalizeAsync(eventId, ct));
 }
