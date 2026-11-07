@@ -38,6 +38,7 @@ else
                         <td><status-badge status="@e.Status" /></td>
                         <td class="text-end text-nowrap">
                             <a asp-page="Bibs" asp-route-eventId="@e.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-123"></i> Gán BIB</a>
+                            <a asp-page="Results" asp-route-eventId="@e.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-list-ol"></i> Kết quả</a>
                         </td>
                     </tr>
                 }

@@ -68,6 +68,13 @@ public interface IResultService
     /// </summary>
     Task<ResultCalculationSummaryDto> CalculateAsync(int eventId, CancellationToken ct = default);
 
+    /// <summary>Tình hình kết quả của giải cho Organizer (số lượng theo trạng thái, thao tác được phép).</summary>
+    Task<ResultsOverviewDto> GetOverviewAsync(int eventId, CancellationToken ct = default);
+
+    /// <summary>Danh sách kết quả cho Organizer – đủ họ tên, mọi trạng thái – để rà soát trước khi công bố.</summary>
+    Task<PagedResult<LeaderboardRowDto>> GetForOrganizerAsync(int eventId, int? categoryId, string? status, string? keyword,
+        int page, int pageSize, CancellationToken ct = default);
+
     /// <summary>BR-27: Draft → Provisional (công khai, nhận khiếu nại). Ghi nhật ký.</summary>
     Task<ResultsStatusDto> PublishProvisionalAsync(int eventId, CancellationToken ct = default);
 

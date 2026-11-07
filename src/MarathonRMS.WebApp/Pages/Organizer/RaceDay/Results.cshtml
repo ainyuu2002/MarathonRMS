@@ -1,0 +1,116 @@
+@page "{eventId:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.RaceDay.ResultsModel
+@{
+    ViewData["Title"] = "Kết quả";
+    var o = Model.Overview;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Kết quả</h1>
+        <p class="text-secondary mb-0">@o.EventName · @o.EventDate.ToString("dd/MM/yyyy") <status-badge status="@o.ResultsStatus" /></p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Ngày thi</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+@if (!string.IsNullOrEmpty(Model.Notes))
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        @foreach (var line in Model.Notes.Split('\n'))
+        {
+            <div>@line</div>
+        }
+    </div>
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 text-center">
+            <div class="col-6 col-md-3"><div class="fs-3 fw-semibold text-success">@o.Finished</div><div class="small text-secondary">Hoàn thành</div></div>
+            <div class="col-6 col-md-3"><div class="fs-3 fw-semibold text-warning">@o.Dnf</div><div class="small text-secondary">DNF</div></div>
+            <div class="col-6 col-md-3"><div class="fs-3 fw-semibold text-secondary">@o.Dns</div><div class="small text-secondary">DNS</div></div>
+            <div class="col-6 col-md-3"><div class="fs-3 fw-semibold text-danger">@o.Dsq</div><div class="small text-secondary">DSQ</div></div>
+        </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span class="small text-secondary">
+            @(o.LastUpdatedAt is DateTime updated ? $"Cập nhật lần cuối {updated:HH:mm dd/MM/yyyy}" : "Chưa tính kết quả")
+        </span>
+        <div class="d-flex gap-2">
+            @if (o.CanCalculate)
+            {
+                <form method="post" asp-page-handler="Calculate" asp-route-eventId="@Model.EventId" class="d-inline"
+                      onsubmit="return confirm('Tính lại kết quả của toàn bộ giải từ dữ liệu bấm giờ hiện có?');">
+                    <button class="btn btn-primary btn-sm"><i class="bi bi-calculator"></i> Tính kết quả</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <select name="CategoryId" class="form-select" aria-label="Cự ly">
+            <option value="">Mọi cự ly</option>
+            @foreach (var c in o.Categories.Where(c => c.IsTimed))
+            {
+                <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="Status" class="form-select" aria-label="Trạng thái">
+            <option value="">Mọi trạng thái</option>
+            @foreach (var s in new[] { "Finished", "DNF", "DNS", "DSQ" })
+            {
+                <option value="@s" selected="@(Model.Status == s)">@(s == "Finished" ? "Hoàn thành" : s)</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-4"><input name="Keyword" value="@Model.Keyword" class="form-control" placeholder="Số BIB hoặc họ tên" /></div>
+    <div class="col-md-2 d-grid"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i> Lọc</button></div>
+</form>
+
+@if (Model.Rows.Items.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-list-ol fs-1"></i>
+        <p class="mt-2 mb-0">Chưa có kết quả phù hợp.</p>
+    </div>
+}
+else
+{
+    <div class="card mb-2">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Hạng</th><th>BIB</th><th>Họ tên</th><th>Cự ly</th><th>Giới tính</th><th>Nhóm tuổi</th>
+                        <th class="text-end">Giờ súng</th><th class="text-end">Giờ chip</th><th class="text-end">Phạt</th>
+                        <th class="text-end">Thành tích</th><th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var r in Model.Rows.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@(r.OverallRank?.ToString() ?? "—")</td>
+                        <td>@r.BibNumber</td>
+                        <td>@r.DisplayName@if (r.ClubName is not null) { <div class="small text-secondary">@r.ClubName</div> }</td>
+                        <td class="small">@r.CategoryName</td>
+                        <td class="small">@RaceTime.GenderLabel(r.Gender)@if (r.GenderRank is int g) { <span class="text-secondary"> #@g</span> }</td>
+                        <td class="small">@(r.AgeGroupName ?? "—")@if (r.AgeGroupRank is int a) { <span class="text-secondary"> #@a</span> }</td>
+                        <td class="text-end font-monospace small">@RaceTime.Format(r.GunTimeMs)</td>
+                        <td class="text-end font-monospace small">@RaceTime.Format(r.ChipTimeMs)</td>
+                        <td class="text-end small">@(r.PenaltySeconds > 0 ? $"+{r.PenaltySeconds / 60}′" : "")</td>
+                        <td class="text-end font-monospace fw-semibold">@RaceTime.Format(r.FinalTimeMs)</td>
+                        <td><status-badge status="@r.Status" /></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <partial name="_Pager" model="PagerModel.From(Model.Rows, new { Model.EventId, Model.CategoryId, Model.Status, Model.Keyword })" />
+}

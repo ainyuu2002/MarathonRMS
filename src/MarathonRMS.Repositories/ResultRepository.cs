@@ -1,0 +1,35 @@
+using MarathonRMS.BusinessObjects.Entities;
+using MarathonRMS.BusinessObjects.Enums;
+using MarathonRMS.DataAccessObjects;
+
+namespace MarathonRMS.Repositories;
+
+public interface IResultRepository
+{
+    Task<Event?> GetEventForResultsAsync(int eventId, CancellationToken ct = default);
+    Task<List<Registration>> GetConfirmedWithTimingAsync(int eventId, CancellationToken ct = default);
+    Task<List<Result>> GetTrackedByEventAsync(int eventId, CancellationToken ct = default);
+    IQueryable<Result> QueryByEvent(int eventId);
+    Task<Dictionary<ResultStatus, int>> CountByStatusAsync(int eventId, CancellationToken ct = default);
+    Task<DateTime?> GetLastUpdatedAtAsync(int eventId, CancellationToken ct = default);
+    Task AddAsync(Result result, CancellationToken ct = default);
+}
+
+public class ResultRepository : IResultRepository
+{
+    private readonly ResultDAO _dao;
+    public ResultRepository(ResultDAO dao) => _dao = dao;
+
+    public Task<Event?> GetEventForResultsAsync(int eventId, CancellationToken ct = default) =>
+        _dao.GetEventForResultsAsync(eventId, ct);
+    public Task<List<Registration>> GetConfirmedWithTimingAsync(int eventId, CancellationToken ct = default) =>
+        _dao.GetConfirmedWithTimingAsync(eventId, ct);
+    public Task<List<Result>> GetTrackedByEventAsync(int eventId, CancellationToken ct = default) =>
+        _dao.GetTrackedByEventAsync(eventId, ct);
+    public IQueryable<Result> QueryByEvent(int eventId) => _dao.QueryByEvent(eventId);
+    public Task<Dictionary<ResultStatus, int>> CountByStatusAsync(int eventId, CancellationToken ct = default) =>
+        _dao.CountByStatusAsync(eventId, ct);
+    public Task<DateTime?> GetLastUpdatedAtAsync(int eventId, CancellationToken ct = default) =>
+        _dao.GetLastUpdatedAtAsync(eventId, ct);
+    public Task AddAsync(Result result, CancellationToken ct = default) => _dao.AddAsync(result, ct);
+}

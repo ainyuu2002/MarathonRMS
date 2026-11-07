@@ -67,6 +67,34 @@ public class ResultCalculationSummaryDto
     public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
 }
 
+/// <summary>Tình hình kết quả của một giải trên màn hình Organizer (UC-59).</summary>
+public class ResultsOverviewDto
+{
+    public int EventId { get; set; }
+    public string EventName { get; set; } = "";
+    public DateOnly EventDate { get; set; }
+    public string EventStatus { get; set; } = "";
+    public string ResultsStatus { get; set; } = "";
+    public DateTime? ProvisionalAt { get; set; }
+    public DateTime? OfficialAt { get; set; }
+    public int Finished { get; set; }
+    public int Dnf { get; set; }
+    public int Dns { get; set; }
+    public int Dsq { get; set; }
+    /// <summary>Lần cập nhật kết quả gần nhất (tính lại, ghi nhận bỏ cuộc…).</summary>
+    public DateTime? LastUpdatedAt { get; set; }
+    public bool CanCalculate { get; set; }
+    public IReadOnlyList<ResultCategoryOptionDto> Categories { get; set; } = Array.Empty<ResultCategoryOptionDto>();
+}
+
+public class ResultCategoryOptionDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public bool IsTimed { get; set; }
+    public bool IsRanked { get; set; }
+}
+
 public class ResultsStatusDto
 {
     public int EventId { get; set; }
