@@ -32,4 +32,9 @@ public class RaceDayApiClient : ApiClientBase
 
     public Task<List<RaceKitLookupItemDto>> LookupRaceKitAsync(int eventId, string keyword, CancellationToken ct = default) =>
         GetAsync<List<RaceKitLookupItemDto>>(Query($"api/race-day/events/{eventId}/race-kit", ("keyword", keyword)), ct);
+
+    // ---------- UC-53 phát race kit ----------
+
+    public Task<RaceKitPickupDto> PickupRaceKitAsync(int registrationId, RaceKitPickupRequest request, CancellationToken ct = default) =>
+        PostAsync<RaceKitPickupDto>($"api/race-day/race-kit/{registrationId}/pickup", request, ct);
 }

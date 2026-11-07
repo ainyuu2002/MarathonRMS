@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.API.Controllers;
 
-/// <summary>Vận hành ngày thi cho Staff/Organizer của BTC: chọn giải, quầy race kit (UC-52).</summary>
+/// <summary>Vận hành ngày thi cho Staff/Organizer của BTC: chọn giải, quầy race kit (UC-52, UC-53).</summary>
 [ApiController]
 [Route("api/race-day")]
 [Authorize(Policy = AppPolicies.StaffOrOrganizer)]
@@ -36,4 +36,8 @@ public class RaceDayController : ControllerBase
     [HttpGet("events/{eventId:int}/race-kit")]
     public async Task<ActionResult<IReadOnlyList<RaceKitLookupItemDto>>> LookupRaceKit(int eventId, [FromQuery] string? keyword,
         CancellationToken ct) => Ok(await _raceKits.LookupAsync(eventId, keyword ?? "", ct));
+
+    [HttpPost("race-kit/{registrationId:int}/pickup")]
+    public async Task<ActionResult<RaceKitPickupDto>> PickupRaceKit(int registrationId, RaceKitPickupRequest request,
+        CancellationToken ct) => Ok(await _raceKits.PickupAsync(registrationId, request, ct));
 }

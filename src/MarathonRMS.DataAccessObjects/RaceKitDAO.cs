@@ -29,4 +29,14 @@ public class RaceKitDAO : BaseDAO<RaceKitPickup>
             .OrderBy(r => r.BibNumber).ThenBy(r => r.FullName)
             .Take(take)
             .ToListAsync(ct);
+
+    public Task<Registration?> GetRegistrationForPickupAsync(int registrationId, CancellationToken ct = default) =>
+        Context.Registrations.AsNoTracking()
+            .Include(r => r.Event).ThenInclude(e => e.Policy)
+            .Include(r => r.Participant)
+            .Include(r => r.RaceKitPickup)
+            .FirstOrDefaultAsync(r => r.RegistrationId == registrationId, ct);
+
+    public Task<string?> GetUserFullNameAsync(string userId, CancellationToken ct = default) =>
+        Context.Users.Where(u => u.Id == userId).Select(u => u.FullName).FirstOrDefaultAsync(ct);
 }
