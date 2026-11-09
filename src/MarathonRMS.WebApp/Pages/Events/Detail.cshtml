@@ -1,0 +1,162 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Events.DetailModel
+@{
+    var e = Model.Event;
+    var p = e.Policy;
+    ViewData["Title"] = e.Name;
+    string TransferText() => p.TransferPolicy switch
+    {
+        "Free" => $"Cho phép, miễn phí, tối đa {p.MaxTransfers} lần" + (p.TransferDeadline is DateTime d ? $", trước {d:dd/MM/yyyy}" : ""),
+        "Paid" => $"Cho phép, phí {p.TransferFee:N0}đ, tối đa {p.MaxTransfers} lần" + (p.TransferDeadline is DateTime d2 ? $", trước {d2:dd/MM/yyyy}" : ""),
+        _ => "Không cho phép"
+    };
+    string ForceMajeureText() => p.ForceMajeurePolicy switch
+    {
+        "Refund" => "Hoàn tiền",
+        "CarryOver" => "Bảo lưu sang mùa sau",
+        _ => "Không hoàn tiền"
+    };
+}
+
+@if (!string.IsNullOrEmpty(e.BannerUrl))
+{
+    <img src="@e.BannerUrl" class="w-100 rounded-3 mb-3 object-fit-cover" style="max-height:320px" alt="@e.Name" />
+}
+
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">@e.Name</h1>
+        <div class="text-secondary">
+            <i class="bi bi-calendar-event"></i> @e.EventDate.ToString("dd/MM/yyyy")@(e.EndDate != e.EventDate ? " – " + e.EndDate.ToString("dd/MM/yyyy") : "") ·
+            <i class="bi bi-geo-alt"></i> @e.VenueName, @e.City ·
+            <i class="bi bi-building"></i> @e.OrganizationName
+        </div>
+    </div>
+    <div class="text-end">
+        <status-badge status="@e.Status" />
+        <div class="small text-secondary mt-1">Đăng ký: @e.RegistrationOpenAt.ToString("HH:mm dd/MM") – @e.RegistrationCloseAt.ToString("HH:mm dd/MM/yyyy")</div>
+    </div>
+</div>
+
+@if (e.Status == "Cancelled")
+{
+    <div class="alert alert-danger">Giải đã bị hủy.</div>
+}
+else if (e.Status == "Postponed")
+{
+    <div class="alert alert-warning">Giải đang tạm hoãn – ban tổ chức sẽ thông báo ngày mới.</div>
+}
+@if (e.ResultsStatus != "Draft")
+{
+    <div class="alert alert-info d-flex gap-3 flex-wrap align-items-center">
+        <span><i class="bi bi-trophy"></i> Kết quả @(e.ResultsStatus == "Official" ? "chính thức" : "tạm thời") đã công bố.</span>
+        <a asp-page="/Results/Index" asp-route-eventId="@e.Id" class="btn btn-sm btn-primary">Bảng xếp hạng</a>
+        <a asp-page="/Results/Winners" asp-route-eventId="@e.Id" class="btn btn-sm btn-outline-primary">Vinh danh</a>
+    </div>
+}
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold">Cự ly</div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Cự ly</th><th>Xuất phát</th><th>Điều kiện</th><th class="text-end">Giá hiện tại</th><th class="text-end">Còn</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var c in e.Categories)
+            {
+                <tr>
+                    <td>
+                        <div class="fw-semibold">@c.Name <span class="badge text-bg-light">@c.DistanceKm.ToString("0.##") km</span></div>
+                        <div class="small text-secondary">
+                            @(c.Discipline == "Trail" ? "Trail" : "Đường phố")
+                            @if (c.ElevationGainM is int elev) { <span>· +@elev m</span> }
+                            @if (c.ItraPoints is byte itra && itra > 0) { <span>· ITRA @itra</span> }
+                            @if (c.CutOffMinutes is int cot) { <span>· COT @(cot / 60)h@(cot % 60 > 0 ? (cot % 60).ToString("00") : "")</span> }
+                            @if (!c.IsTimed) { <span>· không bấm giờ</span> }
+                        </div>
+                    </td>
+                    <td class="small text-nowrap">@c.StartAt.ToString("HH:mm dd/MM")</td>
+                    <td class="small">Từ @c.MinAge tuổi@(c.MaxAge is int max ? $" đến {max}" : "")</td>
+                    <td class="text-end text-nowrap">
+                        @if (c.CurrentPrice is decimal price)
+                        {
+                            <div class="fw-semibold">@(price == 0 ? "Miễn phí" : price.ToString("N0") + "đ")</div>
+                            <div class="small text-secondary">@c.CurrentPriceTierName</div>
+                        }
+                        else
+                        {
+                            var next = c.PriceTiers.FirstOrDefault(t => t.ValidFrom > DateTime.Now);
+                            <span class="small text-secondary">@(next is null ? "—" : $"{next.Name}: {next.Price:N0}đ từ {next.ValidFrom:dd/MM}")</span>
+                        }
+                    </td>
+                    <td class="text-end">@c.RemainingSlots.ToString("N0")</td>
+                    <td class="text-end">
+                        @if (Model.RegistrationOpenNow && c.CurrentPrice is not null && c.RemainingSlots > 0)
+                        {
+                            <a asp-page="/Member/Register" asp-route-eventId="@e.Id" asp-route-categoryId="@c.Id" class="btn btn-sm btn-primary">Đăng ký</a>
+                        }
+                        else if (Model.RegistrationOpenNow && c.RemainingSlots <= 0)
+                        {
+                            <span class="badge text-bg-secondary">Hết suất</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Chính sách của giải</div>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item"><strong>Tự sửa thông tin:</strong> đến @((p.InfoEditDeadline ?? e.RegistrationCloseAt).ToString("dd/MM/yyyy HH:mm"))</li>
+                <li class="list-group-item"><strong>Chuyển nhượng BIB:</strong> @TransferText()</li>
+                <li class="list-group-item"><strong>Đổi cự ly:</strong> @(p.MaxCategoryChanges > 0 ? $"tối đa {p.MaxCategoryChanges} lần, phí {p.CategoryChangeFee:N0}đ" : "không cho phép")</li>
+                <li class="list-group-item"><strong>VĐV tự hủy:</strong> không hoàn tiền (chỉ hủy được đơn chưa thanh toán)</li>
+                <li class="list-group-item"><strong>Giải bị hủy vì bất khả kháng:</strong> @ForceMajeureText()</li>
+                <li class="list-group-item"><strong>Dưới @p.GuardianConsentUnderAge tuổi:</strong> cần đồng ý của người giám hộ</li>
+                @if (!string.IsNullOrEmpty(e.InsuranceNote)) { <li class="list-group-item"><strong>Bảo hiểm:</strong> @e.InsuranceNote</li> }
+                @if (!string.IsNullOrEmpty(e.EmergencyPhone)) { <li class="list-group-item"><strong>Hotline:</strong> @e.EmergencyPhone</li> }
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Nhóm tuổi xếp hạng</div>
+            @if (e.AgeGroups.Count == 0)
+            {
+                <div class="card-body small text-secondary">Chỉ xếp hạng chung cuộc.</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush small">
+                    @foreach (var g in e.AgeGroups)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@g.Name</span>
+                            <span class="text-secondary">@(g.CategoryId is int cid ? e.Categories.FirstOrDefault(c => c.Id == cid)?.Name : "Mọi cự ly")</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(e.DescriptionHtml))
+{
+    @* Mô tả đã được API lọc HTML lúc lưu (BR-50) *@
+    <div class="card mb-4"><div class="card-body">@Html.Raw(e.DescriptionHtml)</div></div>
+}
+
+@if (Model.Content is { } content)
+{
+    @if (content.Sections.Count > 0) { <partial name="_EventContent" model="content" /> }
+    @if (content.Gallery.Count > 0)
+    {
+        <h2 class="h5 mt-4">Album ảnh</h2>
+        <partial name="_EventGallery" model="content.Gallery" />
+    }
+}

@@ -1,0 +1,40 @@
+@model MarathonRMS.DTOs.Events.EventSummaryDto
+@* Thẻ giải dùng chung cho trang chủ và danh sách giải (UC-34). *@
+@{
+    var e = Model;
+    var distances = e.MinDistanceKm == e.MaxDistanceKm ? $"{e.MinDistanceKm:0.##} km" : $"{e.MinDistanceKm:0.##}–{e.MaxDistanceKm:0.##} km";
+}
+<div class="card h-100 shadow-sm">
+    @if (!string.IsNullOrEmpty(e.BannerUrl))
+    {
+        <img src="@e.BannerUrl" class="card-img-top object-fit-cover" style="height:150px" alt="@e.Name" />
+    }
+    else
+    {
+        <div class="card-img-top bg-primary-subtle d-flex align-items-center justify-content-center" style="height:150px">
+            <i class="bi @(e.Disciplines.Contains("Trail") ? "bi-tree" : "bi-signpost-split") fs-1 text-primary"></i>
+        </div>
+    }
+    <div class="card-body">
+        <div class="d-flex justify-content-between gap-2 mb-1">
+            <status-badge status="@e.Status" />
+            <span class="small text-secondary">@(e.Disciplines.Replace("Road", "Đường phố").Replace("Trail", "Trail").Replace(",", " · "))</span>
+        </div>
+        <h2 class="h6 card-title mb-1">
+            <a asp-page="/Events/Detail" asp-route-id="@e.Id" class="stretched-link text-decoration-none">@e.Name</a>
+        </h2>
+        <div class="small text-secondary">
+            <i class="bi bi-calendar-event"></i> @e.EventDate.ToString("dd/MM/yyyy") ·
+            <i class="bi bi-geo-alt"></i> @e.City
+        </div>
+        <div class="small">@distances · @e.OrganizationName</div>
+        @if (e.Status == "RegistrationOpen")
+        {
+            <div class="small text-success mt-1">Mở đăng ký đến @e.RegistrationCloseAt.ToString("HH:mm dd/MM")</div>
+        }
+        else if (e.Status == "Published")
+        {
+            <div class="small text-secondary mt-1">Mở đăng ký từ @e.RegistrationOpenAt.ToString("HH:mm dd/MM")</div>
+        }
+    </div>
+</div>

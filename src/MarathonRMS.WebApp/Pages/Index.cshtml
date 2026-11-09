@@ -13,6 +13,21 @@
     }
 </section>
 
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> Danh sách giải chạy (UC-34) sẽ hiển thị ở đây từ Giai đoạn 1.
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">Giải sắp diễn ra</h2>
+    <a asp-page="/Events/Index" class="btn btn-outline-primary btn-sm">Tất cả giải <i class="bi bi-arrow-right"></i></a>
+</div>
+@if (Model.ApiUnavailable)
+{
+    <div class="alert alert-warning">Chưa tải được danh sách giải. Vui lòng thử lại sau.</div>
+}
+else if (Model.Upcoming.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">Chưa có giải sắp diễn ra.</div>
+}
+<div class="row g-3">
+    @foreach (var e in Model.Upcoming)
+    {
+        <div class="col-sm-6 col-lg-4 col-xl-3"><partial name="_EventCard" model="e" /></div>
+    }
 </div>

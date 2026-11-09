@@ -1,0 +1,50 @@
+@page
+@model MarathonRMS.WebApp.Pages.Events.IndexModel
+@{
+    ViewData["Title"] = "Giải chạy";
+    var when = Model.When ?? "upcoming";
+}
+
+<h1 class="h3 mb-3">Giải chạy</h1>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <input name="keyword" value="@Model.Keyword" class="form-control" placeholder="Tên giải hoặc ban tổ chức" />
+    </div>
+    <div class="col-md-2">
+        <input name="city" value="@Model.City" class="form-control" placeholder="Thành phố" />
+    </div>
+    <div class="col-md-2">
+        <select name="discipline" class="form-select">
+            <option value="">Mọi loại</option>
+            <option value="Road" selected="@(Model.Discipline == "Road")">Đường phố</option>
+            <option value="Trail" selected="@(Model.Discipline == "Trail")">Trail</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="when" class="form-select">
+            <option value="upcoming" selected="@(when == "upcoming")">Sắp diễn ra</option>
+            <option value="open" selected="@(when == "open")">Đang mở đăng ký</option>
+            <option value="past" selected="@(when == "past")">Đã diễn ra</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-grid"><button class="btn btn-primary"><i class="bi bi-search"></i> Tìm</button></div>
+</form>
+
+@if (Model.Data.Items.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-calendar-x fs-1"></i>
+        <p class="mt-2 mb-0">Không có giải phù hợp.</p>
+    </div>
+}
+<div class="row g-3">
+    @foreach (var e in Model.Data.Items)
+    {
+        <div class="col-sm-6 col-lg-4 col-xl-3"><partial name="_EventCard" model="e" /></div>
+    }
+</div>
+<div class="mt-3">
+    <partial name="_Pager" model="PagerModel.From(Model.Data, new { keyword = Model.Keyword, city = Model.City, discipline = Model.Discipline, when = Model.When })" />
+</div>

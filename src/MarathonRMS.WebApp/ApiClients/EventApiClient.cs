@@ -8,6 +8,10 @@ public class EventApiClient : ApiClientBase
 {
     public EventApiClient(HttpClient http) : base(http) { }
 
+    /// <summary>UC-34 – danh sách giải công khai qua OData.</summary>
+    public Task<MarathonRMS.DTOs.Common.PagedResult<EventSummaryDto>> SearchPublicAsync(string? filter, string orderBy, int page, int pageSize,
+        CancellationToken ct = default) => GetODataPageAsync<EventSummaryDto>("Events", filter, orderBy, page, pageSize, ct);
+
     public Task<List<EventSummaryDto>> GetMineAsync(CancellationToken ct = default) =>
         GetAsync<List<EventSummaryDto>>("api/events/mine", ct);
 

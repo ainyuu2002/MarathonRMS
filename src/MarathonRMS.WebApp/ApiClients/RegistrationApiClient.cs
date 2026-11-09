@@ -11,13 +11,6 @@ public class RegistrationApiClient : ApiClientBase
 {
     public RegistrationApiClient(HttpClient http) : base(http) { }
 
-    /// <summary>Cự ly công khai của giải (giá hiện hành, suất còn lại) – để dựng form đăng ký.</summary>
-    public Task<List<RaceCategoryDto>> GetCategoriesAsync(int eventId, CancellationToken ct = default) =>
-        GetAsync<List<RaceCategoryDto>>($"api/events/{eventId}/categories", ct);
-
-    public Task<EventPolicyDto> GetPolicyAsync(int eventId, CancellationToken ct = default) =>
-        GetAsync<EventPolicyDto>($"api/events/{eventId}/policies", ct);
-
     public Task<EventWaiverDto> GetWaiverAsync(int eventId, CancellationToken ct = default) =>
         GetAsync<EventWaiverDto>($"api/events/{eventId}/waiver", ct);
 

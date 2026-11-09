@@ -48,7 +48,13 @@ public class EventService : IEventService
     public async Task<EventDetailDto> GetDetailAsync(int eventId, CancellationToken ct = default)
     {
         var entity = await _events.GetWithCategoriesAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
-        _scope.EnsureCanManage(entity.OrganizationId);
+        // UC-35: giải đã công bố ai cũng xem được; giải nháp chỉ BTC sở hữu (hoặc Admin)
+        if (entity.Status == EventStatus.Draft)
+        {
+            var canManage = _currentUser.IsAdminOrAbove ||
+                            (_currentUser.IsInRole(DTOs.Common.AppRoles.Organizer) && _currentUser.OrganizationId == entity.OrganizationId);
+            if (!canManage) throw new NotFoundException("Không tìm thấy giải.");
+        }
         var activeCounts = await _events.GetActiveRegistrationCountsAsync(eventId, ct);
         return ToDetail(entity, activeCounts, _clock.Now);
     }
@@ -273,7 +279,13 @@ public class EventService : IEventService
             EndDate = e.EndDate,
             RegistrationOpenAt = e.RegistrationOpenAt,
             RegistrationCloseAt = e.RegistrationCloseAt,
-            Status = e.Status.ToString(),
+            // Chuỗi điều kiện thay vì ToString() để OData $filter dịch được ra SQL
+            Status = e.Status == EventStatus.Published ? "Published"
+                : e.Status == EventStatus.RegistrationOpen ? "RegistrationOpen"
+                : e.Status == EventStatus.RegistrationClosed ? "RegistrationClosed"
+                : e.Status == EventStatus.Postponed ? "Postponed"
+                : e.Status == EventStatus.Completed ? "Completed"
+                : e.Status == EventStatus.Cancelled ? "Cancelled" : "Draft",
             BannerUrl = e.BannerUrl,
             Disciplines = e.Categories.Any(c => c.Discipline == Discipline.Road) && e.Categories.Any(c => c.Discipline == Discipline.Trail)
                 ? "Road,Trail"
@@ -307,7 +319,11 @@ public class EventService : IEventService
         WaiverVersion = e.WaiverVersion,
         Policy = ToPolicyDto(e.Policy),
         Categories = e.Categories.OrderBy(c => c.DistanceKm).ThenBy(c => c.Name)
-            .Select(c => RaceCategoryMappings.ToDto(c, activeCounts.GetValueOrDefault(c.CategoryId), now)).ToList()
+            .Select(c => RaceCategoryMappings.ToDto(c, activeCounts.GetValueOrDefault(c.CategoryId), now)).ToList(),
+        AgeGroups = e.AgeGroups.OrderBy(g => g.CategoryId).ThenBy(g => g.MinAge).Select(g => new AgeGroupDto
+        {
+            Id = g.AgeGroupId, EventId = g.EventId, CategoryId = g.CategoryId, Name = g.Name, MinAge = g.MinAge, MaxAge = g.MaxAge
+        }).ToList()
     };
 
     private static EventPolicyDto ToPolicyDto(EventPolicy p) => new()

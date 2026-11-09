@@ -14,10 +14,12 @@ public class RegisterModel : BasePageModel
     private readonly RegistrationApiClient _registrations;
     private readonly ProfileApiClient _profile;
     private readonly CouponApiClient _coupons;
+    private readonly EventApiClient _events;
 
-    public RegisterModel(RegistrationApiClient registrations, ProfileApiClient profile, CouponApiClient coupons)
+    public RegisterModel(RegistrationApiClient registrations, ProfileApiClient profile, CouponApiClient coupons, EventApiClient events)
     {
         _registrations = registrations;
+        _events = events;
         _profile = profile;
         _coupons = coupons;
     }
@@ -26,6 +28,7 @@ public class RegisterModel : BasePageModel
     [BindProperty(SupportsGet = true)] public int CategoryId { get; set; }
     [BindProperty] public CreateRegistrationRequest Input { get; set; } = new();
 
+    public EventDetailDto Event { get; private set; } = new();
     public RaceCategoryDto Category { get; private set; } = new();
     public EventPolicyDto Policy { get; private set; } = new();
     public EventWaiverDto Waiver { get; private set; } = new();
@@ -90,11 +93,11 @@ public class RegisterModel : BasePageModel
 
     private async Task<bool> LoadAsync(CancellationToken ct)
     {
-        var categories = await _registrations.GetCategoriesAsync(EventId, ct);
-        var category = categories.FirstOrDefault(c => c.Id == CategoryId);
+        Event = await _events.GetAsync(EventId, ct);
+        var category = Event.Categories.FirstOrDefault(c => c.Id == CategoryId);
         if (category is null) return false;
         Category = category;
-        Policy = await _registrations.GetPolicyAsync(EventId, ct);
+        Policy = Event.Policy;
         Waiver = await _registrations.GetWaiverAsync(EventId, ct);
         return true;
     }
