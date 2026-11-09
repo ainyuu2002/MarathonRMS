@@ -147,7 +147,9 @@ public class IssuePenaltyRequest
     [Required, AllowedValues("Warning", "TimePenalty", "DSQ")] public string Action { get; set; } = "DSQ";
     [Range(1, 600)] public int? Minutes { get; set; }
     public int? CheckpointId { get; set; }
-    [StringLength(500)] public string? Note { get; set; }
+    /// <summary>BR-28: bắt buộc ghi chú (diễn biến, bằng chứng).</summary>
+    [Required(ErrorMessage = "Phải ghi chú lý do cụ thể của quyết định phạt (BR-28)"), StringLength(500)]
+    public string Note { get; set; } = "";
 }
 
 public class PenaltyDto

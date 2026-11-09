@@ -17,7 +17,7 @@ public class ResultService : IResultService
 {
     private readonly IResultRepository _results;
     private readonly IPenaltyReasonRepository _reasons;
-    private readonly IResultCalculator _calculator;
+    private readonly IResultRecalculation _recalc;
     private readonly IOrganizationScope _scope;
     private readonly ICurrentUserService _currentUser;
     private readonly IPrivacyFilter _privacy;
@@ -25,13 +25,13 @@ public class ResultService : IResultService
     private readonly IAuditLogger _audit;
     private readonly IUnitOfWork _uow;
 
-    public ResultService(IResultRepository results, IPenaltyReasonRepository reasons, IResultCalculator calculator,
+    public ResultService(IResultRepository results, IPenaltyReasonRepository reasons, IResultRecalculation recalc,
         IOrganizationScope scope, ICurrentUserService currentUser, IPrivacyFilter privacy, IDateTimeProvider clock,
         IAuditLogger audit, IUnitOfWork uow)
     {
         _results = results;
         _reasons = reasons;
-        _calculator = calculator;
+        _recalc = recalc;
         _scope = scope;
         _currentUser = currentUser;
         _privacy = privacy;
@@ -42,12 +42,13 @@ public class ResultService : IResultService
 
     public async Task<ResultCalculationSummaryDto> CalculateAsync(int eventId, CancellationToken ct = default)
     {
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        await _uow.LockAsync(RaceDayLocks.Results(eventId), ct);
         var ev = await LoadEventAsync(eventId, ct);
         await _scope.EnsureOrganizationActiveAsync(ev.OrganizationId, ct);
         EnsureCanCalculate(ev);
 
-        await using var tx = await _uow.BeginTransactionAsync(ct);
-        var summary = await RecalculateAsync(ev, ct);
+        var summary = await _recalc.RecalculateAsync(ev, ct);
         await _audit.LogAsync("Result.Calculate", nameof(Event), eventId.ToString(), null,
             new { summary.Finished, summary.Dnf, summary.Dns, summary.Dsq }, ct);
         await _uow.SaveChangesAsync(ct);
@@ -139,6 +140,8 @@ public class ResultService : IResultService
 
     public async Task<ResultsStatusDto> PublishProvisionalAsync(int eventId, CancellationToken ct = default)
     {
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        await _uow.LockAsync(RaceDayLocks.Results(eventId), ct);
         var ev = await LoadEventForStatusChangeAsync(eventId, ct);
         if (ev.ResultsStatus != ResultsStatus.Draft)
             throw new BusinessRuleException("BR-27", "Kết quả của giải đã được công bố.");
@@ -151,11 +154,14 @@ public class ResultService : IResultService
             new { ResultsStatus = nameof(ResultsStatus.Draft) },
             new { ResultsStatus = nameof(ResultsStatus.Provisional), ev.ResultsProvisionalAt }, ct);
         await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return ToStatusDto(ev);
     }
 
     public async Task<ResultsStatusDto> FinalizeAsync(int eventId, CancellationToken ct = default)
     {
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        await _uow.LockAsync(RaceDayLocks.Results(eventId), ct);
         var ev = await LoadEventForStatusChangeAsync(eventId, ct);
         if (ev.ResultsStatus != ResultsStatus.Provisional)
             throw new BusinessRuleException("BR-27", "Chỉ công bố chính thức khi kết quả đang ở trạng thái tạm thời.");
@@ -172,6 +178,7 @@ public class ResultService : IResultService
             new { ResultsStatus = nameof(ResultsStatus.Provisional) },
             new { ResultsStatus = nameof(ResultsStatus.Official), ev.ResultsOfficialAt }, ct);
         await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return ToStatusDto(ev);
     }
 
@@ -250,7 +257,7 @@ public class ResultService : IResultService
         var me = _currentUser.UserId;
         var isOwner = me is not null && (me == registration.Participant.LinkedUserId || me == registration.RegisteredByUserId);
         var privileged = isOwner || IsOperatorOf(ev.OrganizationId);
-        if (ev.ResultsStatus == ResultsStatus.Draft && !privileged)
+        if ((ev.ResultsStatus == ResultsStatus.Draft || registration.Status != RegistrationStatus.Confirmed) && !privileged)
             throw new NotFoundException("Chưa có kết quả của VĐV này.");
 
         var summary = ToOrganizerRow(result);
@@ -374,6 +381,8 @@ public class ResultService : IResultService
         var reason = await _reasons.GetTrackedAsync(request.ReasonCode.Trim(), ct);
         if (reason is null || !reason.IsActive)
             throw new BusinessRuleException("BR-28", "Lý do phạt phải chọn trong danh mục đang áp dụng.", 400);
+        if (string.IsNullOrWhiteSpace(request.Note))
+            throw new BusinessRuleException("BR-28", "Quyết định phạt phải kèm ghi chú (diễn biến, bằng chứng).", 400);
 
         var action = Enum.Parse<PenaltyAction>(request.Action, ignoreCase: true);
         int? minutes = null;
@@ -397,18 +406,19 @@ public class ResultService : IResultService
             Action = action,
             Minutes = minutes,
             CheckpointId = request.CheckpointId,
-            Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+            Note = request.Note.Trim(),
             IssuedById = _currentUser.UserId!,
             IssuedAt = _clock.Now
         };
 
         await using var tx = await _uow.BeginTransactionAsync(ct);
+        var current = await LockForResultChangeAsync(ev.EventId, ct);
         await _results.AddPenaltyAsync(penalty, ct);
         await _uow.SaveChangesAsync(ct);
         await _audit.LogAsync("Result.Penalty", nameof(ResultPenalty), penalty.PenaltyId.ToString(), null,
             new { result.ResultId, registration.BibNumber, penalty.ReasonCode, Action = action.ToString(), penalty.Minutes, penalty.Note }, ct);
         if (action != PenaltyAction.Warning)
-            await RecalculateEventAsync(ev.EventId, ct);
+            await _recalc.RecalculateAsync(current, ct);
         await _uow.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
 
@@ -430,22 +440,28 @@ public class ResultService : IResultService
             throw new BusinessRuleException(ErrorCodes.Conflict, "Quyết định phạt đã được thu hồi.");
 
         await using var tx = await _uow.BeginTransactionAsync(ct);
+        var current = await LockForResultChangeAsync(ev.EventId, ct);
         penalty.RevokedAt = _clock.Now;
         await _audit.LogAsync("Result.PenaltyRevoke", nameof(ResultPenalty), penaltyId.ToString(),
             new { penalty.ReasonCode, Action = penalty.Action.ToString(), penalty.Minutes },
             new { penalty.RevokedAt }, ct);
         await _uow.SaveChangesAsync(ct);
         if (penalty.Action != PenaltyAction.Warning)
-            await RecalculateEventAsync(ev.EventId, ct);
+            await _recalc.RecalculateAsync(current, ct);
         await _uow.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
     }
 
-    /// <summary>Sau khi phạt / thu hồi phạt: tính lại trạng thái, thời gian và hạng của toàn giải.</summary>
-    private async Task RecalculateEventAsync(int eventId, CancellationToken ct)
+    /// <summary>
+    /// Giữ khóa kết quả của giải rồi đọc lại trạng thái: nếu vừa có người chốt chính thức trong lúc chờ khóa thì dừng (BR-27).
+    /// </summary>
+    private async Task<Event> LockForResultChangeAsync(int eventId, CancellationToken ct)
     {
+        await _uow.LockAsync(RaceDayLocks.Results(eventId), ct);
         var ev = await _results.GetEventForResultsAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
-        await RecalculateAsync(ev, ct);
+        if (ev.ResultsStatus == ResultsStatus.Official)
+            throw new BusinessRuleException("BR-27", "Kết quả của giải đã chính thức – không thể thay đổi quyết định phạt.");
+        return ev;
     }
 
     private static PenaltyDto ToPenaltyDto(ResultPenalty p, string reasonName, string? checkpointName) => new()
@@ -484,129 +500,6 @@ public class ResultService : IResultService
         AgeGroupRank = r.AgeGroupRank,
         IsProvisional = r.Registration.Event.ResultsStatus == ResultsStatus.Provisional
     };
-
-    // ============================ Tính kết quả ============================
-
-    /// <summary>Tính lại mọi cự ly bấm giờ của giải và cập nhật bảng Results (chưa SaveChanges).</summary>
-    private async Task<ResultCalculationSummaryDto> RecalculateAsync(Event ev, CancellationToken ct)
-    {
-        var registrations = await _results.GetConfirmedWithTimingAsync(ev.EventId, ct);
-        var existing = (await _results.GetTrackedByEventAsync(ev.EventId, ct)).ToDictionary(r => r.RegistrationId);
-        var now = _clock.Now;
-        var warnings = new List<string>();
-        int finished = 0, dnf = 0, dns = 0, dsq = 0;
-
-        var overallBasis = ev.Policy.OverallRankingBasis;
-        var policy = new CalcPolicy(
-            overallBasis ?? RankingBasis.GunTime,
-            ev.Policy.AgeGroupRankingBasis ?? overallBasis ?? RankingBasis.GunTime,
-            ev.Policy.TieBreakRule,
-            ev.Policy.LateStartToleranceMinutes);
-        if (overallBasis is null)
-            warnings.Add("Giải chưa chọn cơ sở xếp hạng – tạm xếp hạng theo giờ súng.");
-        if (ev.AgeGroups.Count == 0)
-            warnings.Add("Giải chưa có nhóm tuổi – bỏ qua xếp hạng nhóm tuổi.");
-
-        foreach (var category in ev.Categories.OrderBy(c => c.StartAt).ThenBy(c => c.Name))
-        {
-            if (!category.IsTimed)
-            {
-                warnings.Add($"Cự ly {category.Name} không bấm giờ – không tính kết quả (BR-26).");
-                continue;
-            }
-            if (!category.Checkpoints.Any(c => c.Type == CheckpointType.Finish))
-            {
-                warnings.Add($"Cự ly {category.Name} chưa có checkpoint về đích – chưa tính được kết quả.");
-                continue;
-            }
-
-            var runners = registrations.Where(r => r.CategoryId == category.CategoryId)
-                .Select(r => ToRunner(r, ev, category, existing.GetValueOrDefault(r.RegistrationId)))
-                .ToList();
-            if (runners.Count == 0) continue;
-
-            var outcomes = _calculator.Calculate(ToCalcCategory(category), policy, runners);
-            foreach (var outcome in outcomes)
-            {
-                if (!existing.TryGetValue(outcome.RegistrationId, out var result))
-                {
-                    result = new Result { RegistrationId = outcome.RegistrationId };
-                    await _results.AddAsync(result, ct);
-                    existing[outcome.RegistrationId] = result;
-                }
-                Apply(result, outcome, now);
-                switch (outcome.Status)
-                {
-                    case ResultStatus.Finished: finished++; break;
-                    case ResultStatus.DNF: dnf++; break;
-                    case ResultStatus.DNS: dns++; break;
-                    case ResultStatus.DSQ: dsq++; break;
-                }
-            }
-
-            var missingMat = outcomes.Count(o => o.MissingStartMat);
-            if (missingMat > 0)
-                warnings.Add($"Cự ly {category.Name}: {missingMat} VĐV không có thời gian tại thảm xuất phát – giờ chip lấy bằng giờ súng.");
-            var lateStart = outcomes.Count(o => o.LateStart);
-            if (lateStart > 0)
-                warnings.Add($"Cự ly {category.Name}: {lateStart} VĐV qua thảm xuất phát muộn quá {ev.Policy.LateStartToleranceMinutes} phút – ghi nhận DNS (BR-24).");
-        }
-
-        return new ResultCalculationSummaryDto
-        {
-            EventId = ev.EventId,
-            Finished = finished,
-            Dnf = dnf,
-            Dns = dns,
-            Dsq = dsq,
-            Warnings = warnings
-        };
-    }
-
-    private static CalcRunner ToRunner(Registration r, Event ev, RaceCategory category, Result? existing)
-    {
-        var active = existing?.Penalties.Where(p => p.RevokedAt == null).ToList() ?? new List<ResultPenalty>();
-        CalcWithdrawal? withdrawal = existing is { Status: ResultStatus.DNF, DnfReason: DnfReason.Voluntary or DnfReason.Medical }
-            ? new CalcWithdrawal(existing.DnfReason!.Value, existing.DnfCheckpointId)
-            : null;
-        var age = RaceDayRules.AgeForEvent(r.DateOfBirth, ev.EventDate, ev.Policy.AgeCalculationMode);
-
-        return new CalcRunner(
-            r.RegistrationId,
-            r.Gender,
-            PickAgeGroup(ev.AgeGroups, category.CategoryId, age)?.AgeGroupId,
-            r.TimingRecords.GroupBy(t => t.CheckpointId).ToDictionary(g => g.Key, g => g.First().RecordedAt),
-            withdrawal,
-            active.Any(p => p.Action == PenaltyAction.DSQ),
-            active.Where(p => p.Action == PenaltyAction.TimePenalty).Sum(p => (p.Minutes ?? 0) * 60));
-    }
-
-    /// <summary>Nhóm tuổi của VĐV: ưu tiên nhóm riêng của cự ly, rồi nhóm có tuổi tối thiểu cao nhất.</summary>
-    private static AgeGroup? PickAgeGroup(IEnumerable<AgeGroup> groups, int categoryId, int age) =>
-        groups.Where(g => (g.CategoryId == null || g.CategoryId == categoryId) && age >= g.MinAge && (g.MaxAge == null || age <= g.MaxAge))
-            .OrderByDescending(g => g.CategoryId != null)
-            .ThenByDescending(g => g.MinAge)
-            .FirstOrDefault();
-
-    private static CalcCategory ToCalcCategory(RaceCategory c) => new(
-        c.CategoryId, c.Name, c.StartAt, c.CutOffMinutes, c.IsRanked,
-        c.Checkpoints.Select(p => new CalcCheckpoint(p.CheckpointId, p.Name, p.Sequence, p.Type, p.IsMandatory, p.CutOffAt)).ToList());
-
-    private static void Apply(Result result, CalcOutcome o, DateTime now)
-    {
-        result.Status = o.Status;
-        result.DnfReason = o.DnfReason;
-        result.DnfCheckpointId = o.DnfCheckpointId;
-        result.GunTimeMs = o.GunTimeMs;
-        result.ChipTimeMs = o.ChipTimeMs;
-        result.PenaltySeconds = o.PenaltySeconds;
-        result.FinalTimeMs = o.FinalTimeMs;
-        result.OverallRank = o.OverallRank;
-        result.GenderRank = o.GenderRank;
-        result.AgeGroupId = o.AgeGroupId;
-        result.AgeGroupRank = o.AgeGroupRank;
-        result.UpdatedAt = now;
-    }
 
     // ============================ Kiểm tra ============================
 

@@ -8,7 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.Services.RaceDay;
 
-/// <summary>UC-57 – ghi thời gian tại checkpoint theo BIB (BR-21, BR-32); UC-58 – ghi nhận bỏ cuộc (BR-23).</summary>
+/// <summary>
+/// UC-57 – ghi thời gian tại checkpoint theo BIB (BR-21, BR-32); UC-58 – ghi nhận bỏ cuộc (BR-23).
+/// Bỏ cuộc / hủy bỏ cuộc / xóa thời gian khi giải đã tính kết quả ⇒ tính lại cả giải để thứ hạng liền mạch.
+/// </summary>
 public class TimingService : ITimingService
 {
     private readonly ITimingRepository _timing;
@@ -17,10 +20,12 @@ public class TimingService : ITimingService
     private readonly IDateTimeProvider _clock;
     private readonly IAuditLogger _audit;
     private readonly IUnitOfWork _uow;
+    private readonly IResultRecalculation _recalc;
 
     public TimingService(ITimingRepository timing, IOrganizationScope scope, ICurrentUserService currentUser,
-        IDateTimeProvider clock, IAuditLogger audit, IUnitOfWork uow)
+        IDateTimeProvider clock, IAuditLogger audit, IUnitOfWork uow, IResultRecalculation recalc)
     {
+        _recalc = recalc;
         _timing = timing;
         _scope = scope;
         _currentUser = currentUser;
@@ -84,11 +89,11 @@ public class TimingService : ITimingService
         {
             await _uow.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
             // Unique (RegistrationId, CheckpointId): hai người cùng ghi một lúc
-            throw new BusinessRuleException("BR-21",
-                $"BIB {request.BibNumber} vừa được ghi thời gian tại {checkpoint.Name} bởi người khác.");
+            throw DbErrors.ToBusinessError(ex,
+                $"BIB {request.BibNumber} vừa được ghi thời gian tại {checkpoint.Name} bởi người khác.", "BR-21");
         }
 
         return new TimingRecordDto
@@ -106,6 +111,8 @@ public class TimingService : ITimingService
 
     public async Task RecordWithdrawalAsync(RecordWithdrawalRequest request, CancellationToken ct = default)
     {
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        await _uow.LockAsync(RaceDayLocks.Results(request.EventId), ct);
         var ev = await LoadEventForWriteAsync(request.EventId, ct);
         var r = await _timing.GetConfirmedByBibAsync(ev.EventId, request.BibNumber, ct)
                 ?? throw new NotFoundException($"Không có VĐV mang BIB {request.BibNumber} trong giải.");
@@ -152,6 +159,9 @@ public class TimingService : ITimingService
             new { Status = "DNF", DnfReason = reason.ToString(), Checkpoint = checkpoint.Name, request.BibNumber, Note = request.Note?.Trim() },
             ct);
         await _uow.SaveChangesAsync(ct);
+        await _recalc.RecalculateIfCalculatedAsync(ev.EventId, ct);
+        await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
     }
 
     public async Task<IReadOnlyList<WithdrawalDto>> GetWithdrawalsAsync(int eventId, CancellationToken ct = default)
@@ -175,6 +185,10 @@ public class TimingService : ITimingService
         var r = await _timing.GetRegistrationAsync(registrationId, ct) ?? throw new NotFoundException("Không tìm thấy đăng ký.");
         _scope.EnsureCanManage(r.Event.OrganizationId);
         await _scope.EnsureOrganizationActiveAsync(r.Event.OrganizationId, ct);
+        _scope.EnsureNotOwnRegistration(r.Participant.LinkedUserId, r.RegisteredByUserId);
+
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        await _uow.LockAsync(RaceDayLocks.Results(r.EventId), ct);
         if (r.Event.ResultsStatus == ResultsStatus.Official)
             throw new BusinessRuleException("BR-27", "Kết quả của giải đã chính thức – không thể thay đổi.");
 
@@ -182,21 +196,26 @@ public class TimingService : ITimingService
         if (result is not { Status: ResultStatus.DNF, DnfReason: DnfReason.Voluntary or DnfReason.Medical })
             throw new BusinessRuleException(ErrorCodes.Conflict, "VĐV không ở trạng thái bỏ cuộc.");
 
+        var keepRow = result.Penalties.Count > 0;
         await _audit.LogAsync("Result.WithdrawalCancel", nameof(Registration), registrationId.ToString(),
-            new { Status = "DNF", DnfReason = result.DnfReason?.ToString(), result.DnfCheckpointId }, null, ct);
-        if (result.Penalties.Count == 0)
+            new { Status = "DNF", DnfReason = result.DnfReason?.ToString(), result.DnfCheckpointId },
+            new { Result = keepRow ? "Giữ dòng (có quyết định phạt), chờ tính lại" : "Xóa dòng, chờ tính lại" }, ct);
+        if (!keepRow)
         {
             _timing.RemoveResult(result);
         }
         else
         {
-            // Giữ dòng kết quả vì đã có quyết định phạt gắn vào; lần tính kết quả sau sẽ xét lại
+            // Giữ dòng kết quả vì đã có quyết định phạt gắn vào; bước tính lại ngay dưới sẽ xét lại trạng thái
             result.Status = ResultStatus.DNS;
             result.DnfReason = null;
             result.DnfCheckpointId = null;
             result.UpdatedAt = _clock.Now;
         }
         await _uow.SaveChangesAsync(ct);
+        await _recalc.RecalculateIfCalculatedAsync(r.EventId, ct);
+        await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
     }
 
     public async Task<IReadOnlyList<TimingRecordDto>> GetByRegistrationAsync(int registrationId, CancellationToken ct = default)
@@ -230,14 +249,20 @@ public class TimingService : ITimingService
         var ev = record.Registration.Event;
         _scope.EnsureCanManage(ev.OrganizationId);
         await _scope.EnsureOrganizationActiveAsync(ev.OrganizationId, ct);
+        _scope.EnsureNotOwnRegistration(record.Registration.Participant.LinkedUserId, record.Registration.RegisteredByUserId);
         if (ev.ResultsStatus == ResultsStatus.Official)
             throw new BusinessRuleException("BR-27", "Kết quả của giải đã chính thức – không thể thay đổi dữ liệu bấm giờ.");
 
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        await _uow.LockAsync(RaceDayLocks.Results(ev.EventId), ct);
         await _audit.LogAsync("Timing.Delete", nameof(TimingRecord), timingRecordId.ToString(),
             new { record.RegistrationId, record.Registration.BibNumber, Checkpoint = record.Checkpoint.Name, record.RecordedAt },
             null, ct);
         _timing.Remove(record);
         await _uow.SaveChangesAsync(ct);
+        await _recalc.RecalculateIfCalculatedAsync(ev.EventId, ct);
+        await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
     }
 
     private async Task<Event> LoadEventForWriteAsync(int eventId, CancellationToken ct)

@@ -22,7 +22,7 @@
 }
 else
 {
-    <form method="get" class="row g-2 mb-4">
+    <form method="post" asp-page-handler="Search" class="row g-2 mb-4">
         <div class="col-md-5">
             <select name="EventId" class="form-select" aria-label="Giải">
                 @foreach (var e in Model.Events)
@@ -80,7 +80,8 @@ else
                 @if (r.Status == "Confirmed" && r.BibNumber is not null && !r.PickedUp)
                 {
                     <form method="post" asp-page-handler="Pickup" asp-route-registrationId="@r.RegistrationId"
-                          asp-route-eventId="@Model.EventId" asp-route-keyword="@Model.Keyword" class="border-top pt-3 mt-3">
+                          asp-route-eventId="@Model.EventId" class="border-top pt-3 mt-3">
+                        <input type="hidden" name="Keyword" value="@Model.Keyword" />
                         <div class="d-flex flex-wrap gap-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="Pickup.IdChecked" value="true" id="id-@r.RegistrationId" />

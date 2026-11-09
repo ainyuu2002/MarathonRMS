@@ -101,13 +101,15 @@ public class BibService : IBibService
             if (categories.Count == 0) throw new NotFoundException("Không tìm thấy cự ly trong giải.");
         }
 
+        // Hai lần gán cùng lúc chạy lần lượt: lần sau đọc số đã dùng sau khi lần trước commit
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        await _uow.LockAsync(RaceDayLocks.Bibs(eventId), ct);
         var counts = (await _bibs.GetCategoryCountsAsync(eventId, ct)).ToDictionary(c => c.CategoryId);
         var used = (await _bibs.GetUsedBibNumbersAsync(eventId, ct)).ToHashSet();
         var warnings = new List<string>();
         var assigned = 0;
         var alreadyAssigned = 0;
 
-        await using var tx = await _uow.BeginTransactionAsync(ct);
         foreach (var category in categories)
         {
             alreadyAssigned += counts.GetValueOrDefault(category.CategoryId)?.Assigned ?? 0;
@@ -133,10 +135,10 @@ public class BibService : IBibService
             {
                 await _uow.SaveChangesAsync(ct);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
-                throw new BusinessRuleException(ErrorCodes.Conflict,
-                    "Số BIB vừa được gán bởi một thao tác khác. Vui lòng tải lại và thử lại.");
+                // Unique (EventId, BibNumber) hoặc CHECK "chỉ đăng ký đã xác nhận có BIB" (đăng ký vừa bị hủy)
+                throw DbErrors.ToBusinessError(ex, "Số BIB vừa được gán bởi một thao tác khác. Vui lòng tải lại và thử lại.", "BR-19");
             }
             await _audit.LogAsync("Bib.Assign", nameof(Event), eventId.ToString(), null,
                 new { request.CategoryId, Assigned = assigned }, ct);

@@ -3,7 +3,9 @@ using MarathonRMS.BusinessObjects.Enums;
 using MarathonRMS.DTOs.Common;
 using MarathonRMS.DTOs.RaceDay;
 using MarathonRMS.Repositories;
+using MarathonRMS.DTOs.Events;
 using MarathonRMS.Services.Common;
+using MarathonRMS.Services.Events;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.Services.RaceDay;
@@ -19,16 +21,25 @@ public class RaceKitService : IRaceKitService
     private readonly IPrivacyFilter _privacy;
     private readonly IDateTimeProvider _clock;
     private readonly IUnitOfWork _uow;
+    private readonly IEventService _events;
 
     public RaceKitService(IRaceKitRepository raceKits, IOrganizationScope scope, ICurrentUserService currentUser,
-        IPrivacyFilter privacy, IDateTimeProvider clock, IUnitOfWork uow)
+        IPrivacyFilter privacy, IDateTimeProvider clock, IUnitOfWork uow, IEventService events)
     {
+        _events = events;
         _raceKits = raceKits;
         _scope = scope;
         _currentUser = currentUser;
         _privacy = privacy;
         _clock = clock;
         _uow = uow;
+    }
+
+    public async Task<IReadOnlyList<EventSummaryDto>> GetOperationalEventsAsync(CancellationToken ct = default)
+    {
+        // Status trong DTO là chuỗi chiếu từ enum – lọc sau khi tải (mỗi BTC có ít giải)
+        var events = await _events.QueryMine().OrderByDescending(e => e.EventDate).ThenBy(e => e.Name).ToListAsync(ct);
+        return events.Where(e => e.Status is not (nameof(EventStatus.Draft) or nameof(EventStatus.Cancelled))).ToList();
     }
 
     public async Task<IReadOnlyList<RaceKitLookupItemDto>> LookupAsync(int eventId, string keyword, CancellationToken ct = default)
@@ -90,10 +101,10 @@ public class RaceKitService : IRaceKitService
         {
             await _uow.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
-            // Unique RegistrationId: hai quầy cùng phát cho một VĐV
-            throw new BusinessRuleException("BR-20", "VĐV vừa được phát kit ở quầy khác.");
+            // Unique RegistrationId: hai quầy cùng phát cho một VĐV; lỗi ràng buộc khác: đăng ký vừa đổi trạng thái
+            throw DbErrors.ToBusinessError(ex, "VĐV vừa được phát kit ở quầy khác.", "BR-20");
         }
 
         return new RaceKitPickupDto

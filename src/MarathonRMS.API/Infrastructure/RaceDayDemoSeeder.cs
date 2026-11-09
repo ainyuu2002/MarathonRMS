@@ -10,6 +10,10 @@ namespace MarathonRMS.API.Infrastructure;
 /// <summary>
 /// Dữ liệu demo phần C – ngày thi (chỉ khi Seed:Enabled, tức môi trường Development).
 /// Chạy sau DbInitializer; mỗi giải demo chỉ nạp một lần theo slug nên chạy lại API không tạo trùng.
+/// Mỗi giải nạp trong một transaction (lỗi giữa chừng thì không để lại giải nạp dở).
+/// Giải "diễn ra hôm nay" tự dời sang ngày hiện tại mỗi lần chạy API (khi kết quả chưa công bố).
+/// Lưu ý cho phần B: seeder ghi thẳng vào Registrations, Payments, PriceTiers, Checkpoints, AgeGroups –
+/// đổi entity của các bảng này thì sửa seeder theo.
 /// </summary>
 public static class RaceDayDemoSeeder
 {
@@ -35,15 +39,64 @@ public static class RaceDayDemoSeeder
 
         if (!await db.Events.AnyAsync(e => e.Slug == PrepEventSlug))
         {
+            await using var tx = await db.Database.BeginTransactionAsync();
             var count = await SeedPrepEventAsync(db, context, org, now);
+            await tx.CommitAsync();
             logger.LogInformation("Đã nạp giải demo {Slug}: {Count} đăng ký đã xác nhận.", PrepEventSlug, count);
         }
 
         if (!await db.Events.AnyAsync(e => e.Slug == RaceEventSlug))
         {
+            await using var tx = await db.Database.BeginTransactionAsync();
             var count = await SeedRaceEventAsync(db, context, org, now);
+            await tx.CommitAsync();
             logger.LogInformation("Đã nạp giải demo {Slug}: {Count} VĐV có dữ liệu bấm giờ.", RaceEventSlug, count);
         }
+        else
+        {
+            await ShiftRaceEventToTodayAsync(db, now, logger);
+        }
+    }
+
+    /// <summary>
+    /// Giải demo ngày thi được nạp với ngày thi = ngày chạy lần đầu; sang hôm sau thì dời mọi mốc thời gian (ngày thi, giờ xuất
+    /// phát, cut-off trạm, thời gian bấm giờ, phát kit…) thêm đúng số ngày để giải luôn "diễn ra hôm nay".
+    /// Chỉ dời khi kết quả còn Draft; kết quả nháp đã tính theo ngày cũ bị xóa để tính lại.
+    /// </summary>
+    private static async Task ShiftRaceEventToTodayAsync(MarathonDbContext db, DateTime now, ILogger logger)
+    {
+        var today = DateOnly.FromDateTime(now);
+        var ev = await db.Events.FirstOrDefaultAsync(e => e.Slug == RaceEventSlug);
+        if (ev is null || ev.EventDate >= today || ev.ResultsStatus != ResultsStatus.Draft) return;
+
+        var days = today.DayNumber - ev.EventDate.DayNumber;
+        var eventId = ev.EventId;
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        ev.EventDate = ev.EventDate.AddDays(days);
+        ev.EndDate = ev.EndDate.AddDays(days);
+        ev.RegistrationOpenAt = ev.RegistrationOpenAt.AddDays(days);
+        ev.RegistrationCloseAt = ev.RegistrationCloseAt.AddDays(days);
+        await db.SaveChangesAsync();
+
+        await db.RaceCategories.Where(c => c.EventId == eventId)
+            .ExecuteUpdateAsync(u => u.SetProperty(c => c.StartAt, c => c.StartAt.AddDays(days)));
+        await db.PriceTiers.Where(p => p.Category.EventId == eventId)
+            .ExecuteUpdateAsync(u => u.SetProperty(p => p.ValidFrom, p => p.ValidFrom.AddDays(days))
+                .SetProperty(p => p.ValidTo, p => p.ValidTo.AddDays(days)));
+        await db.Checkpoints.Where(c => c.Category.EventId == eventId && c.CutOffAt != null)
+            .ExecuteUpdateAsync(u => u.SetProperty(c => c.CutOffAt, c => c.CutOffAt!.Value.AddDays(days)));
+        await db.TimingRecords.Where(t => t.Registration.EventId == eventId)
+            .ExecuteUpdateAsync(u => u.SetProperty(t => t.RecordedAt, t => t.RecordedAt.AddDays(days)));
+        await db.RaceKitPickups.Where(k => k.Registration.EventId == eventId)
+            .ExecuteUpdateAsync(u => u.SetProperty(k => k.PickedUpAt, k => k.PickedUpAt.AddDays(days)));
+
+        await db.ResultComplaints.Where(c => c.Result.Registration.EventId == eventId).ExecuteDeleteAsync();
+        await db.ResultPenalties.Where(p => p.Result.Registration.EventId == eventId).ExecuteDeleteAsync();
+        await db.Results.Where(r => r.Registration.EventId == eventId).ExecuteDeleteAsync();
+
+        await tx.CommitAsync();
+        logger.LogInformation("Đã dời giải demo {Slug} thêm {Days} ngày để ngày thi là hôm nay.", RaceEventSlug, days);
     }
 
     private static async Task<int> SeedRaceEventAsync(MarathonDbContext db, DemoContext ctx, Organization org, DateTime now)

@@ -31,12 +31,18 @@ public class ResultDAO : BaseDAO<Result>
             .Where(r => r.Registration.EventId == eventId)
             .ToListAsync(ct);
 
+    /// <summary>Có dòng kết quả nào ngoài các ca bỏ cuộc (ghi nhận từ trạm) – tức giải đã được tính kết quả.</summary>
+    public Task<bool> HasCalculatedResultsAsync(int eventId, CancellationToken ct = default) =>
+        Set.AnyAsync(r => r.Registration.EventId == eventId &&
+                          !(r.Status == ResultStatus.DNF && (r.DnfReason == DnfReason.Voluntary || r.DnfReason == DnfReason.Medical)), ct);
+
+    /// <summary>Kết quả của giải – chỉ đăng ký còn hiệu lực (đã hủy / chuyển nhượng thì không hiện).</summary>
     public IQueryable<Result> QueryByEvent(int eventId) =>
-        Set.AsNoTracking().Where(r => r.Registration.EventId == eventId);
+        Set.AsNoTracking().Where(r => r.Registration.EventId == eventId && r.Registration.Status == RegistrationStatus.Confirmed);
 
     public Task<Dictionary<ResultStatus, int>> CountByStatusAsync(int eventId, CancellationToken ct = default) =>
         Set.AsNoTracking()
-            .Where(r => r.Registration.EventId == eventId)
+            .Where(r => r.Registration.EventId == eventId && r.Registration.Status == RegistrationStatus.Confirmed)
             .GroupBy(r => r.Status)
             .ToDictionaryAsync(g => g.Key, g => g.Count(), ct);
 
@@ -49,7 +55,7 @@ public class ResultDAO : BaseDAO<Result>
         Context.Events.Include(e => e.Policy).FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
     public Task<bool> AnyForEventAsync(int eventId, CancellationToken ct = default) =>
-        Set.AnyAsync(r => r.Registration.EventId == eventId, ct);
+        Set.AnyAsync(r => r.Registration.EventId == eventId && r.Registration.Status == RegistrationStatus.Confirmed, ct);
 
     /// <summary>Khiếu nại kết quả chưa xử lý của giải (BR-27).</summary>
     public Task<int> CountOpenComplaintsAsync(int eventId, CancellationToken ct = default) =>
@@ -78,10 +84,11 @@ public class ResultDAO : BaseDAO<Result>
 
     // ---------- Bảng xếp hạng công khai (UC-62) ----------
 
-    /// <summary>Kết quả của các giải đã công bố (tạm thời hoặc chính thức).</summary>
+    /// <summary>Kết quả của các giải đã công bố (tạm thời hoặc chính thức) – chỉ đăng ký còn hiệu lực.</summary>
     public IQueryable<Result> QueryPublished() =>
-        Set.AsNoTracking().Where(r => r.Registration.Event.ResultsStatus == ResultsStatus.Provisional ||
-                                      r.Registration.Event.ResultsStatus == ResultsStatus.Official);
+        Set.AsNoTracking().Where(r => r.Registration.Status == RegistrationStatus.Confirmed &&
+                                      (r.Registration.Event.ResultsStatus == ResultsStatus.Provisional ||
+                                       r.Registration.Event.ResultsStatus == ResultsStatus.Official));
 
     /// <summary>Kết quả cá nhân kèm thời gian từng checkpoint, nhóm tuổi, quyết định phạt (UC-63).</summary>
     public Task<Result?> GetDetailByRegistrationAsync(int registrationId, CancellationToken ct = default) =>

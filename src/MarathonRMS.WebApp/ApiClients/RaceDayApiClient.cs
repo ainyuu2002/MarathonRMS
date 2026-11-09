@@ -31,7 +31,8 @@ public class RaceDayApiClient : ApiClientBase
     // ---------- UC-52 tra cứu race kit ----------
 
     public Task<List<RaceKitLookupItemDto>> LookupRaceKitAsync(int eventId, string keyword, CancellationToken ct = default) =>
-        GetAsync<List<RaceKitLookupItemDto>>(Query($"api/race-day/events/{eventId}/race-kit", ("keyword", keyword)), ct);
+        PostAsync<List<RaceKitLookupItemDto>>($"api/race-day/events/{eventId}/race-kit/search",
+            new RaceKitLookupRequest { Keyword = keyword }, ct);
 
     // ---------- UC-53 phát race kit ----------
 

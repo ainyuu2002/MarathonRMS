@@ -112,6 +112,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRaceKitService, RaceKitService>();
         services.AddScoped<ITimingService, TimingService>();
         services.AddSingleton<IResultCalculator, ResultCalculator>();
+        services.AddScoped<IResultRecalculation, ResultRecalculation>();
         services.AddScoped<IResultService, ResultService>();
 
         return services;
