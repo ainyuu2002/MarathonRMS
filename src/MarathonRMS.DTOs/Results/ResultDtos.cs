@@ -171,6 +171,8 @@ public class ResultsOverviewDto
     /// <summary>Hết hạn nhận khiếu nại = lúc công bố tạm thời + ComplaintWindowMinutes (BR-27).</summary>
     public DateTime? ComplaintWindowEndsAt { get; set; }
     public int OpenComplaints { get; set; }
+    /// <summary>UC-91: lúc nhóm máu / ghi chú y tế trong đăng ký của giải tự bị xóa (BR-52) – null khi chưa chính thức.</summary>
+    public DateTime? MedicalDataPurgeAt { get; set; }
     public IReadOnlyList<ResultCategoryOptionDto> Categories { get; set; } = Array.Empty<ResultCategoryOptionDto>();
 }
 

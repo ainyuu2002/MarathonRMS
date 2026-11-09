@@ -24,11 +24,13 @@ public class ResultService : IResultService
     private readonly IDateTimeProvider _clock;
     private readonly IAuditLogger _audit;
     private readonly IUnitOfWork _uow;
+    private readonly IMedicalDataRetentionService _medicalRetention;
 
     public ResultService(IResultRepository results, IPenaltyReasonRepository reasons, IResultRecalculation recalc,
         IOrganizationScope scope, ICurrentUserService currentUser, IPrivacyFilter privacy, IDateTimeProvider clock,
-        IAuditLogger audit, IUnitOfWork uow)
+        IAuditLogger audit, IUnitOfWork uow, IMedicalDataRetentionService medicalRetention)
     {
+        _medicalRetention = medicalRetention;
         _results = results;
         _reasons = reasons;
         _recalc = recalc;
@@ -81,6 +83,7 @@ public class ResultService : IResultService
             CanFinalize = ev.ResultsStatus == ResultsStatus.Provisional && _clock.Now >= windowEndsAt && openComplaints == 0,
             ComplaintWindowEndsAt = windowEndsAt,
             OpenComplaints = openComplaints,
+            MedicalDataPurgeAt = await _medicalRetention.GetPurgeAtAsync(ev, ct),
             Categories = ev.Categories.OrderBy(c => c.StartAt).ThenBy(c => c.Name)
                 .Select(c => new ResultCategoryOptionDto { Id = c.CategoryId, Name = c.Name, IsTimed = c.IsTimed, IsRanked = c.IsRanked })
                 .ToList()

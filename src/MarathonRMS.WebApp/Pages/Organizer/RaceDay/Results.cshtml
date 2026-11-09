@@ -44,6 +44,10 @@
             {
                 <div>Công bố chính thức @official.ToString("HH:mm dd/MM/yyyy")</div>
             }
+            @if (o.MedicalDataPurgeAt is DateTime purge)
+            {
+                <div><i class="bi bi-shield-lock"></i> Nhóm máu và ghi chú y tế của VĐV giải này tự xóa từ @purge.ToString("HH:mm dd/MM/yyyy") – BR-52</div>
+            }
             @if (o.ResultsStatus != "Draft")
             {
                 <div>
