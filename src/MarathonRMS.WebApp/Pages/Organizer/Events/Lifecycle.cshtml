@@ -1,0 +1,118 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.Events.LifecycleModel
+@{
+    ViewData["Title"] = "Hoãn / hủy & hoàn tiền";
+    var e = Model.Event;
+    var policyRefund = e.Policy.ForceMajeurePolicy == "Refund";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Hoãn / hủy & hoàn tiền</h1>
+        <p class="text-secondary mb-0">@e.Name · @e.EventDate.ToString("dd/MM/yyyy") · <status-badge status="@e.Status" />
+            @if (e.PostponedFromDate is DateOnly from) { <span class="small">(dời từ @from.ToString("dd/MM/yyyy"))</span> }</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+@if (e.Status == "Cancelled")
+{
+    <div class="alert alert-danger"><strong>Giải đã hủy.</strong> Lý do: @e.CancelReason</div>
+}
+else if (!Model.CanChange)
+{
+    <div class="alert alert-secondary">Giải @(e.Status == "Draft" ? "còn là bản nháp – sửa ngày trực tiếp ở trang thông tin giải" : "đã kết thúc hoặc đã có kết quả") – không hoãn / hủy được.</div>
+}
+else
+{
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <form method="post" asp-page-handler="Postpone" asp-route-id="@Model.Id" class="card h-100" novalidate
+                  onsubmit="return confirm('Dời giải sang ngày mới?');">
+                <div class="card-header fw-semibold"><i class="bi bi-calendar-plus"></i> Hoãn giải</div>
+                <div class="card-body">
+                    <p class="small text-secondary">Đăng ký giữ nguyên. Giờ xuất phát, cut-off tại trạm và các hạn (sửa thông tin, chuyển nhượng, đổi cự ly) dời theo cùng số ngày (BR-15).</p>
+                    <label asp-for="PostponeInput.NewEventDate" class="form-label">Ngày tổ chức mới</label>
+                    <input asp-for="PostponeInput.NewEventDate" type="date" class="form-control" />
+                    <span asp-validation-for="PostponeInput.NewEventDate" class="text-danger small"></span>
+                    <label asp-for="PostponeInput.Reason" class="form-label mt-3">Lý do</label>
+                    <textarea asp-for="PostponeInput.Reason" class="form-control" rows="2" placeholder="VD: Bão số 3 đổ bộ…"></textarea>
+                    <span asp-validation-for="PostponeInput.Reason" class="text-danger small"></span>
+                </div>
+                <div class="card-footer text-end"><button class="btn btn-warning">Hoãn giải</button></div>
+            </form>
+        </div>
+        <div class="col-lg-6">
+            <form method="post" asp-page-handler="Cancel" asp-route-id="@Model.Id" class="card h-100 border-danger" novalidate
+                  onsubmit="return confirm('HỦY giải? Thao tác không hoàn tác được.');">
+                <div class="card-header fw-semibold text-danger"><i class="bi bi-x-octagon"></i> Hủy giải</div>
+                <div class="card-body">
+                    <p class="small text-secondary">
+                        Đơn chưa thanh toán bị hủy. Chính sách bất khả kháng của giải:
+                        <strong>@(policyRefund ? "Hoàn tiền" : e.Policy.ForceMajeurePolicy == "CarryOver" ? "Bảo lưu" : "Không hoàn tiền")</strong>.
+                        Hoàn tiền tạo một yêu cầu cho mỗi đăng ký đã thanh toán (giá đăng ký + chênh lệch đổi cự ly; phí dịch vụ không hoàn).
+                    </p>
+                    <label asp-for="CancelInput.Reason" class="form-label">Lý do hủy (công khai trên trang giải)</label>
+                    <textarea asp-for="CancelInput.Reason" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="CancelInput.Reason" class="text-danger small"></span>
+                    <div class="form-check mt-3">
+                        <input asp-for="CancelInput.RefundPaidRegistrations" class="form-check-input" disabled="@policyRefund" />
+                        <label asp-for="CancelInput.RefundPaidRegistrations" class="form-check-label">
+                            Hoàn tiền cho VĐV đã thanh toán @(policyRefund ? "(bắt buộc theo chính sách)" : "(tự nguyện)")
+                        </label>
+                    </div>
+                </div>
+                <div class="card-footer text-end"><button class="btn btn-danger">Hủy giải</button></div>
+            </form>
+        </div>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header fw-semibold">Yêu cầu hoàn tiền (@Model.Refunds.Count) – tổng @Model.Refunds.Sum(r => r.Amount).ToString("N0")đ</div>
+    @if (Model.Refunds.Count == 0)
+    {
+        <div class="card-body text-secondary small">Chưa có yêu cầu hoàn tiền.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 small">
+                <thead><tr><th>VĐV</th><th>Liên hệ</th><th class="text-end">Số tiền</th><th>Tài khoản nhận</th><th>Trạng thái</th><th style="min-width:280px"></th></tr></thead>
+                <tbody>
+                @foreach (var r in Model.Refunds)
+                {
+                    <tr>
+                        <td><div class="fw-semibold">@r.RunnerName</div><div class="text-secondary">@r.CategoryName · #@r.RegistrationId</div></td>
+                        <td>@r.Phone<div class="text-secondary">@r.Email</div></td>
+                        <td class="text-end fw-semibold">@r.Amount.ToString("N0")đ</td>
+                        <td>@(r.BankInfo ?? "— chưa khai —")</td>
+                        <td>
+                            <status-badge status="@(r.Status == "Pending" ? "RefundPending" : r.Status == "Completed" ? "Refunded" : "Rejected")" />
+                            @if (r.TransactionRef is not null) { <div class="text-secondary">Mã GD: @r.TransactionRef</div> }
+                        </td>
+                        <td>
+                            @if (r.Status == "Pending")
+                            {
+                                <form method="post" asp-page-handler="Complete" asp-route-id="@Model.Id" class="input-group input-group-sm mb-1">
+                                    <input type="hidden" name="refundId" value="@r.Id" />
+                                    <input name="transactionRef" class="form-control" placeholder="Mã giao dịch" required />
+                                    <button class="btn btn-success">Đã hoàn</button>
+                                </form>
+                                <form method="post" asp-page-handler="Reject" asp-route-id="@Model.Id" class="input-group input-group-sm"
+                                      onsubmit="return confirm('Từ chối hoàn tiền cho @r.RunnerName?');">
+                                    <input type="hidden" name="refundId" value="@r.Id" />
+                                    <input name="reason" class="form-control" placeholder="Lý do từ chối" required />
+                                    <button class="btn btn-outline-danger">Từ chối</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

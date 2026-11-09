@@ -49,6 +49,10 @@ public class EventDetailDto
     public string? EmergencyPhone { get; set; }
     public string? InsuranceNote { get; set; }
     public int WaiverVersion { get; set; }
+    /// <summary>Ngày tổ chức ban đầu nếu giải đã bị hoãn (UC-25).</summary>
+    public DateOnly? PostponedFromDate { get; set; }
+    /// <summary>Lý do hủy giải (UC-25).</summary>
+    public string? CancelReason { get; set; }
     public EventPolicyDto Policy { get; set; } = new();
     public IReadOnlyList<RaceCategoryDto> Categories { get; set; } = Array.Empty<RaceCategoryDto>();
     public IReadOnlyList<AgeGroupDto> AgeGroups { get; set; } = Array.Empty<AgeGroupDto>();

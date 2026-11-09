@@ -44,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RegistrationDAO>();
         services.AddScoped<PaymentDAO>();
         services.AddScoped<RegistrationChangeDAO>();
+        services.AddScoped<EventLifecycleDAO>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<BibDAO>();
         services.AddScoped<RaceKitDAO>();
@@ -78,6 +79,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRegistrationRepository, RegistrationRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IRegistrationChangeRepository, RegistrationChangeRepository>();
+        services.AddScoped<IEventLifecycleRepository, EventLifecycleRepository>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<IBibRepository, BibRepository>();
         services.AddScoped<IRaceKitRepository, RaceKitRepository>();
@@ -123,6 +125,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPenaltyReasonService, PenaltyReasonService>();
         // Phần A – đổi cự ly, chuyển nhượng BIB (UC-46, 47)
         services.AddScoped<IRegistrationChangeService, RegistrationChangeService>();
+        // Phần A – hoãn / hủy giải, hoàn tiền (UC-25, 50)
+        services.AddScoped<IEventLifecycleService, EventLifecycleService>();
+        services.AddScoped<IRefundService, RefundService>();
 
         // Phần B – giải, đăng ký, thanh toán (thêm bên dưới)
         services.AddScoped<IEventService, EventService>();

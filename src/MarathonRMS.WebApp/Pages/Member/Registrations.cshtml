@@ -33,6 +33,10 @@
                     </div>
                     <div class="small">Phí: @(r.FinalPrice == 0 ? "Miễn phí" : r.FinalPrice.ToString("N0") + "đ")</div>
 
+                    @if (r.Status is "RefundPending" or "Refunded")
+                    {
+                        <div class="alert alert-info py-2 small mt-2 mb-0">Giải đã hủy – xem <a asp-page="/Member/Refunds">hoàn tiền</a>.</div>
+                    }
                     @if (r.Status == "PendingPayment" && r.ExpiresAt is DateTime exp)
                     {
                         <div class="alert alert-warning py-2 small mt-2 mb-0">Giữ chỗ đến <strong>@exp.ToString("HH:mm dd/MM")</strong> – quá hạn sẽ tự hủy.</div>

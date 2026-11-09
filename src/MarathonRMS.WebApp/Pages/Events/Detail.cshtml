@@ -40,11 +40,13 @@
 
 @if (e.Status == "Cancelled")
 {
-    <div class="alert alert-danger">Giải đã bị hủy.</div>
+    <div class="alert alert-danger"><strong>Giải đã bị hủy.</strong> @e.CancelReason
+        <div class="small mt-1">VĐV đã thanh toán xem tình trạng hoàn tiền tại <a asp-page="/Member/Refunds">Hoàn tiền của tôi</a>.</div>
+    </div>
 }
-else if (e.Status == "Postponed")
+else if (e.PostponedFromDate is DateOnly from)
 {
-    <div class="alert alert-warning">Giải đang tạm hoãn – ban tổ chức sẽ thông báo ngày mới.</div>
+    <div class="alert alert-warning">Giải đã <strong>dời</strong> từ @from.ToString("dd/MM/yyyy") sang @e.EventDate.ToString("dd/MM/yyyy"). Đăng ký của bạn vẫn giữ nguyên.</div>
 }
 @if (e.ResultsStatus != "Draft")
 {

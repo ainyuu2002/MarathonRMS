@@ -59,6 +59,7 @@ AddApiClient<SuperAdminApiClient>();
 AddApiClient<CouponApiClient>();
 AddApiClient<EventContentApiClient>();
 AddApiClient<RegistrationChangeApiClient>();
+AddApiClient<EventLifecycleApiClient>();
 // Phần B
 AddApiClient<EventApiClient>();
 AddApiClient<RegistrationApiClient>();

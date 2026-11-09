@@ -317,6 +317,8 @@ public class EventService : IEventService
         EmergencyPhone = e.EmergencyPhone,
         InsuranceNote = e.InsuranceNote,
         WaiverVersion = e.WaiverVersion,
+        PostponedFromDate = e.PostponedFromDate,
+        CancelReason = e.CancelReason,
         Policy = ToPolicyDto(e.Policy),
         Categories = e.Categories.OrderBy(c => c.DistanceKm).ThenBy(c => c.Name)
             .Select(c => RaceCategoryMappings.ToDto(c, activeCounts.GetValueOrDefault(c.CategoryId), now)).ToList(),
