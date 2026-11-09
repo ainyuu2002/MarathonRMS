@@ -62,6 +62,10 @@
                             <button class="btn btn-sm btn-outline-danger">Hủy</button>
                         </form>
                     }
+                    @if (r.Status == "Confirmed" && !r.RaceKitCollected && r.EventDate > DateOnly.FromDateTime(DateTime.Today))
+                    {
+                        <a asp-page="/Member/RegistrationChange" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left-right"></i> Chuyển nhượng / đổi cự ly</a>
+                    }
                     @if (r.CanEditInfo)
                     {
                         <a asp-page="/Member/RegistrationEdit" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Sửa thông tin</a>
