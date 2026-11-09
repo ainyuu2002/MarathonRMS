@@ -62,6 +62,7 @@ else
                                 <a asp-page="Policy" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Chính sách"><i class="bi bi-sliders"></i></a>
                                 <a asp-page="Categories" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Cự ly"><i class="bi bi-signpost-split"></i></a>
                                 <a asp-page="AgeGroups" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Nhóm tuổi"><i class="bi bi-people"></i></a>
+                                <a asp-page="Registrations" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Đăng ký"><i class="bi bi-person-lines-fill"></i></a>
                                 <a asp-page="/Organizer/EventContent" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Nội dung"><i class="bi bi-file-richtext"></i></a>
                                 <a asp-page="/Organizer/EventAlbum" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Album"><i class="bi bi-images"></i></a>
                                 @if (next.Status is not null)

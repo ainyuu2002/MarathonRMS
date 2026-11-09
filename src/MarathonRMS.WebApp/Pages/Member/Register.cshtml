@@ -1,0 +1,219 @@
+@page "{eventId:int}/{categoryId:int}"
+@model MarathonRMS.WebApp.Pages.Member.RegisterModel
+@using MarathonRMS.DTOs.Common
+@{
+    ViewData["Title"] = "Đăng ký " + Model.Category.Name;
+    var c = Model.Category;
+    var price = Model.Quote?.FinalPrice ?? c.CurrentPrice;
+    var canRegister = c.CurrentPrice is not null && c.RemainingSlots > 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Đăng ký cự ly @c.Name</h1>
+        <p class="text-secondary mb-0">
+            @c.DistanceKm.ToString("0.##") km · xuất phát @c.StartAt.ToString("HH:mm dd/MM/yyyy") ·
+            tuổi @c.MinAge@(c.MaxAge is int max ? $"–{max}" : "+") · còn @c.RemainingSlots.ToString("N0") suất
+        </p>
+    </div>
+    <a asp-page="/Member/Registrations" class="btn btn-outline-secondary"><i class="bi bi-ticket-perforated"></i> Đăng ký của tôi</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+@if (!canRegister)
+{
+    <div class="alert alert-warning">
+        @(c.RemainingSlots <= 0 ? "Cự ly đã hết suất." : "Cự ly hiện không mở bán (ngoài thời gian đăng ký).")
+    </div>
+}
+else
+{
+<form method="post" asp-page="/Member/Register" asp-route-eventId="@Model.EventId" asp-route-categoryId="@Model.CategoryId" novalidate>
+    <input asp-for="Input.ParticipantId" type="hidden" />
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">Thông tin người chạy</div>
+                <div class="card-body row g-3">
+                    <div class="col-12 small text-secondary">Điền sẵn từ <a asp-page="/Member/Profile">hồ sơ của bạn</a>. Thông tin này được lưu lại cho đăng ký – sửa hồ sơ sau này không làm đổi đăng ký.</div>
+                    <div class="col-md-8">
+                        <label asp-for="Input.FullName" class="form-label">Họ tên <span class="text-danger">*</span></label>
+                        <input asp-for="Input.FullName" class="form-control" />
+                        <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.BibName" class="form-label">Tên in BIB <span class="text-danger">*</span></label>
+                        <input asp-for="Input.BibName" class="form-control" maxlength="16" />
+                        <span asp-validation-for="Input.BibName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.DateOfBirth" class="form-label">Ngày sinh <span class="text-danger">*</span></label>
+                        <input asp-for="Input.DateOfBirth" type="date" class="form-control" value="@(Model.Input.DateOfBirth == default ? "" : Model.Input.DateOfBirth.ToString("yyyy-MM-dd"))" />
+                        <span asp-validation-for="Input.DateOfBirth" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Gender" class="form-label">Giới tính <span class="text-danger">*</span></label>
+                        <select asp-for="Input.Gender" class="form-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="M">Nam</option>
+                            <option value="F">Nữ</option>
+                        </select>
+                        <span asp-validation-for="Input.Gender" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Nationality" class="form-label">Quốc tịch <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Nationality" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.IdType" class="form-label">Loại giấy tờ</label>
+                        <select asp-for="Input.IdType" class="form-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="CCCD">CCCD</option>
+                            <option value="Passport">Hộ chiếu</option>
+                            <option value="BirthCertificate">Giấy khai sinh</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="Input.IdNumber" class="form-label">Số giấy tờ</label>
+                        <input asp-for="Input.IdNumber" class="form-control" />
+                        <div class="form-text">Bắt buộc từ 14 tuổi – BTC đối chiếu khi phát race kit.</div>
+                        <span asp-validation-for="Input.IdNumber" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Phone" class="form-control" />
+                        <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Input.Email" class="form-label">Email</label>
+                        <input asp-for="Input.Email" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.TShirtSize" class="form-label">Size áo <span class="text-danger">*</span></label>
+                        <select asp-for="Input.TShirtSize" class="form-select">
+                            <option value="">--</option>
+                            @foreach (var size in DomainValues.TShirtSizes) { <option value="@size">@size</option> }
+                        </select>
+                        <span asp-validation-for="Input.TShirtSize" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.EmergencyContactName" class="form-label">Liên hệ khẩn cấp <span class="text-danger">*</span></label>
+                        <input asp-for="Input.EmergencyContactName" class="form-control" />
+                        <span asp-validation-for="Input.EmergencyContactName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.EmergencyContactPhone" class="form-label">SĐT khẩn cấp <span class="text-danger">*</span></label>
+                        <input asp-for="Input.EmergencyContactPhone" class="form-control" />
+                        <span asp-validation-for="Input.EmergencyContactPhone" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.ClubName" class="form-label">CLB</label>
+                        <input asp-for="Input.ClubName" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">Y tế (tùy chọn)</div>
+                <div class="card-body row g-3">
+                    <div class="col-md-3">
+                        <label asp-for="Input.BloodType" class="form-label">Nhóm máu</label>
+                        <input asp-for="Input.BloodType" class="form-control" maxlength="5" />
+                    </div>
+                    <div class="col-md-9">
+                        <label asp-for="Input.MedicalNotes" class="form-label">Bệnh nền / ghi chú y tế</label>
+                        <input asp-for="Input.MedicalNotes" class="form-control" />
+                    </div>
+                    <div class="col-12 form-check ms-2">
+                        <input asp-for="Input.HealthDataConsent" class="form-check-input" />
+                        <label asp-for="Input.HealthDataConsent" class="form-check-label">
+                            Tôi đồng ý cho BTC xử lý dữ liệu sức khỏe này để hỗ trợ y tế khi thi đấu (bắt buộc nếu điền nhóm máu / ghi chú y tế).
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <details class="card mb-4" @(Model.NeedsGuardian || Model.NeedsEscort ? "open" : "")>
+                <summary class="card-header fw-semibold">Người giám hộ / người chạy kèm
+                    <span class="small fw-normal text-secondary">– bắt buộc nếu dưới @Model.Policy.GuardianConsentUnderAge tuổi@(c.EscortRequiredUnderAge is int e ? $"; chạy kèm nếu dưới {e} tuổi" : "")</span>
+                </summary>
+                <div class="card-body row g-3">
+                    <div class="col-md-5">
+                        <label asp-for="Input.GuardianName" class="form-label">Họ tên người giám hộ</label>
+                        <input asp-for="Input.GuardianName" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.GuardianPhone" class="form-label">SĐT</label>
+                        <input asp-for="Input.GuardianPhone" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.GuardianIdNumber" class="form-label">Số giấy tờ</label>
+                        <input asp-for="Input.GuardianIdNumber" class="form-control" />
+                    </div>
+                    <div class="col-12 form-check ms-2">
+                        <input asp-for="Input.GuardianConsent" class="form-check-input" />
+                        <label asp-for="Input.GuardianConsent" class="form-check-label">Người giám hộ đồng ý cho người chạy tham gia và cung cấp các thông tin trên.</label>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.EscortName" class="form-label">Người chạy kèm</label>
+                        <input asp-for="Input.EscortName" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.EscortPhone" class="form-label">SĐT người chạy kèm</label>
+                        <input asp-for="Input.EscortPhone" class="form-control" />
+                    </div>
+                </div>
+            </details>
+
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">Văn bản miễn trừ trách nhiệm (phiên bản @Model.Waiver.WaiverVersion)</div>
+                <div class="card-body">
+                    <div class="border rounded p-3 mb-3 small bg-body-tertiary" style="max-height: 220px; overflow:auto; white-space: pre-line">@Model.Waiver.WaiverText</div>
+                    <div class="form-check">
+                        <input asp-for="Input.WaiverAccepted" class="form-check-input" />
+                        <label asp-for="Input.WaiverAccepted" class="form-check-label">Tôi đã đọc và đồng ý văn bản miễn trừ trách nhiệm. <span class="text-danger">*</span></label>
+                        <div><span asp-validation-for="Input.WaiverAccepted" class="text-danger small"></span></div>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.HealthDeclarationAccepted" class="form-check-input" />
+                        <label asp-for="Input.HealthDeclarationAccepted" class="form-check-label">Tôi cam kết đủ sức khỏe để tham gia cự ly này. <span class="text-danger">*</span></label>
+                        <div><span asp-validation-for="Input.HealthDeclarationAccepted" class="text-danger small"></span></div>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.PhotoMarketingConsent" class="form-check-input" />
+                        <label asp-for="Input.PhotoMarketingConsent" class="form-check-label">Cho phép BTC dùng ảnh có tôi để quảng bá (tùy chọn).</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.HideFromPublicList" class="form-check-input" />
+                        <label asp-for="Input.HideFromPublicList" class="form-check-label">Ẩn tên tôi trên danh sách VĐV và bảng xếp hạng công khai.</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card position-sticky" style="top: 1rem">
+                <div class="card-header fw-semibold">Thanh toán</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between"><span>@c.CurrentPriceTierName</span><span>@(c.CurrentPrice == 0 ? "Miễn phí" : c.CurrentPrice?.ToString("N0") + "đ")</span></div>
+                    @if (Model.Quote is not null)
+                    {
+                        <div class="d-flex justify-content-between text-success"><span>@Model.Quote.Code</span><span>−@Model.Quote.DiscountAmount.ToString("N0")đ</span></div>
+                        <div class="small text-secondary">@Model.Quote.Description</div>
+                    }
+                    <hr />
+                    <div class="d-flex justify-content-between fw-semibold fs-5"><span>Tổng</span><span>@(price == 0 ? "0đ" : price?.ToString("N0") + "đ")</span></div>
+                    <div class="input-group mt-3">
+                        <input asp-for="Input.CouponCode" class="form-control" placeholder="Mã giảm giá" />
+                        <button type="submit" asp-page-handler="Coupon" class="btn btn-outline-secondary" formnovalidate>Áp dụng</button>
+                    </div>
+                    @if (Model.CouponError is not null) { <div class="small text-danger mt-1">@Model.CouponError</div> }
+                    <button type="submit" class="btn btn-primary w-100 mt-3"><i class="bi bi-check2-circle"></i> Đăng ký</button>
+                    <div class="form-text">Đơn có phí được giữ chỗ trong thời gian ngắn – thanh toán ở trang "Đăng ký của tôi". Đơn 0đ được xác nhận ngay.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+}

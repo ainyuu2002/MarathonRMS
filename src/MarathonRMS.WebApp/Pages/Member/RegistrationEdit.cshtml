@@ -1,0 +1,68 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Member.RegistrationEditModel
+@using MarathonRMS.DTOs.Common
+@{
+    ViewData["Title"] = "Sửa thông tin đăng ký";
+    var r = Model.Registration;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Sửa thông tin đăng ký</h1>
+        <p class="text-secondary mb-0">@r.EventName · @r.CategoryName · @r.RunnerName</p>
+    </div>
+    <a asp-page="/Member/Registrations" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Đăng ký của tôi</a>
+</div>
+
+@if (!r.CanEditInfo)
+{
+    <div class="alert alert-secondary">Đã quá hạn tự sửa thông tin. Họ tên, ngày sinh, giới tính, giấy tờ chỉ ban tổ chức sửa được.</div>
+}
+else
+{
+    <form method="post" class="card" style="max-width: 720px" novalidate>
+        <div class="card-body row g-3">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <div class="col-12 small text-secondary">Họ tên, ngày sinh, giới tính, giấy tờ không tự sửa được – liên hệ ban tổ chức nếu sai.</div>
+            <div class="col-md-6">
+                <label asp-for="Input.BibName" class="form-label">Tên in BIB</label>
+                <input asp-for="Input.BibName" class="form-control" maxlength="16" />
+                <span asp-validation-for="Input.BibName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Input.TShirtSize" class="form-label">Size áo</label>
+                <select asp-for="Input.TShirtSize" class="form-select">
+                    @foreach (var size in DomainValues.TShirtSizes) { <option value="@size">@size</option> }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Input.Phone" class="form-label">SĐT</label>
+                <input asp-for="Input.Phone" class="form-control" />
+                <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.EmergencyContactName" class="form-label">Liên hệ khẩn cấp</label>
+                <input asp-for="Input.EmergencyContactName" class="form-control" />
+                <span asp-validation-for="Input.EmergencyContactName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.EmergencyContactPhone" class="form-label">SĐT khẩn cấp</label>
+                <input asp-for="Input.EmergencyContactPhone" class="form-control" />
+                <span asp-validation-for="Input.EmergencyContactPhone" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Input.ClubName" class="form-label">CLB</label>
+                <input asp-for="Input.ClubName" class="form-control" />
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check">
+                    <input asp-for="Input.HideFromPublicList" class="form-check-input" />
+                    <label asp-for="Input.HideFromPublicList" class="form-check-label">Ẩn tên trên trang công khai</label>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-end">
+            <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu</button>
+        </div>
+    </form>
+}

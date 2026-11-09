@@ -73,6 +73,14 @@ public class MyRegistrationDto
     public bool CanEditInfo { get; set; }
     public bool CanCancel { get; set; }
     public bool RaceKitCollected { get; set; }
+
+    // Các trường tự sửa được (BR-08) – để dựng form sửa
+    public string TShirtSize { get; set; } = "";
+    public string Phone { get; set; } = "";
+    public string EmergencyContactName { get; set; } = "";
+    public string EmergencyContactPhone { get; set; } = "";
+    public string? ClubName { get; set; }
+    public bool HideFromPublicList { get; set; }
 }
 
 /// <summary>UC-44: các trường người đăng ký tự sửa được trước InfoEditDeadline (BR-08).</summary>
@@ -111,6 +119,9 @@ public class RegistrationListItemDto
     public string Gender { get; set; } = "";
     public DateOnly DateOfBirth { get; set; }
     public string Nationality { get; set; } = "";
+    /// <summary>Giấy tờ – BTC cần để đối chiếu khi phát kit và sửa trường đã khóa (BR-08).</summary>
+    public string? IdType { get; set; }
+    public string? IdNumber { get; set; }
     public string Phone { get; set; } = "";
     public string? Email { get; set; }
     public string TShirtSize { get; set; } = "";
