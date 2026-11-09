@@ -2,6 +2,10 @@
 @if (Model is null)
 {
     <div asp-validation-summary="All" class="alert alert-warning"></div>
+    @if (ViewContext.ModelState.ErrorCount == 0)
+    {
+        <div class="alert alert-secondary">Văn bản này chưa được công bố. Vui lòng quay lại sau.</div>
+    }
 }
 else
 {

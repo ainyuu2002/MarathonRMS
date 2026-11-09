@@ -12,7 +12,13 @@ public class LegalModel : BasePageModel
     private readonly SuperAdminApiClient _superAdmin;
     public LegalModel(SuperAdminApiClient superAdmin) => _superAdmin = superAdmin;
 
-    [BindProperty(SupportsGet = true)] public string DocType { get; set; } = "Terms";
+    /// <summary>
+    /// Tab đang mở (Terms / Privacy). Kiểu string? – nếu để string, Razor Pages coi là bắt buộc và báo
+    /// "The DocType field is required" khi mở trang không kèm ?DocType=. Giá trị lạ / bỏ trống ⇒ Terms.
+    /// </summary>
+    [BindProperty(SupportsGet = true)] public string? DocType { get; set; }
+
+    private string CurrentDocType => DocType is "Terms" or "Privacy" ? DocType : "Terms";
     [BindProperty] public PublishLegalDocumentRequest Input { get; set; } = new();
     public List<LegalDocumentDto> Versions { get; private set; } = new();
 
@@ -21,7 +27,7 @@ public class LegalModel : BasePageModel
         try
         {
             await LoadAsync(ct);
-            Input = new PublishLegalDocumentRequest { DocType = DocType, Content = Versions.FirstOrDefault()?.Content ?? "" };
+            Input = new PublishLegalDocumentRequest { DocType = CurrentDocType, Content = Versions.FirstOrDefault()?.Content ?? "" };
         }
         catch (ApiException ex) { return await HandleApiErrorAsync(ex) ?? Page(); }
         return Page();
@@ -30,14 +36,14 @@ public class LegalModel : BasePageModel
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
         // Loại văn bản lấy theo tab đang mở (route), không lấy từ form
-        Input.DocType = DocType;
+        Input.DocType = CurrentDocType;
         ModelState.Remove($"{nameof(Input)}.{nameof(Input.DocType)}");
         if (!ModelState.IsValid) { await LoadAsync(ct); return Page(); }
         try
         {
             var doc = await _superAdmin.PublishLegalAsync(Input, ct);
             StatusMessage = $"Đã đăng phiên bản {doc.Version}. Người dùng đồng ý phiên bản cũ không phải đồng ý lại.";
-            return RedirectToPage(new { DocType });
+            return RedirectToPage(new { DocType = CurrentDocType });
         }
         catch (ApiException ex)
         {
@@ -49,7 +55,7 @@ public class LegalModel : BasePageModel
 
     private async Task LoadAsync(CancellationToken ct)
     {
-        if (DocType is not ("Terms" or "Privacy")) DocType = "Terms";
+        DocType = CurrentDocType;
         Versions = await _superAdmin.GetLegalVersionsAsync(DocType, ct);
     }
 }

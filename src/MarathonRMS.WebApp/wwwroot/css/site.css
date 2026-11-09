@@ -34,3 +34,7 @@ body {
 .text-bg-danger { color: #fff !important; background-color: #dc3545 !important; }
 .text-bg-light { color: #000 !important; background-color: #f8f9fa !important; }
 .text-bg-dark { color: #fff !important; background-color: #212529 !important; }
+
+/* Khung tóm tắt lỗi (asp-validation-summary="All") luôn được vẽ để jQuery Validation dùng lại –
+   khi chưa có lỗi (class validation-summary-valid) thì ẩn, tránh khung đỏ / vàng rỗng */
+.validation-summary-valid { display: none; }
