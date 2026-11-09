@@ -1,0 +1,102 @@
+@page
+@model MarathonRMS.WebApp.Pages.Admin.DashboardModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Dashboard hệ thống";
+    var d = Model.Data;
+    string StatusText(string s) => s switch
+    {
+        "Draft" => "Bản nháp", "Published" => "Đã công bố", "RegistrationOpen" => "Mở đăng ký", "RegistrationClosed" => "Đóng đăng ký",
+        "Postponed" => "Tạm hoãn", "Completed" => "Kết thúc", "Cancelled" => "Đã hủy", _ => s
+    };
+    var chart = JsonSerializer.Serialize(new
+    {
+        months = d.Monthly.Select(m => m.Month),
+        regs = d.Monthly.Select(m => m.Registrations),
+        revenue = d.Monthly.Select(m => m.Revenue),
+        statuses = d.EventsByStatus.Select(s => StatusText(s.Name)),
+        statusCounts = d.EventsByStatus.Select(s => s.Count)
+    });
+}
+
+<h1 class="h3 mb-3">Dashboard hệ thống</h1>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+        <div class="small text-secondary">Tài khoản</div>
+        <div class="fs-3 fw-semibold">@d.TotalUsers.ToString("N0")</div>
+        <div class="small">@d.LockedUsers đang khóa</div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+        <div class="small text-secondary">Ban tổ chức</div>
+        <div class="fs-3 fw-semibold">@d.ActiveOrganizations</div>
+        <div class="small">@d.LockedOrganizations tạm khóa ·
+            <a asp-page="/Admin/OrganizationApplications" class="@(d.PendingApplications > 0 ? "text-danger fw-semibold" : "")">@d.PendingApplications hồ sơ chờ duyệt</a></div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+        <div class="small text-secondary">Đăng ký còn hiệu lực</div>
+        <div class="fs-3 fw-semibold">@d.ActiveRegistrations.ToString("N0")</div>
+        <div class="small">trên @d.EventsByStatus.Sum(s => s.Count) giải</div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+        <div class="small text-secondary">Tiền đã thu / đã hoàn</div>
+        <div class="fs-4 fw-semibold">@d.TotalRevenue.ToString("N0")đ</div>
+        <div class="small">Hoàn @d.TotalRefunded.ToString("N0")đ · @d.PendingRefunds chờ hoàn (@d.PendingRefundAmount.ToString("N0")đ)</div>
+    </div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">6 tháng gần nhất: đăng ký mới và tiền thu</div>
+            <div class="card-body"><canvas id="monthly" height="130"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header fw-semibold">Giải theo trạng thái</div>
+            <div class="card-body"><canvas id="statuses" height="200"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="card-header fw-semibold">Tài khoản theo vai trò</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var r in d.UsersByRole)
+                {
+                    <li class="list-group-item d-flex justify-content-between"><span>@r.Name</span><span class="fw-semibold">@r.Count</span></li>
+                }
+            </ul>
+            <div class="card-footer small text-secondary">Một tài khoản có thể có nhiều vai trò.</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        (() => {
+            if (!window.Chart) return;
+            const d = @Html.Raw(chart);
+            new Chart(document.getElementById('monthly'), {
+                data: {
+                    labels: d.months,
+                    datasets: [
+                        { type: 'bar', label: 'Đăng ký mới', data: d.regs, backgroundColor: '#0d6efd', yAxisID: 'y' },
+                        { type: 'line', label: 'Tiền thu (đ)', data: d.revenue, borderColor: '#198754', yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 }, position: 'left' },
+                        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+            new Chart(document.getElementById('statuses'), {
+                type: 'doughnut',
+                data: { labels: d.statuses, datasets: [{ data: d.statusCounts }] },
+                options: { plugins: { legend: { position: 'bottom' } } }
+            });
+        })();
+    </script>
+}
