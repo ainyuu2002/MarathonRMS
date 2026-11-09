@@ -26,6 +26,9 @@ public static class EdmModelBuilder
         builder.EntitySet<RegistrationListItemDto>("Registrations");
         builder.EntitySet<EventSummaryDto>("Events");
 
+        // ---------- Phần A – GĐ3 ----------
+        builder.EntitySet<PublicRunnerDto>("Participants");
+
         // ---------- Phần C ----------
         builder.EntitySet<LeaderboardRowDto>("Results").EntityType.HasKey(r => r.ResultId);
 

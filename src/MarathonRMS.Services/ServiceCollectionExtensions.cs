@@ -46,6 +46,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RegistrationChangeDAO>();
         services.AddScoped<EventLifecycleDAO>();
         services.AddScoped<PriceReferenceDAO>();
+        services.AddScoped<PublicRunnerDAO>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<BibDAO>();
         services.AddScoped<RaceKitDAO>();
@@ -82,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRegistrationChangeRepository, RegistrationChangeRepository>();
         services.AddScoped<IEventLifecycleRepository, EventLifecycleRepository>();
         services.AddScoped<IPriceReferenceRepository, PriceReferenceRepository>();
+        services.AddScoped<IPublicRunnerRepository, PublicRunnerRepository>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<IBibRepository, BibRepository>();
         services.AddScoped<IRaceKitRepository, RaceKitRepository>();
@@ -132,6 +134,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRefundService, RefundService>();
         // Phần A – GĐ3: khoảng giá tham khảo (UC-87)
         services.AddScoped<IPriceReferenceService, PriceReferenceService>();
+        // Phần A – GĐ3: danh sách VĐV công khai (UC-38)
+        services.AddScoped<IPublicRunnerService, PublicRunnerService>();
 
         // Phần B – giải, đăng ký, thanh toán (thêm bên dưới)
         services.AddScoped<IEventService, EventService>();

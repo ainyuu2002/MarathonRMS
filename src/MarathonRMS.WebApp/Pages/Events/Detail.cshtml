@@ -58,7 +58,10 @@ else if (e.PostponedFromDate is DateOnly from)
 }
 
 <div class="card mb-4">
-    <div class="card-header fw-semibold">Cự ly</div>
+    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span>Cự ly</span>
+        <a asp-page="/Events/Runners" asp-route-id="@e.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-people"></i> Danh sách VĐV</a>
+    </div>
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead><tr><th>Cự ly</th><th>Xuất phát</th><th>Điều kiện</th><th class="text-end">Giá hiện tại</th><th class="text-end">Còn</th><th></th></tr></thead>

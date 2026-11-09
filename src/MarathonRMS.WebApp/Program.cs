@@ -60,6 +60,7 @@ AddApiClient<CouponApiClient>();
 AddApiClient<EventContentApiClient>();
 AddApiClient<RegistrationChangeApiClient>();
 AddApiClient<EventLifecycleApiClient>();
+AddApiClient<PublicRunnerApiClient>();
 // Phần B
 AddApiClient<EventApiClient>();
 AddApiClient<RegistrationApiClient>();

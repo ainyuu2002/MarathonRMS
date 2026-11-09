@@ -1,0 +1,64 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Events.RunnersModel
+@{
+    ViewData["Title"] = "Danh sách VĐV – " + Model.Event.Name;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Danh sách VĐV</h1>
+        <p class="text-secondary mb-0">@Model.Event.Name · @Model.Event.EventDate.ToString("dd/MM/yyyy")</p>
+    </div>
+    <a asp-page="/Events/Detail" asp-route-id="@Model.Id" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Trang giải</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <select name="categoryId" class="form-select">
+            <option value="">Mọi cự ly</option>
+            @foreach (var c in Model.Event.Categories)
+            {
+                <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="gender" class="form-select">
+            <option value="">Nam & nữ</option>
+            <option value="M" selected="@(Model.Gender == "M")">Nam</option>
+            <option value="F" selected="@(Model.Gender == "F")">Nữ</option>
+        </select>
+    </div>
+    <div class="col-md-5"><input name="keyword" value="@Model.Keyword" class="form-control" placeholder="Tên hoặc số BIB" /></div>
+    <div class="col-md-2 d-grid"><button class="btn btn-primary"><i class="bi bi-search"></i> Tìm</button></div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>BIB</th><th>VĐV</th><th>Giới tính</th><th>Cự ly</th><th>CLB</th></tr></thead>
+            <tbody>
+            @if (Model.Data.Items.Count == 0)
+            {
+                <tr><td colspan="5" class="text-center text-secondary py-4">Chưa có VĐV phù hợp.</td></tr>
+            }
+            @foreach (var r in Model.Data.Items)
+            {
+                <tr>
+                    <td class="font-monospace">@(r.BibNumber?.ToString() ?? "—")</td>
+                    <td>@r.DisplayName</td>
+                    <td>@(r.Gender == "F" ? "Nữ" : "Nam")</td>
+                    <td>@r.CategoryName</td>
+                    <td class="text-secondary">@r.ClubName</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="mt-2">
+    <partial name="_Pager" model="PagerModel.From(Model.Data, new { id = Model.Id, categoryId = Model.CategoryId, gender = Model.Gender, keyword = Model.Keyword })" />
+</div>
+<p class="small text-secondary mt-2">Chỉ hiện tên, BIB, cự ly, CLB. VĐV chọn ẩn tên hoặc dưới 18 tuổi hiện dạng "VĐV #BIB".</p>
