@@ -38,7 +38,17 @@ public static class PagingExtensions
 
 public static class EnumParser
 {
-    /// <summary>Chuyển chuỗi từ DTO sang enum; chuỗi null/rỗng ⇒ null. DTO đã có [AllowedValues] nên lỗi ở đây là lỗi lập trình.</summary>
-    public static TEnum? ParseOptional<TEnum>(string? value) where TEnum : struct, Enum =>
-        string.IsNullOrWhiteSpace(value) ? null : Enum.Parse<TEnum>(value, ignoreCase: true);
+    /// <summary>
+    /// Chuyển chuỗi (DTO, query, form) sang enum; chuỗi null/rỗng ⇒ null.
+    /// Giá trị không thuộc enum (kể cả số như "7") ⇒ lỗi 400 kèm danh sách giá trị hợp lệ, không để lọt thành lỗi 500.
+    /// </summary>
+    public static TEnum? ParseOptional<TEnum>(string? value) where TEnum : struct, Enum
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var text = value.Trim();
+        if (!int.TryParse(text, out _) && Enum.TryParse<TEnum>(text, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed))
+            return parsed;
+        throw new BusinessRuleException(ErrorCodes.Validation,
+            $"Giá trị không hợp lệ cho {typeof(TEnum).Name}. Chỉ chấp nhận: {string.Join(", ", Enum.GetNames<TEnum>())}.", 400);
+    }
 }
