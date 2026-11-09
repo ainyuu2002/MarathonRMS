@@ -1,0 +1,108 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.Events.AgeGroupsModel
+@{
+    ViewData["Title"] = "Nhóm tuổi";
+    var locked = Model.Event.ResultsStatus != "Draft";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Nhóm tuổi</h1>
+        <p class="text-secondary mb-0">@Model.Event.Name · tính tuổi theo @(Model.Event.Policy.AgeCalculationMode == "CalendarYear" ? "năm sinh" : "ngày thi")</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
+</div>
+
+@if (locked)
+{
+    <div class="alert alert-secondary"><i class="bi bi-lock"></i> Kết quả đã công bố – nhóm tuổi bị khóa (BR-46).</div>
+}
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card">
+            <div class="card-header fw-semibold">Danh sách (@Model.Groups.Count)</div>
+            @if (Model.Groups.Count == 0)
+            {
+                <div class="card-body text-center text-secondary py-5">
+                    <i class="bi bi-people fs-1"></i>
+                    <p class="mt-2 mb-0">Chưa có nhóm tuổi. Không có nhóm tuổi thì chỉ xếp hạng chung cuộc.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>Nhóm</th><th>Áp dụng</th><th>Tuổi</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var g in Model.Groups)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@g.Name</td>
+                                <td>@Model.CategoryName(g.CategoryId)</td>
+                                <td>@g.MinAge – @(g.MaxAge?.ToString() ?? "trở lên")</td>
+                                <td class="text-end text-nowrap">
+                                    @if (!locked)
+                                    {
+                                        <a asp-route-id="@Model.Id" asp-route-ageGroupId="@g.Id" class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id" class="d-inline"
+                                              onsubmit="return confirm('Xóa nhóm tuổi @g.Name?');">
+                                            <input type="hidden" name="ageGroupId" value="@g.Id" />
+                                            <button class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (!locked)
+    {
+        <div class="col-xl-5">
+            <form method="post" asp-page-handler="Save" asp-route-id="@Model.Id" asp-route-ageGroupId="@Model.AgeGroupId" class="card" novalidate>
+                <div class="card-header fw-semibold">@(Model.AgeGroupId is null ? "Thêm nhóm tuổi" : "Sửa nhóm tuổi")</div>
+                <div class="card-body row g-3">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Name" class="form-label">Tên nhóm</label>
+                        <input asp-for="Input.Name" class="form-control" placeholder="40–49" />
+                        <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.CategoryId" class="form-label">Áp dụng cho</label>
+                        <select asp-for="Input.CategoryId" class="form-select">
+                            <option value="">Mọi cự ly</option>
+                            @foreach (var c in Model.Event.Categories)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.MinAge" class="form-label">Từ tuổi</label>
+                        <input asp-for="Input.MinAge" type="number" min="0" max="120" class="form-control" />
+                        <span asp-validation-for="Input.MinAge" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.MaxAge" class="form-label">Đến tuổi</label>
+                        <input asp-for="Input.MaxAge" type="number" min="0" max="120" class="form-control" />
+                        <div class="form-text">Để trống = không giới hạn trên.</div>
+                        <span asp-validation-for="Input.MaxAge" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end gap-2">
+                    @if (Model.AgeGroupId is not null)
+                    {
+                        <a asp-route-id="@Model.Id" class="btn btn-outline-secondary">Hủy sửa</a>
+                    }
+                    <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu</button>
+                </div>
+            </form>
+        </div>
+    }
+</div>

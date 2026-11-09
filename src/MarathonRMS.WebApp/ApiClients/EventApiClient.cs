@@ -49,4 +49,34 @@ public class EventApiClient : ApiClientBase
 
     public Task DeleteCategoryAsync(int categoryId, CancellationToken ct = default) =>
         DeleteAsync($"api/categories/{categoryId}", ct);
+
+    // UC-22 – mức giá
+    public Task<PriceTierDto> CreatePriceTierAsync(int categoryId, UpsertPriceTierRequest request, CancellationToken ct = default) =>
+        PostAsync<PriceTierDto>($"api/categories/{categoryId}/price-tiers", request, ct);
+
+    public Task<PriceTierDto> UpdatePriceTierAsync(int id, UpsertPriceTierRequest request, CancellationToken ct = default) =>
+        PutAsync<PriceTierDto>($"api/price-tiers/{id}", request, ct);
+
+    public Task DeletePriceTierAsync(int id, CancellationToken ct = default) => DeleteAsync($"api/price-tiers/{id}", ct);
+
+    // UC-23 – nhóm tuổi
+    public Task<List<AgeGroupDto>> GetAgeGroupsAsync(int eventId, CancellationToken ct = default) =>
+        GetAsync<List<AgeGroupDto>>($"api/events/{eventId}/age-groups", ct);
+
+    public Task<AgeGroupDto> CreateAgeGroupAsync(int eventId, UpsertAgeGroupRequest request, CancellationToken ct = default) =>
+        PostAsync<AgeGroupDto>($"api/events/{eventId}/age-groups", request, ct);
+
+    public Task<AgeGroupDto> UpdateAgeGroupAsync(int id, UpsertAgeGroupRequest request, CancellationToken ct = default) =>
+        PutAsync<AgeGroupDto>($"api/age-groups/{id}", request, ct);
+
+    public Task DeleteAgeGroupAsync(int id, CancellationToken ct = default) => DeleteAsync($"api/age-groups/{id}", ct);
+
+    // UC-24 – checkpoint
+    public Task<CheckpointDto> CreateCheckpointAsync(int categoryId, UpsertCheckpointRequest request, CancellationToken ct = default) =>
+        PostAsync<CheckpointDto>($"api/categories/{categoryId}/checkpoints", request, ct);
+
+    public Task<CheckpointDto> UpdateCheckpointAsync(int id, UpsertCheckpointRequest request, CancellationToken ct = default) =>
+        PutAsync<CheckpointDto>($"api/checkpoints/{id}", request, ct);
+
+    public Task DeleteCheckpointAsync(int id, CancellationToken ct = default) => DeleteAsync($"api/checkpoints/{id}", ct);
 }

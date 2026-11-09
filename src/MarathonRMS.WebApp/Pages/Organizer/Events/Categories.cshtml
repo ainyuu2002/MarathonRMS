@@ -12,7 +12,6 @@
     <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
 </div>
 
-<partial name="_StatusMessage" model="Model.StatusMessage" />
 
 <div class="row g-4">
     <div class="col-xl-7">
@@ -42,6 +41,7 @@
                                         else { <span>COT @item.CutOffMinutes phút</span> }
                                         @if (item.IsRanked) { <span> · Có xếp hạng</span> }
                                     </div>
+                                    <div class="small text-secondary">@item.PriceTiers.Count mức giá · @item.Checkpoints.Count checkpoint@(item.CurrentPrice is decimal price ? $" · đang bán {price:N0}đ" : "")</div>
                                 </td>
                                 <td class="text-nowrap">@item.StartAt.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td class="text-nowrap">@item.Capacity.ToString("N0")<div class="small text-secondary">Còn @item.RemainingSlots.ToString("N0")</div></td>
@@ -49,6 +49,8 @@
                                 <td class="text-end text-nowrap">
                                     <a asp-page="Categories" asp-route-id="@Model.Id" asp-route-categoryId="@item.Id"
                                        class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    <a asp-page="CategorySetup" asp-route-id="@Model.Id" asp-route-categoryId="@item.Id"
+                                       class="btn btn-sm btn-outline-primary" title="Giá & checkpoint"><i class="bi bi-cash-coin"></i></a>
                                     <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id" class="d-inline"
                                           onsubmit="return confirm('Xóa cự ly @item.Name?');">
                                         <input type="hidden" name="categoryId" value="@item.Id" />

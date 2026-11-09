@@ -1,0 +1,224 @@
+@page "{id:int}/{categoryId:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.Events.CategorySetupModel
+@{
+    ViewData["Title"] = "Giá & checkpoint";
+    var c = Model.Category;
+    string Station(string s) => s switch { "Water" => "Nước", "Full" => "Tiếp tế đầy đủ", "Medical" => "Y tế", _ => "—" };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Giá & checkpoint – @c.Name</h1>
+        <p class="text-secondary mb-0">@Model.Event.Name · @c.DistanceKm.ToString("0.##") km · xuất phát @c.StartAt.ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+    <a asp-page="Categories" asp-route-id="@Model.Id" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Cự ly của giải</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Warning))
+{
+    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> <strong>Lưu ý (BR-49):</strong> @Model.Warning</div>
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+@* ---------------- UC-22 Mức giá ---------------- *@
+<div class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="card h-100">
+            <div class="card-header fw-semibold d-flex justify-content-between">
+                <span>Mức giá</span>
+                <span class="small text-secondary fw-normal">Đăng ký: @Model.Event.RegistrationOpenAt.ToString("dd/MM/yyyy HH:mm") – @Model.Event.RegistrationCloseAt.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            @if (!Model.PriceCoverageComplete)
+            {
+                <div class="alert alert-info rounded-0 border-0 border-bottom mb-0 small">
+                    Các mức giá phải phủ kín thời gian đăng ký, không chồng lấn, không hở (BR-47) thì mới mở đăng ký được.
+                </div>
+            }
+            @if (c.PriceTiers.Count == 0)
+            {
+                <div class="card-body text-center text-secondary py-4">Chưa có mức giá.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>Tên</th><th class="text-end">Giá</th><th>Từ</th><th>Đến</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var t in c.PriceTiers)
+                        {
+                            <tr class="@(t.Id == c.PriceTiers.FirstOrDefault(x => x.Name == c.CurrentPriceTierName)?.Id ? "table-success" : "")">
+                                <td>@t.Name</td>
+                                <td class="text-end">@(t.Price == 0 ? "Miễn phí" : t.Price.ToString("N0") + "đ")</td>
+                                <td class="text-nowrap small">@t.ValidFrom.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-nowrap small">@t.ValidTo.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-route-id="@Model.Id" asp-route-categoryId="@c.Id" asp-route-priceTierId="@t.Id"
+                                       class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" asp-page-handler="DeletePrice" asp-route-id="@Model.Id" asp-route-categoryId="@c.Id"
+                                          class="d-inline" onsubmit="return confirm('Xóa mức giá @t.Name?');">
+                                        <input type="hidden" name="priceTierId" value="@t.Id" />
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <form method="post" asp-page-handler="SavePrice" asp-route-id="@Model.Id" asp-route-categoryId="@c.Id"
+              asp-route-priceTierId="@Model.PriceTierId" class="card h-100" novalidate>
+            <div class="card-header fw-semibold">@(Model.PriceTierId is null ? "Thêm mức giá" : "Sửa mức giá")</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label asp-for="PriceInput.Name" class="form-label">Tên</label>
+                    <input asp-for="PriceInput.Name" class="form-control" placeholder="Early Bird" />
+                    <span asp-validation-for="PriceInput.Name" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="PriceInput.Price" class="form-label">Giá (VNĐ)</label>
+                    <input asp-for="PriceInput.Price" type="number" min="0" step="1000" class="form-control" />
+                    <div class="form-text">0 = miễn phí; bội số 1.000đ.</div>
+                    <span asp-validation-for="PriceInput.Price" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="PriceInput.ValidFrom" class="form-label">Từ</label>
+                    <input asp-for="PriceInput.ValidFrom" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                    <span asp-validation-for="PriceInput.ValidFrom" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="PriceInput.ValidTo" class="form-label">Đến (không gồm)</label>
+                    <input asp-for="PriceInput.ValidTo" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                    <span asp-validation-for="PriceInput.ValidTo" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                @if (Model.PriceTierId is not null)
+                {
+                    <a asp-route-id="@Model.Id" asp-route-categoryId="@c.Id" class="btn btn-outline-secondary">Hủy sửa</a>
+                }
+                <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu mức giá</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* ---------------- UC-24 Checkpoint ---------------- *@
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Checkpoint</div>
+            @if (c.IsTimed && (!c.Checkpoints.Any(x => x.Type == "Start") || !c.Checkpoints.Any(x => x.Type == "Finish")))
+            {
+                <div class="alert alert-info rounded-0 border-0 border-bottom mb-0 small">Cự ly bấm giờ cần checkpoint Start và Finish trước khi mở đăng ký (BR-38).</div>
+            }
+            @if (c.Checkpoints.Count == 0)
+            {
+                <div class="card-body text-center text-secondary py-4">Chưa có checkpoint.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>#</th><th>Checkpoint</th><th class="text-end">Km</th><th>Trạm</th><th>Cut-off</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var p in c.Checkpoints)
+                        {
+                            <tr>
+                                <td>@p.Sequence</td>
+                                <td>
+                                    <span class="fw-semibold">@p.Name</span>
+                                    <span class="badge @(p.Type == "Split" ? "text-bg-light" : "text-bg-dark")">@p.Type</span>
+                                    @if (!p.IsMandatory) { <span class="badge text-bg-secondary">Không bắt buộc</span> }
+                                </td>
+                                <td class="text-end">@p.DistanceKm.ToString("0.##")</td>
+                                <td class="small">@Station(p.StationType)</td>
+                                <td class="small text-nowrap">@(p.CutOffAt?.ToString("dd/MM HH:mm") ?? "—")</td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-route-id="@Model.Id" asp-route-categoryId="@c.Id" asp-route-checkpointId="@p.Id"
+                                       class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" asp-page-handler="DeleteCheckpoint" asp-route-id="@Model.Id" asp-route-categoryId="@c.Id"
+                                          class="d-inline" onsubmit="return confirm('Xóa checkpoint @p.Name?');">
+                                        <input type="hidden" name="checkpointId" value="@p.Id" />
+                                        <button class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <form method="post" asp-page-handler="SaveCheckpoint" asp-route-id="@Model.Id" asp-route-categoryId="@c.Id"
+              asp-route-checkpointId="@Model.CheckpointId" class="card h-100" novalidate>
+            <div class="card-header fw-semibold">@(Model.CheckpointId is null ? "Thêm checkpoint" : "Sửa checkpoint")</div>
+            <div class="card-body row g-3">
+                <div class="col-md-8">
+                    <label asp-for="CheckpointInput.Name" class="form-label">Tên</label>
+                    <input asp-for="CheckpointInput.Name" class="form-control" />
+                    <span asp-validation-for="CheckpointInput.Name" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="CheckpointInput.Sequence" class="form-label">Thứ tự</label>
+                    <input asp-for="CheckpointInput.Sequence" type="number" min="1" max="100" class="form-control" />
+                    <span asp-validation-for="CheckpointInput.Sequence" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="CheckpointInput.Type" class="form-label">Loại</label>
+                    <select asp-for="CheckpointInput.Type" class="form-select">
+                        <option value="Start">Start</option>
+                        <option value="Split">Split</option>
+                        <option value="Finish">Finish</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="CheckpointInput.DistanceKm" class="form-label">Km</label>
+                    <input asp-for="CheckpointInput.DistanceKm" type="number" min="0" step="0.01" class="form-control" />
+                    <span asp-validation-for="CheckpointInput.DistanceKm" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="CheckpointInput.StationType" class="form-label">Trạm</label>
+                    <select asp-for="CheckpointInput.StationType" class="form-select">
+                        <option value="None">Không</option>
+                        <option value="Water">Nước</option>
+                        <option value="Full">Tiếp tế đầy đủ</option>
+                        <option value="Medical">Y tế</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label asp-for="CheckpointInput.CutOffAt" class="form-label">Giờ cut-off tại trạm</label>
+                    <input asp-for="CheckpointInput.CutOffAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                    <div class="form-text">Để trống nếu không có. Tăng dần theo thứ tự (BR-39).</div>
+                    <span asp-validation-for="CheckpointInput.CutOffAt" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 d-flex align-items-center">
+                    <div class="form-check form-switch mt-3">
+                        <input asp-for="CheckpointInput.IsMandatory" class="form-check-input" />
+                        <label asp-for="CheckpointInput.IsMandatory" class="form-check-label">Bắt buộc</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="CheckpointInput.Latitude" class="form-label">Vĩ độ</label>
+                    <input asp-for="CheckpointInput.Latitude" type="number" step="0.000001" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="CheckpointInput.Longitude" class="form-label">Kinh độ</label>
+                    <input asp-for="CheckpointInput.Longitude" type="number" step="0.000001" class="form-control" />
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                @if (Model.CheckpointId is not null)
+                {
+                    <a asp-route-id="@Model.Id" asp-route-categoryId="@c.Id" class="btn btn-outline-secondary">Hủy sửa</a>
+                }
+                <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu checkpoint</button>
+            </div>
+        </form>
+    </div>
+</div>
