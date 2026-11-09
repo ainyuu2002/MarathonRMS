@@ -82,7 +82,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Input.Note" class="form-label">Ghi chú</label>
+                        <label asp-for="Input.Note" class="form-label">Ghi chú <span class="text-danger">*</span></label>
                         <textarea asp-for="Input.Note" class="form-control" rows="2" maxlength="500"></textarea>
                         <span asp-validation-for="Input.Note" class="text-danger small"></span>
                     </div>

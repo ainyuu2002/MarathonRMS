@@ -57,6 +57,15 @@ public class BibListItemDto
 
 // ============================ Race kit (UC-52, UC-53) ============================
 
+/// <summary>
+/// Tra cứu tại quầy – gửi trong body (POST) để số giấy tờ / số điện thoại không nằm trên URL, lịch sử trình duyệt, log.
+/// </summary>
+public class RaceKitLookupRequest
+{
+    [Required(ErrorMessage = "Nhập số BIB, mã QR, số giấy tờ hoặc số điện thoại"), StringLength(100)]
+    public string Keyword { get; set; } = "";
+}
+
 /// <summary>Kết quả tra cứu tại quầy. Số giấy tờ được che bớt (VD ******1234) – BR-37.</summary>
 public class RaceKitLookupItemDto
 {

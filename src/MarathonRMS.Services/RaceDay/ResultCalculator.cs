@@ -35,6 +35,8 @@ public sealed class CalcOutcome
     public bool MissingStartMat { get; set; }
     /// <summary>Qua thảm xuất phát muộn hơn mức cho phép ⇒ DNS.</summary>
     public bool LateStart { get; set; }
+    /// <summary>Chưa về đích, chưa bỏ cuộc và các mốc cut-off phía trước chưa qua ⇒ còn trên đường chạy, chưa có kết quả.</summary>
+    public bool OnCourse { get; set; }
 }
 
 /// <summary>
@@ -44,25 +46,27 @@ public sealed class CalcOutcome
 /// </summary>
 public interface IResultCalculator
 {
-    IReadOnlyList<CalcOutcome> Calculate(CalcCategory category, CalcPolicy policy, IReadOnlyList<CalcRunner> runners);
+    /// <param name="now">Giờ hiện tại (giờ VN) – để biết trạm / vạch đích đã đóng hay VĐV còn trên đường chạy.</param>
+    IReadOnlyList<CalcOutcome> Calculate(CalcCategory category, CalcPolicy policy, IReadOnlyList<CalcRunner> runners, DateTime now);
 }
 
 public class ResultCalculator : IResultCalculator
 {
-    public IReadOnlyList<CalcOutcome> Calculate(CalcCategory category, CalcPolicy policy, IReadOnlyList<CalcRunner> runners)
+    public IReadOnlyList<CalcOutcome> Calculate(CalcCategory category, CalcPolicy policy, IReadOnlyList<CalcRunner> runners,
+        DateTime now)
     {
         var ordered = category.Checkpoints.OrderBy(c => c.Sequence).ToList();
         var start = ordered.FirstOrDefault(c => c.Type == CheckpointType.Start);
         var finish = ordered.FirstOrDefault(c => c.Type == CheckpointType.Finish)
                      ?? throw new InvalidOperationException($"Cự ly {category.Name} chưa có checkpoint về đích.");
 
-        var outcomes = runners.Select(r => Evaluate(r, category, policy, ordered, start, finish)).ToList();
+        var outcomes = runners.Select(r => Evaluate(r, category, policy, ordered, start, finish, now)).ToList();
         if (category.IsRanked) Rank(outcomes, policy);
         return outcomes;
     }
 
     private static CalcOutcome Evaluate(CalcRunner runner, CalcCategory category, CalcPolicy policy,
-        IReadOnlyList<CalcCheckpoint> ordered, CalcCheckpoint? start, CalcCheckpoint finish)
+        IReadOnlyList<CalcCheckpoint> ordered, CalcCheckpoint? start, CalcCheckpoint finish, DateTime now)
     {
         var o = new CalcOutcome
         {
@@ -72,10 +76,11 @@ public class ResultCalculator : IResultCalculator
             PenaltySeconds = runner.PenaltySeconds
         };
 
-        EvaluateNatural(o, runner, category, policy, ordered, start, finish);
+        EvaluateNatural(o, runner, category, policy, ordered, start, finish, now);
 
         if (runner.Disqualified)
         {
+            o.OnCourse = false;
             o.Status = ResultStatus.DSQ;
             o.DnfReason = null;
             o.DnfCheckpointId = null;
@@ -85,7 +90,7 @@ public class ResultCalculator : IResultCalculator
     }
 
     private static void EvaluateNatural(CalcOutcome o, CalcRunner runner, CalcCategory category, CalcPolicy policy,
-        IReadOnlyList<CalcCheckpoint> ordered, CalcCheckpoint? start, CalcCheckpoint finish)
+        IReadOnlyList<CalcCheckpoint> ordered, CalcCheckpoint? start, CalcCheckpoint finish, DateTime now)
     {
         if (runner.Withdrawal is { } withdrawal)
         {
@@ -121,10 +126,30 @@ public class ResultCalculator : IResultCalculator
 
         if (!times.TryGetValue(finish.CheckpointId, out var finishedAt))
         {
-            // Không về đích: dừng ở checkpoint kế tiếp sau checkpoint cuối cùng có thời gian
+            // Chưa về đích: xác định VĐV dừng ở trạm nào và trạm đó đã đóng chưa
             var lastSequence = ordered.Where(c => times.ContainsKey(c.CheckpointId)).Select(c => c.Sequence).DefaultIfEmpty(0).Max();
             var next = ordered.FirstOrDefault(c => c.Sequence > lastSequence) ?? finish;
-            SetDnf(o, DnfReason.CutOff, next.CheckpointId);
+
+            // BR-23: một trạm phía trước đã đóng mà VĐV chưa tới ⇒ DNF quá giờ tại trạm đó
+            var closedAhead = ordered.FirstOrDefault(c => c.Sequence > lastSequence && c.CutOffAt is DateTime close && now > close);
+            if (closedAhead is not null)
+            {
+                SetDnf(o, DnfReason.CutOff, closedAhead.CheckpointId);
+                return;
+            }
+
+            // Hết giờ tổng (COT theo giờ súng) ⇒ DNF quá giờ. Cự ly không đặt COT: hết ngày thi mà chưa tới trạm kế tiếp ⇒ bỏ trạm
+            var courseClosesAt = category.CutOffMinutes is int limit
+                ? category.StartAt.AddMinutes(limit)
+                : category.StartAt.Date.AddDays(1);
+            if (now > courseClosesAt)
+            {
+                SetDnf(o, category.CutOffMinutes is null ? DnfReason.MissedCheckpoint : DnfReason.CutOff, next.CheckpointId);
+                return;
+            }
+
+            // Các mốc phía trước chưa đóng ⇒ VĐV còn trên đường chạy, chưa có kết quả
+            o.OnCourse = true;
             return;
         }
 
@@ -176,7 +201,7 @@ public class ResultCalculator : IResultCalculator
 
     private static void Rank(List<CalcOutcome> outcomes, CalcPolicy policy)
     {
-        var finished = outcomes.Where(o => o.Status == ResultStatus.Finished).ToList();
+        var finished = outcomes.Where(o => o.Status == ResultStatus.Finished && !o.OnCourse).ToList();
         Func<CalcOutcome, long>? tieBreak = policy.TieBreak == TieBreakRule.ChipTime
             ? o => CeilingSeconds(o.ChipTimeMs!.Value + o.PenaltySeconds * 1000L)
             : null;

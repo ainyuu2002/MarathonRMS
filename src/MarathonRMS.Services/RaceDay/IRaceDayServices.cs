@@ -1,4 +1,5 @@
 using MarathonRMS.DTOs.Common;
+using MarathonRMS.DTOs.Events;
 using MarathonRMS.DTOs.RaceDay;
 using MarathonRMS.DTOs.Results;
 
@@ -23,6 +24,9 @@ public interface IBibService
 /// <summary>UC-52, UC-53 – phát race kit (BR-20).</summary>
 public interface IRaceKitService
 {
+    /// <summary>Giải của BTC người gọi đang vận hành được (không gồm bản nháp, đã hủy) – chọn giải ở quầy kit, bấm giờ.</summary>
+    Task<IReadOnlyList<EventSummaryDto>> GetOperationalEventsAsync(CancellationToken ct = default);
+
     /// <summary>Tìm theo BIB, QrToken, số giấy tờ hoặc SĐT trong một giải.</summary>
     Task<IReadOnlyList<RaceKitLookupItemDto>> LookupAsync(int eventId, string keyword, CancellationToken ct = default);
 

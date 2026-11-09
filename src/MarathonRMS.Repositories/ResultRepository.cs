@@ -13,6 +13,8 @@ public interface IResultRepository
     Task<Dictionary<ResultStatus, int>> CountByStatusAsync(int eventId, CancellationToken ct = default);
     Task<DateTime?> GetLastUpdatedAtAsync(int eventId, CancellationToken ct = default);
     Task AddAsync(Result result, CancellationToken ct = default);
+    void Remove(Result result);
+    Task<bool> HasCalculatedResultsAsync(int eventId, CancellationToken ct = default);
     Task<Event?> GetEventTrackedAsync(int eventId, CancellationToken ct = default);
     Task<bool> AnyForEventAsync(int eventId, CancellationToken ct = default);
     Task<int> CountOpenComplaintsAsync(int eventId, CancellationToken ct = default);
@@ -41,6 +43,9 @@ public class ResultRepository : IResultRepository
     public Task<DateTime?> GetLastUpdatedAtAsync(int eventId, CancellationToken ct = default) =>
         _dao.GetLastUpdatedAtAsync(eventId, ct);
     public Task AddAsync(Result result, CancellationToken ct = default) => _dao.AddAsync(result, ct);
+    public void Remove(Result result) => _dao.Remove(result);
+    public Task<bool> HasCalculatedResultsAsync(int eventId, CancellationToken ct = default) =>
+        _dao.HasCalculatedResultsAsync(eventId, ct);
     public Task<Event?> GetEventTrackedAsync(int eventId, CancellationToken ct = default) => _dao.GetEventTrackedAsync(eventId, ct);
     public Task<bool> AnyForEventAsync(int eventId, CancellationToken ct = default) => _dao.AnyForEventAsync(eventId, ct);
     public Task<int> CountOpenComplaintsAsync(int eventId, CancellationToken ct = default) =>

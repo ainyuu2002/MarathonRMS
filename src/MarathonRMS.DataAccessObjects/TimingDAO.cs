@@ -26,6 +26,7 @@ public class TimingDAO : BaseDAO<TimingRecord>
     public Task<Registration?> GetRegistrationAsync(int registrationId, CancellationToken ct = default) =>
         Context.Registrations.AsNoTracking()
             .Include(r => r.Event)
+            .Include(r => r.Participant)
             .FirstOrDefaultAsync(r => r.RegistrationId == registrationId, ct);
 
     public Task<List<TimingRecord>> GetByRegistrationAsync(int registrationId, CancellationToken ct = default) =>
@@ -49,6 +50,7 @@ public class TimingDAO : BaseDAO<TimingRecord>
     public Task<TimingRecord?> GetTrackedAsync(int timingRecordId, CancellationToken ct = default) =>
         Set.Include(t => t.Checkpoint)
             .Include(t => t.Registration).ThenInclude(r => r.Event)
+            .Include(t => t.Registration).ThenInclude(r => r.Participant)
             .FirstOrDefaultAsync(t => t.TimingRecordId == timingRecordId, ct);
 
     // ---------- Bỏ cuộc (UC-58) ----------
