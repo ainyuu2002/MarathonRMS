@@ -55,6 +55,11 @@ public class ResultDAO : BaseDAO<Result>
     public Task<Event?> GetEventTrackedAsync(int eventId, CancellationToken ct = default) =>
         Context.Events.Include(e => e.Policy).FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
+    /// <summary>Kết quả đang tạm thời mà vừa thay đổi ⇒ tính lại cửa sổ khiếu nại từ thời điểm này (cập nhật ngay, trong transaction hiện tại).</summary>
+    public Task ReopenComplaintWindowAsync(int eventId, DateTime now, CancellationToken ct = default) =>
+        Context.Events.Where(e => e.EventId == eventId && e.ResultsStatus == ResultsStatus.Provisional)
+            .ExecuteUpdateAsync(u => u.SetProperty(e => e.ResultsProvisionalAt, now), ct);
+
     public Task<bool> AnyForEventAsync(int eventId, CancellationToken ct = default) =>
         Set.AnyAsync(r => r.Registration.EventId == eventId && r.Registration.Status == RegistrationStatus.Confirmed, ct);
 

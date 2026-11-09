@@ -270,8 +270,13 @@ public class ResultService : IResultService
 
         var checkpoints = registration.Category.Checkpoints.ToDictionary(c => c.CheckpointId);
         var showReason = privileged || result.DnfReason != DnfReason.Medical;
+        var complaintEndsAt = ComplaintService.WindowEndsAt(ev);
         return new ResultDetailDto
         {
+            CanComplain = isOwner && registration.Status == RegistrationStatus.Confirmed &&
+                          complaintEndsAt is DateTime ends && _clock.Now <= ends,
+            ComplaintWindowEndsAt = complaintEndsAt,
+            ComplaintFee = ev.Policy.ComplaintFee,
             Summary = summary,
             EventName = ev.Name,
             DnfReason = showReason ? result.DnfReason?.ToString() : null,

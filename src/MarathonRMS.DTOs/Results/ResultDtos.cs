@@ -63,6 +63,64 @@ public class ResultDetailDto
     public IReadOnlyList<SplitDto> Splits { get; set; } = Array.Empty<SplitDto>();
     /// <summary>Chỉ phạt còn hiệu lực; lý do hiển thị theo danh mục (BR-28).</summary>
     public IReadOnlyList<PenaltyDto> Penalties { get; set; } = Array.Empty<PenaltyDto>();
+
+    // ---------- UC-66 khiếu nại (chỉ có nghĩa với chính VĐV / người đăng ký hộ) ----------
+    /// <summary>Người xem là chủ đăng ký, kết quả đang tạm thời và còn trong thời gian nhận khiếu nại (BR-27).</summary>
+    public bool CanComplain { get; set; }
+    public DateTime? ComplaintWindowEndsAt { get; set; }
+    public decimal ComplaintFee { get; set; }
+}
+
+// ============================ Khiếu nại kết quả (UC-66) ============================
+
+public class CreateComplaintRequest
+{
+    [Required(ErrorMessage = "Nhập nội dung khiếu nại"), StringLength(2000, MinimumLength = 10, ErrorMessage = "Nội dung từ 10 đến 2.000 ký tự")]
+    public string Content { get; set; } = "";
+
+    /// <summary>Đường dẫn ảnh / video / file GPS làm bằng chứng (tùy chọn).</summary>
+    [Url(ErrorMessage = "Đường dẫn bằng chứng không hợp lệ"), StringLength(500)]
+    public string? EvidenceUrl { get; set; }
+}
+
+public class ResolveComplaintRequest
+{
+    [Required, AllowedValues("Accepted", "Rejected")] public string Decision { get; set; } = "Rejected";
+
+    [Required(ErrorMessage = "Phải trả lời người khiếu nại"), StringLength(2000)]
+    public string Response { get; set; } = "";
+}
+
+public class ComplaintDto
+{
+    public int Id { get; set; }
+    public int ResultId { get; set; }
+    public int RegistrationId { get; set; }
+    public int EventId { get; set; }
+    public string EventName { get; set; } = "";
+    public string CategoryName { get; set; } = "";
+    public int? BibNumber { get; set; }
+    public string RunnerName { get; set; } = "";
+    /// <summary>Trạng thái kết quả hiện tại của VĐV (Finished/DNF/DNS/DSQ).</summary>
+    public string ResultStatus { get; set; } = "";
+    public string Content { get; set; } = "";
+    public string? EvidenceUrl { get; set; }
+    public decimal FeeAmount { get; set; }
+    public string Status { get; set; } = "";
+    public string? Response { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? HandledAt { get; set; }
+}
+
+public class EventComplaintsDto
+{
+    public int EventId { get; set; }
+    public string EventName { get; set; } = "";
+    public string ResultsStatus { get; set; } = "";
+    public DateTime? ComplaintWindowEndsAt { get; set; }
+    /// <summary>Còn xử lý được (kết quả chưa chính thức).</summary>
+    public bool CanResolve { get; set; }
+    public IReadOnlyList<ComplaintDto> Items { get; set; } = Array.Empty<ComplaintDto>();
 }
 
 public class SplitDto

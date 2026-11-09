@@ -139,6 +139,14 @@ public class ResultRecalculation : IResultRecalculation
             stale.UpdatedAt = now;
         }
 
+        // Kết quả đang công bố tạm thời mà thay đổi ⇒ VĐV được đủ thời gian khiếu nại tính từ lúc này (BR-27)
+        if (ev.ResultsStatus == ResultsStatus.Provisional)
+        {
+            await _results.ReopenComplaintWindowAsync(ev.EventId, now, ct);
+            warnings.Add($"Kết quả đang tạm thời – thời gian nhận khiếu nại được tính lại từ {now:HH:mm dd/MM} " +
+                         $"({ev.Policy.ComplaintWindowMinutes} phút).");
+        }
+
         return new ResultCalculationSummaryDto
         {
             EventId = ev.EventId,

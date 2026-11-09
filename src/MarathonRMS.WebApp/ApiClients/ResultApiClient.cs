@@ -44,6 +44,20 @@ public class ResultApiClient : ApiClientBase
     public Task RevokePenaltyAsync(int penaltyId, CancellationToken ct = default) =>
         PostAsync($"api/penalties/{penaltyId}/revoke", new { }, ct);
 
+    // ---------- UC-66 khiếu nại ----------
+
+    public Task<ComplaintDto> CreateComplaintAsync(int resultId, CreateComplaintRequest request, CancellationToken ct = default) =>
+        PostAsync<ComplaintDto>($"api/results/{resultId}/complaints", request, ct);
+
+    public Task<List<ComplaintDto>> GetMyComplaintsAsync(CancellationToken ct = default) =>
+        GetAsync<List<ComplaintDto>>("api/complaints/me", ct);
+
+    public Task<EventComplaintsDto> GetEventComplaintsAsync(int eventId, string? status, CancellationToken ct = default) =>
+        GetAsync<EventComplaintsDto>(Query($"api/events/{eventId}/complaints", ("status", status)), ct);
+
+    public Task<ComplaintDto> ResolveComplaintAsync(int complaintId, ResolveComplaintRequest request, CancellationToken ct = default) =>
+        PostAsync<ComplaintDto>($"api/complaints/{complaintId}/resolve", request, ct);
+
     // ---------- UC-62 bảng xếp hạng công khai ----------
 
     public Task<List<ResultsEventDto>> GetPublishedEventsAsync(CancellationToken ct = default) =>

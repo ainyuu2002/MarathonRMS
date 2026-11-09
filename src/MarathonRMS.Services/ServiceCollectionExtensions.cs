@@ -42,6 +42,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RaceKitDAO>();
         services.AddScoped<TimingDAO>();
         services.AddScoped<ResultDAO>();
+        services.AddScoped<ComplaintDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -66,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRaceKitRepository, RaceKitRepository>();
         services.AddScoped<ITimingRepository, TimingRepository>();
         services.AddScoped<IResultRepository, ResultRepository>();
+        services.AddScoped<IComplaintRepository, ComplaintRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -114,6 +116,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IResultCalculator, ResultCalculator>();
         services.AddScoped<IResultRecalculation, ResultRecalculation>();
         services.AddScoped<IResultService, ResultService>();
+        services.AddScoped<IComplaintService, ComplaintService>();
 
         return services;
     }
