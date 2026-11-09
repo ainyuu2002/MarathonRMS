@@ -57,7 +57,7 @@ public class PrizeService : IPrizeService
             EventName = ev.Name,
             ResultsStatus = ev.ResultsStatus.ToString(),
             AwardStackingPolicy = ev.Policy.AwardStackingPolicy.ToString(),
-            CanEdit = ev.ResultsStatus != ResultsStatus.Official && ev.Status != EventStatus.Cancelled,
+            CanEdit = ev.ResultsStatus == ResultsStatus.Draft && ev.Status != EventStatus.Cancelled,
             Categories = ev.Categories.OrderBy(c => c.StartAt).ThenBy(c => c.Name)
                 .Select(c => new PrizeCategoryOptionDto { Id = c.CategoryId, Name = c.Name, IsRanked = c.IsTimed && c.IsRanked })
                 .ToList(),
@@ -163,8 +163,9 @@ public class PrizeService : IPrizeService
         var ev = await _prizes.GetEventAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
         _scope.EnsureCanManage(ev.OrganizationId);
         await _scope.EnsureOrganizationActiveAsync(ev.OrganizationId, ct);
-        if (ev.ResultsStatus == ResultsStatus.Official)
-            throw new BusinessRuleException("BR-29", "Kết quả đã chính thức – không sửa cơ cấu giải thưởng.");
+        // BR-46c: từ khi kết quả tạm thời, cơ cấu giải thưởng bị khóa (VĐV đã thấy hạng, không đổi luật sau đó)
+        if (ev.ResultsStatus != ResultsStatus.Draft)
+            throw new BusinessRuleException("BR-46", "Kết quả đã công bố – cơ cấu giải thưởng bị khóa.");
         if (ev.Status == EventStatus.Cancelled)
             throw new BusinessRuleException(ErrorCodes.Conflict, "Giải đã hủy.");
         return ev;
