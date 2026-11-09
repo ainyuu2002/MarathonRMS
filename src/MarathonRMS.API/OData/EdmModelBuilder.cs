@@ -1,4 +1,5 @@
 using MarathonRMS.DTOs.Admin;
+using MarathonRMS.DTOs.Results;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 
@@ -21,7 +22,8 @@ public static class EdmModelBuilder
 
         // ---------- Phần B ---------- (VD: builder.EntitySet<EventSummaryDto>("Events");)
 
-        // ---------- Phần C ---------- (VD: builder.EntitySet<ResultRowDto>("Results");)
+        // ---------- Phần C ----------
+        builder.EntitySet<LeaderboardRowDto>("Results").EntityType.HasKey(r => r.ResultId);
 
         return builder.GetEdmModel();
     }

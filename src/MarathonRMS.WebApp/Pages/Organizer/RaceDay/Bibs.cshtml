@@ -1,0 +1,120 @@
+@page "{eventId:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.RaceDay.BibsModel
+@{
+    ViewData["Title"] = "Gán BIB";
+    var o = Model.Overview;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Gán BIB</h1>
+        <p class="text-secondary mb-0">@o.EventName <status-badge status="@o.EventStatus" /></p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Ngày thi</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+@if (!string.IsNullOrEmpty(Model.AssignWarnings))
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        @foreach (var line in Model.AssignWarnings.Split('\n'))
+        {
+            <div>@line</div>
+        }
+    </div>
+}
+@if (o.EventId > 0 && !o.CanAssign)
+{
+    <div class="alert alert-info small"><i class="bi bi-info-circle"></i> Chỉ gán BIB khi giải đang mở hoặc đã đóng đăng ký và kết quả chưa công bố.</div>
+}
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span class="fw-semibold">Theo cự ly</span>
+        @if (o.CanAssign && o.Categories.Any(c => c.Unassigned > 0))
+        {
+            <form method="post" asp-page-handler="Assign" asp-route-eventId="@Model.EventId" class="d-inline"
+                  onsubmit="return confirm('Gán BIB cho mọi đăng ký đã xác nhận chưa có số?');">
+                <button class="btn btn-sm btn-primary"><i class="bi bi-lightning-charge"></i> Gán tất cả cự ly</button>
+            </form>
+        }
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Cự ly</th><th>Dải BIB</th><th class="text-center">Đã xác nhận</th><th class="text-center">Đã có BIB</th>
+                    <th class="text-center">Chưa có BIB</th><th class="text-center">Số còn trống</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var c in o.Categories)
+            {
+                <tr>
+                    <td class="fw-semibold">@c.CategoryName</td>
+                    <td class="text-nowrap">@c.BibFrom – @c.BibTo</td>
+                    <td class="text-center">@c.Confirmed</td>
+                    <td class="text-center">@c.Assigned</td>
+                    <td class="text-center">
+                        @if (c.Unassigned > 0) { <span class="badge text-bg-warning">@c.Unassigned</span> }
+                        else { <span class="text-secondary">0</span> }
+                    </td>
+                    <td class="text-center @(c.FreeNumbers < c.Unassigned ? "text-danger fw-semibold" : "")">@c.FreeNumbers</td>
+                    <td class="text-end">
+                        @if (o.CanAssign && c.Unassigned > 0)
+                        {
+                            <form method="post" asp-page-handler="Assign" asp-route-eventId="@Model.EventId" class="d-inline">
+                                <input type="hidden" name="assignCategoryId" value="@c.CategoryId" />
+                                <button class="btn btn-sm btn-outline-primary">Gán BIB</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h2 class="h5">Danh sách đã gán</h2>
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-4">
+        <select name="CategoryId" class="form-select" onchange="this.form.submit()">
+            <option value="">Mọi cự ly</option>
+            @foreach (var c in o.Categories)
+            {
+                <option value="@c.CategoryId" selected="@(Model.CategoryId == c.CategoryId)">@c.CategoryName</option>
+            }
+        </select>
+    </div>
+    <div class="col-sm-6"><input name="Keyword" value="@Model.Keyword" class="form-control" placeholder="Số BIB hoặc họ tên" /></div>
+    <div class="col-sm-2 d-grid"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+
+@if (Model.Assignments.Items.Count == 0)
+{
+    <p class="text-secondary">Chưa có đăng ký nào được gán BIB.</p>
+}
+else
+{
+    <div class="card mb-2">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>BIB</th><th>Họ tên</th><th>Tên in BIB</th><th>Giới tính</th><th>Cự ly</th></tr></thead>
+                <tbody>
+                @foreach (var r in Model.Assignments.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@r.BibNumber</td>
+                        <td>@r.FullName</td>
+                        <td>@r.BibName</td>
+                        <td>@(r.Gender == "F" ? "Nữ" : "Nam")</td>
+                        <td>@r.CategoryName</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <partial name="_Pager" model="PagerModel.From(Model.Assignments, new { Model.EventId, Model.CategoryId, Model.Keyword })" />
+}

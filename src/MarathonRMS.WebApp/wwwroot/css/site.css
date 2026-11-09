@@ -24,3 +24,13 @@ body {
 .nav-card { transition: box-shadow .15s ease, transform .15s ease; }
 .nav-card:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.08); transform: translateY(-2px); }
 .border-dashed { border-style: dashed !important; }
+
+/* Bootstrap 5.1 chưa có .text-bg-* (từ 5.2) – <status-badge> và các badge dùng các lớp này */
+.text-bg-primary { color: #fff !important; background-color: #0d6efd !important; }
+.text-bg-secondary { color: #fff !important; background-color: #6c757d !important; }
+.text-bg-success { color: #fff !important; background-color: #198754 !important; }
+.text-bg-info { color: #000 !important; background-color: #0dcaf0 !important; }
+.text-bg-warning { color: #000 !important; background-color: #ffc107 !important; }
+.text-bg-danger { color: #fff !important; background-color: #dc3545 !important; }
+.text-bg-light { color: #000 !important; background-color: #f8f9fa !important; }
+.text-bg-dark { color: #fff !important; background-color: #212529 !important; }

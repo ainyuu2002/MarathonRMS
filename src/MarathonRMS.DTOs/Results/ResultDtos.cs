@@ -29,6 +29,28 @@ public class LeaderboardRowDto
     public int? AgeGroupRank { get; set; }
     /// <summary>True khi kết quả của giải còn "Tạm thời" (BR-27).</summary>
     public bool IsProvisional { get; set; }
+    /// <summary>Khóa sắp xếp bảng xếp hạng: VĐV hoàn thành theo hạng, sau đó DNF, DSQ, DNS ($orderby=SortOrder).</summary>
+    public int SortOrder { get; set; }
+}
+
+/// <summary>Giải đã công bố kết quả – để chọn trên trang bảng xếp hạng công khai (UC-62).</summary>
+public class ResultsEventDto
+{
+    public int EventId { get; set; }
+    public string EventName { get; set; } = "";
+    public string OrganizationName { get; set; } = "";
+    public DateOnly EventDate { get; set; }
+    public string ResultsStatus { get; set; } = "";
+    public IReadOnlyList<ResultCategoryOptionDto> Categories { get; set; } = Array.Empty<ResultCategoryOptionDto>();
+    public IReadOnlyList<AgeGroupOptionDto> AgeGroups { get; set; } = Array.Empty<AgeGroupOptionDto>();
+}
+
+public class AgeGroupOptionDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    /// <summary>Null = áp dụng cho mọi cự ly.</summary>
+    public int? CategoryId { get; set; }
 }
 
 /// <summary>Kết quả cá nhân + split (UC-63).</summary>
@@ -65,6 +87,39 @@ public class ResultCalculationSummaryDto
     public int Dns { get; set; }
     public int Dsq { get; set; }
     public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
+}
+
+/// <summary>Tình hình kết quả của một giải trên màn hình Organizer (UC-59).</summary>
+public class ResultsOverviewDto
+{
+    public int EventId { get; set; }
+    public string EventName { get; set; } = "";
+    public DateOnly EventDate { get; set; }
+    public string EventStatus { get; set; } = "";
+    public string ResultsStatus { get; set; } = "";
+    public DateTime? ProvisionalAt { get; set; }
+    public DateTime? OfficialAt { get; set; }
+    public int Finished { get; set; }
+    public int Dnf { get; set; }
+    public int Dns { get; set; }
+    public int Dsq { get; set; }
+    /// <summary>Lần cập nhật kết quả gần nhất (tính lại, ghi nhận bỏ cuộc…).</summary>
+    public DateTime? LastUpdatedAt { get; set; }
+    public bool CanCalculate { get; set; }
+    public bool CanPublishProvisional { get; set; }
+    public bool CanFinalize { get; set; }
+    /// <summary>Hết hạn nhận khiếu nại = lúc công bố tạm thời + ComplaintWindowMinutes (BR-27).</summary>
+    public DateTime? ComplaintWindowEndsAt { get; set; }
+    public int OpenComplaints { get; set; }
+    public IReadOnlyList<ResultCategoryOptionDto> Categories { get; set; } = Array.Empty<ResultCategoryOptionDto>();
+}
+
+public class ResultCategoryOptionDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public bool IsTimed { get; set; }
+    public bool IsRanked { get; set; }
 }
 
 public class ResultsStatusDto
@@ -105,4 +160,21 @@ public class PenaltyDto
     public string? CheckpointName { get; set; }
     public string? Note { get; set; }
     public DateTime IssuedAt { get; set; }
+    /// <summary>Có giá trị khi quyết định đã bị thu hồi (chỉ xuất hiện ở màn hình quản lý phạt).</summary>
+    public DateTime? RevokedAt { get; set; }
+}
+
+/// <summary>Màn hình quản lý phạt của một kết quả (UC-61): thông tin VĐV, checkpoint của cự ly, mọi quyết định đã ban hành.</summary>
+public class ResultPenaltiesDto
+{
+    public LeaderboardRowDto Result { get; set; } = new();
+    public string ResultsStatus { get; set; } = "";
+    public IReadOnlyList<ResultCheckpointOptionDto> Checkpoints { get; set; } = Array.Empty<ResultCheckpointOptionDto>();
+    public IReadOnlyList<PenaltyDto> Penalties { get; set; } = Array.Empty<PenaltyDto>();
+}
+
+public class ResultCheckpointOptionDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
 }

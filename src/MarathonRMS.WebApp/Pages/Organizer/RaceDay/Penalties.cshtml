@@ -1,0 +1,148 @@
+@page "{resultId:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.RaceDay.PenaltiesModel
+@{
+    ViewData["Title"] = "Phạt / DSQ";
+    var r = Model.Data.Result;
+    string Describe(MarathonRMS.DTOs.Results.PenaltyReasonDto reason) => reason.DefaultAction switch
+    {
+        "DSQ" => "DSQ",
+        "TimePenalty" => $"+{reason.DefaultMinutes}′",
+        _ => "cảnh cáo"
+    };
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Phạt / DSQ</h1>
+        <p class="text-secondary mb-0">
+            @if (r.BibNumber is int bib) { <span class="badge text-bg-dark me-1">@bib</span> }
+            @r.DisplayName · @r.CategoryName <status-badge status="@r.Status" />
+        </p>
+    </div>
+    <a asp-page="Results" asp-route-eventId="@r.EventId" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kết quả</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-body small">
+                <div class="d-flex justify-content-between"><span class="text-secondary">Giờ súng</span><span class="font-monospace">@RaceTime.Format(r.GunTimeMs)</span></div>
+                <div class="d-flex justify-content-between"><span class="text-secondary">Giờ chip</span><span class="font-monospace">@RaceTime.Format(r.ChipTimeMs)</span></div>
+                <div class="d-flex justify-content-between"><span class="text-secondary">Phạt cộng giờ</span><span>@(r.PenaltySeconds > 0 ? $"+{r.PenaltySeconds / 60} phút" : "—")</span></div>
+                <div class="d-flex justify-content-between fw-semibold"><span>Thành tích</span><span class="font-monospace">@RaceTime.Format(r.FinalTimeMs)</span></div>
+                <div class="d-flex justify-content-between"><span class="text-secondary">Hạng chung</span><span>@(r.OverallRank?.ToString() ?? "—")</span></div>
+            </div>
+        </div>
+
+        @if (!Model.CanChange)
+        {
+            <div class="alert alert-info small"><i class="bi bi-lock"></i> Kết quả của giải đã chính thức – không thể ban hành hay thu hồi quyết định phạt.</div>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Issue" asp-route-resultId="@Model.ResultId" class="card" novalidate
+                  onsubmit="return confirm('Ban hành quyết định phạt? Kết quả của cả giải sẽ được tính lại.');">
+                <div class="card-header fw-semibold">Ban hành quyết định</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Input.ReasonCode" class="form-label">Lý do (theo danh mục)</label>
+                        <select asp-for="Input.ReasonCode" class="form-select" id="reason">
+                            <option value="">— Chọn lý do —</option>
+                            @foreach (var reason in Model.Reasons)
+                            {
+                                <option value="@reason.Code" data-action="@reason.DefaultAction" data-minutes="@reason.DefaultMinutes">@reason.Name (@Describe(reason))</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Input.ReasonCode" class="text-danger small"></span>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label asp-for="Input.Action" class="form-label">Hình thức</label>
+                            <select asp-for="Input.Action" class="form-select" id="action">
+                                <option value="Warning">Cảnh cáo</option>
+                                <option value="TimePenalty">Phạt cộng giờ</option>
+                                <option value="DSQ">Truất quyền thi đấu (DSQ)</option>
+                            </select>
+                        </div>
+                        <div class="col-5">
+                            <label asp-for="Input.Minutes" class="form-label">Số phút</label>
+                            <input asp-for="Input.Minutes" type="number" min="1" max="600" class="form-control" id="minutes" />
+                            <span asp-validation-for="Input.Minutes" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.CheckpointId" class="form-label">Tại checkpoint (nếu có)</label>
+                        <select asp-for="Input.CheckpointId" class="form-select">
+                            <option value="">— Không chỉ định —</option>
+                            @foreach (var c in Model.Data.Checkpoints)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Note" class="form-label">Ghi chú</label>
+                        <textarea asp-for="Input.Note" class="form-control" rows="2" maxlength="500"></textarea>
+                        <span asp-validation-for="Input.Note" class="text-danger small"></span>
+                    </div>
+                    <button class="btn btn-danger w-100"><i class="bi bi-flag"></i> Ban hành</button>
+                </div>
+            </form>
+        }
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header fw-semibold">Quyết định đã ban hành (@Model.Data.Penalties.Count)</div>
+            @if (Model.Data.Penalties.Count == 0)
+            {
+                <div class="card-body text-secondary">Chưa có quyết định nào.</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in Model.Data.Penalties)
+                    {
+                        var revoked = p.RevokedAt is not null;
+                        <li class="list-group-item @(revoked ? "text-secondary" : "")">
+                            <div class="d-flex justify-content-between gap-2">
+                                <div>
+                                    <div class="fw-semibold @(revoked ? "text-decoration-line-through" : "")">
+                                        @(p.Action == "DSQ" ? "DSQ" : p.Action == "TimePenalty" ? $"+{p.Minutes} phút" : "Cảnh cáo") – @p.ReasonName
+                                    </div>
+                                    <div class="small text-secondary">
+                                        @p.IssuedAt.ToString("HH:mm dd/MM/yyyy")@(p.CheckpointName is null ? "" : $" · {p.CheckpointName}")
+                                        @if (revoked) { <span> · đã thu hồi @p.RevokedAt?.ToString("HH:mm dd/MM")</span> }
+                                    </div>
+                                    @if (p.Note is not null) { <div class="small">@p.Note</div> }
+                                </div>
+                                @if (!revoked && Model.CanChange)
+                                {
+                                    <form method="post" asp-page-handler="Revoke" asp-route-resultId="@Model.ResultId" class="d-inline"
+                                          onsubmit="return confirm('Thu hồi quyết định này? Kết quả của cả giải sẽ được tính lại.');">
+                                        <input type="hidden" name="penaltyId" value="@p.Id" />
+                                        <button class="btn btn-sm btn-outline-secondary text-nowrap"><i class="bi bi-arrow-counterclockwise"></i> Thu hồi</button>
+                                    </form>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Chọn lý do ⇒ gợi ý hình thức và số phút mặc định của danh mục
+        document.getElementById('reason')?.addEventListener('change', function () {
+            var option = this.selectedOptions[0];
+            if (!option || !option.dataset.action) return;
+            document.getElementById('action').value = option.dataset.action;
+            document.getElementById('minutes').value = option.dataset.minutes || '';
+        });
+    </script>
+}

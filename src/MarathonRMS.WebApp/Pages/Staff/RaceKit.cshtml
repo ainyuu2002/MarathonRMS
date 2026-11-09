@@ -1,0 +1,118 @@
+@page
+@model MarathonRMS.WebApp.Pages.Staff.RaceKitModel
+@{
+    ViewData["Title"] = "Phát race kit";
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Phát race kit</h1>
+        <p class="text-secondary mb-0">Tra cứu VĐV theo số BIB, mã QR, số giấy tờ hoặc số điện thoại.</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Vận hành</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (Model.Events.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-bag-check fs-1"></i>
+        <p class="mt-2 mb-0">Ban tổ chức chưa có giải nào đã công bố.</p>
+    </div>
+}
+else
+{
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-5">
+            <select name="EventId" class="form-select" aria-label="Giải">
+                @foreach (var e in Model.Events)
+                {
+                    <option value="@e.Id" selected="@(Model.EventId == e.Id)">@e.Name – @e.EventDate.ToString("dd/MM/yyyy")</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-5">
+            <input name="Keyword" value="@Model.Keyword" class="form-control" placeholder="BIB, mã QR, số giấy tờ hoặc số điện thoại" autofocus />
+        </div>
+        <div class="col-md-2 d-grid"><button class="btn btn-primary"><i class="bi bi-search"></i> Tra cứu</button></div>
+    </form>
+
+    @if (Model.Searched && Model.Results.Count == 0)
+    {
+        <div class="alert alert-secondary">Không tìm thấy đăng ký phù hợp trong giải này.</div>
+    }
+
+    @foreach (var r in Model.Results)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="h5 mb-1">
+                            @if (r.BibNumber is int bib) { <span class="badge text-bg-dark me-1">@bib</span> }
+                            @r.FullName
+                        </div>
+                        <div class="small text-secondary">
+                            @r.CategoryName · Áo @r.TShirtSize · Giấy tờ @(r.IdNumberMasked ?? "—")
+                            @if (r.IsMinor)
+                            {
+                                <span> · Cần đồng ý giám hộ: @(r.HasGuardianConsent ? "đã có" : "chưa có")</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <status-badge status="@r.Status" />
+                        @if (r.PickedUp)
+                        {
+                            <div class="small text-success mt-1"><i class="bi bi-check-circle"></i> Đã nhận kit @r.PickedUpAt?.ToString("HH:mm dd/MM")</div>
+                        }
+                    </div>
+                </div>
+                @if (r.Warnings.Count > 0)
+                {
+                    <ul class="small text-danger mb-0 mt-2 ps-3">
+                        @foreach (var w in r.Warnings)
+                        {
+                            <li>@w</li>
+                        }
+                    </ul>
+                }
+                @if (r.Status == "Confirmed" && r.BibNumber is not null && !r.PickedUp)
+                {
+                    <form method="post" asp-page-handler="Pickup" asp-route-registrationId="@r.RegistrationId"
+                          asp-route-eventId="@Model.EventId" asp-route-keyword="@Model.Keyword" class="border-top pt-3 mt-3">
+                        <div class="d-flex flex-wrap gap-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="Pickup.IdChecked" value="true" id="id-@r.RegistrationId" />
+                                <label class="form-check-label" for="id-@r.RegistrationId">Đã đối chiếu giấy tờ tùy thân</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input proxy-toggle" type="checkbox" name="Pickup.IsProxy" value="true"
+                                       id="proxy-@r.RegistrationId" data-target="#proxy-fields-@r.RegistrationId" />
+                                <label class="form-check-label" for="proxy-@r.RegistrationId">Nhận hộ</label>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2 d-none" id="proxy-fields-@r.RegistrationId">
+                            <div class="col-md-6"><input name="Pickup.ProxyName" class="form-control form-control-sm" maxlength="100" placeholder="Họ tên người nhận hộ" /></div>
+                            <div class="col-md-6"><input name="Pickup.ProxyIdNumber" class="form-control form-control-sm" maxlength="20" placeholder="Số giấy tờ người nhận hộ" /></div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <input name="Pickup.Note" class="form-control form-control-sm" maxlength="500" placeholder="Ghi chú (không bắt buộc)" />
+                            <button class="btn btn-success btn-sm text-nowrap"><i class="bi bi-bag-check"></i> Phát kit</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.proxy-toggle').forEach(function (box) {
+            box.addEventListener('change', function () {
+                document.querySelector(box.dataset.target).classList.toggle('d-none', !box.checked);
+            });
+        });
+    </script>
+}

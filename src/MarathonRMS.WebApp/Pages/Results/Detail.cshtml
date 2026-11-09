@@ -1,0 +1,120 @@
+@page "{registrationId:int}"
+@model MarathonRMS.WebApp.Pages.Results.DetailModel
+@{
+    ViewData["Title"] = "Kết quả cá nhân";
+    var d = Model.Detail;
+    var s = d?.Summary;
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (d is not null && s is not null)
+{
+    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 mb-1">
+                @if (s.BibNumber is int bib) { <span class="badge text-bg-dark me-1">@bib</span> }
+                @s.DisplayName
+            </h1>
+            <p class="text-secondary mb-0">
+                @d.EventName · @s.CategoryName@(s.ClubName is null ? "" : $" · {s.ClubName}")
+                <status-badge status="@s.Status" />
+            </p>
+        </div>
+        <a asp-page="Index" asp-route-eventId="@s.EventId" asp-route-categoryId="@s.CategoryId" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Bảng xếp hạng
+        </a>
+    </div>
+
+    @if (s.IsProvisional)
+    {
+        <div class="alert alert-warning small"><i class="bi bi-hourglass-split"></i> Kết quả <strong>tạm thời</strong> – có thể thay đổi sau thời gian nhận khiếu nại.</div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-body">
+                    @if (s.Status == "Finished")
+                    {
+                        <div class="text-secondary small">Thành tích</div>
+                        <div class="display-6 font-monospace fw-semibold">@RaceTime.Format(s.FinalTimeMs)</div>
+                        <div class="small mt-2">
+                            Giờ súng <span class="font-monospace">@RaceTime.Format(s.GunTimeMs)</span> ·
+                            Giờ chip <span class="font-monospace">@RaceTime.Format(s.ChipTimeMs)</span>
+                            @if (s.PenaltySeconds > 0) { <span class="text-danger"> · phạt +@(s.PenaltySeconds / 60) phút</span> }
+                        </div>
+                    }
+                    else if (s.Status == "DNF")
+                    {
+                        <div class="h5">Không hoàn thành (DNF)</div>
+                        <div class="text-secondary">
+                            @(d.DnfReason is null ? "" : RaceTime.DnfReasonLabel(d.DnfReason))@(d.DnfCheckpointName is null ? "" : $" – tại {d.DnfCheckpointName}")
+                        </div>
+                    }
+                    else if (s.Status == "DSQ")
+                    {
+                        <div class="h5 text-danger">Bị truất quyền thi đấu (DSQ)</div>
+                    }
+                    else
+                    {
+                        <div class="h5">Không xuất phát (DNS)</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4"><div class="fs-3 fw-semibold">@(s.OverallRank?.ToString() ?? "—")</div><div class="small text-secondary">Hạng chung</div></div>
+                        <div class="col-4"><div class="fs-3 fw-semibold">@(s.GenderRank?.ToString() ?? "—")</div><div class="small text-secondary">Hạng @RaceTime.GenderLabel(s.Gender).ToLower()</div></div>
+                        <div class="col-4"><div class="fs-3 fw-semibold">@(s.AgeGroupRank?.ToString() ?? "—")</div><div class="small text-secondary">Nhóm @(s.AgeGroupName ?? "tuổi")</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="h5">Thời gian qua các checkpoint</h2>
+    @if (d.Splits.Count == 0)
+    {
+        <p class="text-secondary">Chưa có thời gian ghi nhận.</p>
+    }
+    else
+    {
+        <div class="card mb-4">
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Checkpoint</th><th class="text-end">Km</th><th>Thời điểm</th><th class="text-end">Thời gian</th><th class="text-end">Pace đoạn</th></tr></thead>
+                    <tbody>
+                    @foreach (var split in d.Splits)
+                    {
+                        <tr>
+                            <td>@split.CheckpointName</td>
+                            <td class="text-end">@split.DistanceKm.ToString("0.##")</td>
+                            <td class="font-monospace small">@split.RecordedAt.ToString("HH:mm:ss")</td>
+                            <td class="text-end font-monospace">@RaceTime.Format(split.ElapsedMs)</td>
+                            <td class="text-end small">@RaceTime.Pace(split.SegmentPaceSecondsPerKm)</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @if (d.Penalties.Count > 0)
+    {
+        <h2 class="h5">Quyết định của ban tổ chức</h2>
+        <ul class="list-group mb-4">
+            @foreach (var p in d.Penalties)
+            {
+                <li class="list-group-item">
+                    <div class="fw-semibold">@(p.Action == "DSQ" ? "Truất quyền thi đấu" : p.Action == "TimePenalty" ? $"Phạt cộng {p.Minutes} phút" : "Cảnh cáo") – @p.ReasonName</div>
+                    <div class="small text-secondary">@p.IssuedAt.ToString("HH:mm dd/MM/yyyy")@(p.CheckpointName is null ? "" : $" · {p.CheckpointName}")</div>
+                    @if (p.Note is not null) { <div class="small">@p.Note</div> }
+                </li>
+            }
+        </ul>
+    }
+}

@@ -19,6 +19,42 @@ public class BibAssignmentResultDto
     public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
 }
 
+/// <summary>Tình trạng BIB của một cự ly trên màn hình gán BIB.</summary>
+public class BibCategoryStatusDto
+{
+    public int CategoryId { get; set; }
+    public string CategoryName { get; set; } = "";
+    public int BibFrom { get; set; }
+    public int BibTo { get; set; }
+    /// <summary>Số đăng ký đã xác nhận.</summary>
+    public int Confirmed { get; set; }
+    public int Assigned { get; set; }
+    public int Unassigned { get; set; }
+    /// <summary>Số còn trống trong dải BIB.</summary>
+    public int FreeNumbers { get; set; }
+}
+
+public class BibOverviewDto
+{
+    public int EventId { get; set; }
+    public string EventName { get; set; } = "";
+    public string EventStatus { get; set; } = "";
+    /// <summary>Giải đang mở/đã đóng đăng ký và kết quả chưa công bố.</summary>
+    public bool CanAssign { get; set; }
+    public IReadOnlyList<BibCategoryStatusDto> Categories { get; set; } = Array.Empty<BibCategoryStatusDto>();
+}
+
+public class BibListItemDto
+{
+    public int RegistrationId { get; set; }
+    public int BibNumber { get; set; }
+    public string FullName { get; set; } = "";
+    public string BibName { get; set; } = "";
+    public int CategoryId { get; set; }
+    public string CategoryName { get; set; } = "";
+    public string Gender { get; set; } = "";
+}
+
 // ============================ Race kit (UC-52, UC-53) ============================
 
 /// <summary>Kết quả tra cứu tại quầy. Số giấy tờ được che bớt (VD ******1234) – BR-37.</summary>
@@ -93,4 +129,17 @@ public class RecordWithdrawalRequest
     [Required] public int CheckpointId { get; set; }
     [Required, AllowedValues("Voluntary", "Medical")] public string Reason { get; set; } = "Voluntary";
     [StringLength(500)] public string? Note { get; set; }
+}
+
+/// <summary>VĐV đã ghi nhận bỏ cuộc trong giải (UC-58).</summary>
+public class WithdrawalDto
+{
+    public int RegistrationId { get; set; }
+    public int? BibNumber { get; set; }
+    public string FullName { get; set; } = "";
+    public string CategoryName { get; set; } = "";
+    public string? CheckpointName { get; set; }
+    /// <summary>"Voluntary" hoặc "Medical".</summary>
+    public string Reason { get; set; } = "";
+    public DateTime RecordedAt { get; set; }
 }

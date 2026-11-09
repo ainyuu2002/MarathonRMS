@@ -1,6 +1,13 @@
 @page
 @{
     ViewData["Title"] = "Vận hành ngày thi";
-    var model = new RoleHomeModel("Vận hành ngày thi", "bi-stopwatch", User.FindFirst("org_name")?.Value, new[] { "Tra cứu VĐV, phát race kit (UC-52, UC-53)", "Nhập thời gian checkpoint, ghi nhận bỏ cuộc (UC-57, UC-58)" });
+    var orgName = User.FindFirst("org_name")?.Value;
+    var cards = new[]
+    {
+        new NavCard("Phát race kit", "Tra cứu VĐV theo BIB, mã QR, giấy tờ hoặc số điện thoại và phát kit", "bi-bag-check", "/Staff/RaceKit"),
+        new NavCard("Bấm giờ", "Nhập thời gian tại checkpoint theo số BIB, ghi nhận VĐV bỏ cuộc", "bi-stopwatch", "/Staff/Timing"),
+    };
 }
-<partial name="_RoleHome" model="model" />
+<h1 class="h3 mb-1">Vận hành ngày thi</h1>
+<p class="text-secondary mb-4">@(orgName ?? "") – Xin chào @User.Identity?.Name</p>
+<partial name="_NavCards" model="cards" />
