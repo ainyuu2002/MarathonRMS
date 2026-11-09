@@ -24,11 +24,13 @@ public class ResultService : IResultService
     private readonly IDateTimeProvider _clock;
     private readonly IAuditLogger _audit;
     private readonly IUnitOfWork _uow;
+    private readonly IMedicalDataRetentionService _medicalRetention;
 
     public ResultService(IResultRepository results, IPenaltyReasonRepository reasons, IResultRecalculation recalc,
         IOrganizationScope scope, ICurrentUserService currentUser, IPrivacyFilter privacy, IDateTimeProvider clock,
-        IAuditLogger audit, IUnitOfWork uow)
+        IAuditLogger audit, IUnitOfWork uow, IMedicalDataRetentionService medicalRetention)
     {
+        _medicalRetention = medicalRetention;
         _results = results;
         _reasons = reasons;
         _recalc = recalc;
@@ -81,6 +83,7 @@ public class ResultService : IResultService
             CanFinalize = ev.ResultsStatus == ResultsStatus.Provisional && _clock.Now >= windowEndsAt && openComplaints == 0,
             ComplaintWindowEndsAt = windowEndsAt,
             OpenComplaints = openComplaints,
+            MedicalDataPurgeAt = await _medicalRetention.GetPurgeAtAsync(ev, ct),
             Categories = ev.Categories.OrderBy(c => c.StartAt).ThenBy(c => c.Name)
                 .Select(c => new ResultCategoryOptionDto { Id = c.CategoryId, Name = c.Name, IsTimed = c.IsTimed, IsRanked = c.IsRanked })
                 .ToList()
@@ -234,7 +237,7 @@ public class ResultService : IResultService
             OrganizationName = e.Organization.Name,
             EventDate = e.EventDate,
             ResultsStatus = e.ResultsStatus.ToString(),
-            Categories = e.Categories.Where(c => c.IsTimed).OrderBy(c => c.StartAt).ThenBy(c => c.Name)
+            Categories = e.Categories.OrderBy(c => c.StartAt).ThenBy(c => c.Name)
                 .Select(c => new ResultCategoryOptionDto { Id = c.CategoryId, Name = c.Name, IsTimed = c.IsTimed, IsRanked = c.IsRanked })
                 .ToList(),
             AgeGroups = e.AgeGroups.OrderBy(g => g.CategoryId != null).ThenBy(g => g.MinAge)
@@ -270,8 +273,15 @@ public class ResultService : IResultService
 
         var checkpoints = registration.Category.Checkpoints.ToDictionary(c => c.CheckpointId);
         var showReason = privileged || result.DnfReason != DnfReason.Medical;
+        var complaintEndsAt = ComplaintService.WindowEndsAt(ev);
         return new ResultDetailDto
         {
+            CanComplain = isOwner && registration.Status == RegistrationStatus.Confirmed &&
+                          complaintEndsAt is DateTime ends && _clock.Now <= ends,
+            ComplaintWindowEndsAt = complaintEndsAt,
+            HasCertificate = result.Status == ResultStatus.Finished && ev.ResultsStatus == ResultsStatus.Official &&
+                             registration.Status == RegistrationStatus.Confirmed,
+            ComplaintFee = ev.Policy.ComplaintFee,
             Summary = summary,
             EventName = ev.Name,
             DnfReason = showReason ? result.DnfReason?.ToString() : null,

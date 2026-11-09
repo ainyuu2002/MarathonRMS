@@ -65,7 +65,14 @@ public class ResultRecalculation : IResultRecalculation
         {
             if (!category.IsTimed)
             {
-                warnings.Add($"Cự ly {category.Name} không bấm giờ – không tính kết quả (BR-26).");
+                var (done, absent, disqualified) = await ApplyUntimedAsync(ev, category,
+                    registrations.Where(r => r.CategoryId == category.CategoryId).ToList(), existing, touched, now, ct);
+                finished += done;
+                dns += absent;
+                dsq += disqualified;
+                if (done + absent + disqualified > 0)
+                    warnings.Add($"Cự ly {category.Name} không bấm giờ: {done} hoàn thành (đã nhận kit), {absent} DNS (chưa nhận kit)" +
+                                 (disqualified > 0 ? $", {disqualified} DSQ" : "") + " – không xếp hạng (BR-26).");
                 continue;
             }
             if (!category.Checkpoints.Any(c => c.Type == CheckpointType.Finish))
@@ -132,6 +139,14 @@ public class ResultRecalculation : IResultRecalculation
             stale.UpdatedAt = now;
         }
 
+        // Kết quả đang công bố tạm thời mà thay đổi ⇒ VĐV được đủ thời gian khiếu nại tính từ lúc này (BR-27)
+        if (ev.ResultsStatus == ResultsStatus.Provisional)
+        {
+            await _results.ReopenComplaintWindowAsync(ev.EventId, now, ct);
+            warnings.Add($"Kết quả đang tạm thời – thời gian nhận khiếu nại được tính lại từ {now:HH:mm dd/MM} " +
+                         $"({ev.Policy.ComplaintWindowMinutes} phút).");
+        }
+
         return new ResultCalculationSummaryDto
         {
             EventId = ev.EventId,
@@ -141,6 +156,48 @@ public class ResultRecalculation : IResultRecalculation
             Dsq = dsq,
             Warnings = warnings
         };
+    }
+
+    /// <summary>
+    /// BR-26 – cự ly không bấm giờ (VD Kids Run): chỉ Finished / DNS, không thời gian, không xếp hạng.
+    /// Đã nhận race kit ⇒ Finished (đã tham gia); chưa nhận ⇒ DNS. Quyết định DSQ còn hiệu lực vẫn áp dụng.
+    /// </summary>
+    private async Task<(int Finished, int Dns, int Dsq)> ApplyUntimedAsync(Event ev, RaceCategory category,
+        IReadOnlyList<Registration> registrations, Dictionary<int, Result> existing, HashSet<int> touched, DateTime now,
+        CancellationToken ct)
+    {
+        int finished = 0, dns = 0, dsq = 0;
+        foreach (var r in registrations)
+        {
+            if (!existing.TryGetValue(r.RegistrationId, out var result))
+            {
+                result = new Result { RegistrationId = r.RegistrationId };
+                await _results.AddAsync(result, ct);
+                existing[r.RegistrationId] = result;
+            }
+            touched.Add(r.RegistrationId);
+
+            var disqualified = result.Penalties.Any(p => p.RevokedAt == null && p.Action == PenaltyAction.DSQ);
+            var status = disqualified ? ResultStatus.DSQ
+                : r.RaceKitPickup is not null ? ResultStatus.Finished
+                : ResultStatus.DNS;
+            var age = RaceDayRules.AgeForEvent(r.DateOfBirth, ev.EventDate, ev.Policy.AgeCalculationMode);
+            Apply(result, new CalcOutcome
+            {
+                RegistrationId = r.RegistrationId,
+                Gender = r.Gender,
+                AgeGroupId = PickAgeGroup(ev.AgeGroups, category.CategoryId, age)?.AgeGroupId,
+                Status = status
+            }, now);
+
+            switch (status)
+            {
+                case ResultStatus.Finished: finished++; break;
+                case ResultStatus.DSQ: dsq++; break;
+                default: dns++; break;
+            }
+        }
+        return (finished, dns, dsq);
     }
 
     private static CalcRunner ToRunner(Registration r, Event ev, RaceCategory category, Result? existing)

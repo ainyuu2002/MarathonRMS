@@ -42,6 +42,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RaceKitDAO>();
         services.AddScoped<TimingDAO>();
         services.AddScoped<ResultDAO>();
+        services.AddScoped<ComplaintDAO>();
+        services.AddScoped<PrizeDAO>();
+        services.AddScoped<AchievementDAO>();
+        services.AddScoped<MedicalDataDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -66,6 +70,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRaceKitRepository, RaceKitRepository>();
         services.AddScoped<ITimingRepository, TimingRepository>();
         services.AddScoped<IResultRepository, ResultRepository>();
+        services.AddScoped<IComplaintRepository, ComplaintRepository>();
+        services.AddScoped<IPrizeRepository, PrizeRepository>();
+        services.AddScoped<IAchievementRepository, AchievementRepository>();
+        services.AddScoped<IMedicalDataRepository, MedicalDataRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -114,6 +122,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IResultCalculator, ResultCalculator>();
         services.AddScoped<IResultRecalculation, ResultRecalculation>();
         services.AddScoped<IResultService, ResultService>();
+        services.AddScoped<IComplaintService, ComplaintService>();
+        services.AddSingleton<IPrizeAllocator, PrizeAllocator>();
+        services.AddScoped<IPrizeService, PrizeService>();
+        services.AddScoped<IAchievementService, AchievementService>();
+        services.AddScoped<IMedicalDataRetentionService, MedicalDataRetentionService>();
 
         return services;
     }

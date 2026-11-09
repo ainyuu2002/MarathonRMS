@@ -18,10 +18,11 @@ public class ResultDAO : BaseDAO<Result>
             .Include(e => e.AgeGroups)
             .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
-    /// <summary>Đăng ký đã xác nhận của giải kèm mọi thời gian đã ghi.</summary>
+    /// <summary>Đăng ký đã xác nhận của giải kèm mọi thời gian đã ghi và việc nhận kit (BR-26).</summary>
     public Task<List<Registration>> GetConfirmedWithTimingAsync(int eventId, CancellationToken ct = default) =>
-        Context.Registrations.AsNoTracking()
+        Context.Registrations.AsNoTracking().AsSplitQuery()
             .Include(r => r.TimingRecords)
+            .Include(r => r.RaceKitPickup)
             .Where(r => r.EventId == eventId && r.Status == RegistrationStatus.Confirmed)
             .ToListAsync(ct);
 
@@ -53,6 +54,11 @@ public class ResultDAO : BaseDAO<Result>
 
     public Task<Event?> GetEventTrackedAsync(int eventId, CancellationToken ct = default) =>
         Context.Events.Include(e => e.Policy).FirstOrDefaultAsync(e => e.EventId == eventId, ct);
+
+    /// <summary>Kết quả đang tạm thời mà vừa thay đổi ⇒ tính lại cửa sổ khiếu nại từ thời điểm này (cập nhật ngay, trong transaction hiện tại).</summary>
+    public Task ReopenComplaintWindowAsync(int eventId, DateTime now, CancellationToken ct = default) =>
+        Context.Events.Where(e => e.EventId == eventId && e.ResultsStatus == ResultsStatus.Provisional)
+            .ExecuteUpdateAsync(u => u.SetProperty(e => e.ResultsProvisionalAt, now), ct);
 
     public Task<bool> AnyForEventAsync(int eventId, CancellationToken ct = default) =>
         Set.AnyAsync(r => r.Registration.EventId == eventId && r.Registration.Status == RegistrationStatus.Confirmed, ct);

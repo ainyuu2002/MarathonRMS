@@ -29,6 +29,9 @@ public class StatusBadgeTagHelper : TagHelper
         // Kết quả
         ["Provisional"] = ("Tạm thời", "text-bg-warning"),
         ["Official"] = ("Chính thức", "text-bg-success"),
+        // Khiếu nại (UC-66)
+        ["Open"] = ("Chờ xử lý", "text-bg-warning"),
+        ["Accepted"] = ("Chấp nhận", "text-bg-success"),
         // Đăng ký / thanh toán
         ["PendingPayment"] = ("Chờ thanh toán", "text-bg-warning"),
         ["Confirmed"] = ("Đã xác nhận", "text-bg-success"),

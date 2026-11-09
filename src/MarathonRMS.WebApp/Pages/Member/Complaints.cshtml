@@ -1,0 +1,61 @@
+@page
+@model MarathonRMS.WebApp.Pages.Member.ComplaintsModel
+@{
+    ViewData["Title"] = "Khiếu nại kết quả";
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Khiếu nại kết quả</h1>
+        <p class="text-secondary mb-0">Gửi khiếu nại từ trang kết quả cá nhân khi kết quả còn <strong>tạm thời</strong>.</p>
+    </div>
+    <a asp-page="/Results/Index" class="btn btn-outline-secondary"><i class="bi bi-trophy"></i> Bảng xếp hạng</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-chat-left-text fs-1"></i>
+        <p class="mt-2 mb-0">Bạn chưa gửi khiếu nại nào.</p>
+    </div>
+}
+else
+{
+    <div class="vstack gap-3">
+        @foreach (var c in Model.Items)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                        <div>
+                            <div class="fw-semibold">@c.EventName</div>
+                            <div class="small text-secondary">
+                                @c.CategoryName@(c.BibNumber is int bib ? $" · BIB {bib}" : "") · @c.RunnerName ·
+                                gửi lúc @c.CreatedAt.ToString("HH:mm dd/MM/yyyy")
+                            </div>
+                        </div>
+                        <status-badge status="@c.Status" />
+                    </div>
+                    <p class="mb-2" style="white-space: pre-line">@c.Content</p>
+                    @if (c.EvidenceUrl is not null)
+                    {
+                        <div class="small mb-2"><a href="@c.EvidenceUrl" target="_blank" rel="noopener noreferrer nofollow"><i class="bi bi-paperclip"></i> Bằng chứng</a></div>
+                    }
+                    @if (c.FeeAmount > 0)
+                    {
+                        <div class="small text-secondary mb-2">Phí khiếu nại: @c.FeeAmount.ToString("N0") đ</div>
+                    }
+                    @if (c.Response is not null)
+                    {
+                        <div class="border-start border-3 ps-3 small">
+                            <div class="fw-semibold">Ban tổ chức trả lời@(c.HandledAt is DateTime at ? $" lúc {at:HH:mm dd/MM/yyyy}" : "")</div>
+                            <div style="white-space: pre-line">@c.Response</div>
+                        </div>
+                    }
+                    <a asp-page="/Results/Detail" asp-route-registrationId="@c.RegistrationId" class="small">Xem kết quả <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        }
+    </div>
+}

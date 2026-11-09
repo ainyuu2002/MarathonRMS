@@ -35,6 +35,11 @@ else
         }
     </ul>
 
+    @if (ev.ResultsStatus == "Official")
+    {
+        <p class="mb-3"><a asp-page="Winners" asp-route-eventId="@ev.EventId" class="btn btn-sm btn-outline-warning"><i class="bi bi-trophy"></i> Vinh danh</a></p>
+    }
+
     @if (ev.ResultsStatus == "Provisional")
     {
         <div class="alert alert-warning small">

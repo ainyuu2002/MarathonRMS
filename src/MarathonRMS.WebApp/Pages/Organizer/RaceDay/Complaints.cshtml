@@ -1,0 +1,101 @@
+@page "{eventId:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.RaceDay.ComplaintsModel
+@{
+    ViewData["Title"] = "Khiếu nại kết quả";
+    var d = Model.Data;
+    var open = d.Items.Count(c => c.Status == "Open");
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Khiếu nại kết quả</h1>
+        <p class="text-secondary mb-0">
+            @d.EventName <status-badge status="@d.ResultsStatus" />
+            @if (d.ComplaintWindowEndsAt is DateTime ends) { <span class="small">· nhận khiếu nại đến @ends.ToString("HH:mm dd/MM/yyyy")</span> }
+        </p>
+    </div>
+    <a asp-page="Results" asp-route-eventId="@Model.EventId" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kết quả</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <select name="Status" class="form-select" aria-label="Trạng thái" onchange="this.form.submit()">
+            <option value="">Mọi trạng thái</option>
+            <option value="Open" selected="@(Model.Status == "Open")">Chờ xử lý</option>
+            <option value="Accepted" selected="@(Model.Status == "Accepted")">Chấp nhận</option>
+            <option value="Rejected" selected="@(Model.Status == "Rejected")">Từ chối</option>
+        </select>
+    </div>
+    @if (open > 0)
+    {
+        <div class="col-md-9 d-flex align-items-center small text-danger">Còn @open khiếu nại chờ xử lý – chưa thể chốt kết quả chính thức.</div>
+    }
+</form>
+
+@if (!d.CanResolve)
+{
+    <div class="alert alert-info small"><i class="bi bi-lock"></i> Kết quả đã chính thức – không xử lý khiếu nại nữa.</div>
+}
+
+@if (d.Items.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-chat-left-text fs-1"></i>
+        <p class="mt-2 mb-0">Chưa có khiếu nại nào.</p>
+    </div>
+}
+else
+{
+    <div class="vstack gap-3">
+        @foreach (var c in d.Items)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                        <div>
+                            @if (c.BibNumber is int bib) { <span class="badge text-bg-dark me-1">@bib</span> }
+                            <span class="fw-semibold">@c.RunnerName</span> · @c.CategoryName <status-badge status="@c.ResultStatus" />
+                            <div class="small text-secondary">Gửi lúc @c.CreatedAt.ToString("HH:mm dd/MM/yyyy")@(c.FeeAmount > 0 ? $" · phí {c.FeeAmount:N0} đ" : "")</div>
+                        </div>
+                        <status-badge status="@c.Status" />
+                    </div>
+                    <p class="mb-2" style="white-space: pre-line">@c.Content</p>
+                    <div class="small mb-2 d-flex gap-3 flex-wrap">
+                        @if (c.EvidenceUrl is not null)
+                        {
+                            <a href="@c.EvidenceUrl" target="_blank" rel="noopener noreferrer nofollow"><i class="bi bi-paperclip"></i> Bằng chứng</a>
+                        }
+                        <a asp-page="/Results/Detail" asp-route-registrationId="@c.RegistrationId"><i class="bi bi-stopwatch"></i> Thời gian từng checkpoint</a>
+                        <a asp-page="Penalties" asp-route-resultId="@c.ResultId"><i class="bi bi-flag"></i> Phạt / DSQ</a>
+                    </div>
+
+                    @if (c.Response is not null)
+                    {
+                        <div class="border-start border-3 ps-3 small">
+                            <div class="fw-semibold">Trả lời@(c.HandledAt is DateTime at ? $" lúc {at:HH:mm dd/MM/yyyy}" : "")</div>
+                            <div style="white-space: pre-line">@c.Response</div>
+                        </div>
+                    }
+                    else if (d.CanResolve)
+                    {
+                        <form method="post" asp-page-handler="Resolve" asp-route-eventId="@Model.EventId" asp-route-status="@Model.Status"
+                              asp-route-complaintId="@c.Id" class="border-top pt-3 mt-2">
+                            <textarea name="Input.Response" class="form-control mb-2" rows="2" maxlength="2000" required
+                                      placeholder="Trả lời người khiếu nại (bắt buộc)"></textarea>
+                            <div class="d-flex gap-2">
+                                <button name="Input.Decision" value="Accepted" class="btn btn-success btn-sm"
+                                        onclick="return confirm('Chấp nhận khiếu nại? Sau đó hãy sửa dữ liệu và tính lại kết quả nếu cần.');">
+                                    <i class="bi bi-check2"></i> Chấp nhận
+                                </button>
+                                <button name="Input.Decision" value="Rejected" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-x"></i> Từ chối
+                                </button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

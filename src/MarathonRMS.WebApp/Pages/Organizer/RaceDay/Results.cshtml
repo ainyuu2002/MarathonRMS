@@ -44,9 +44,17 @@
             {
                 <div>Công bố chính thức @official.ToString("HH:mm dd/MM/yyyy")</div>
             }
-            @if (o.OpenComplaints > 0)
+            @if (o.MedicalDataPurgeAt is DateTime purge)
             {
-                <div class="text-danger">Còn @o.OpenComplaints khiếu nại chưa xử lý.</div>
+                <div><i class="bi bi-shield-lock"></i> Nhóm máu và ghi chú y tế của VĐV giải này tự xóa từ @purge.ToString("HH:mm dd/MM/yyyy") – BR-52</div>
+            }
+            @if (o.ResultsStatus != "Draft")
+            {
+                <div>
+                    @if (o.OpenComplaints > 0) { <span class="text-danger">Còn @o.OpenComplaints khiếu nại chưa xử lý.</span> }
+                    <a asp-page="Complaints" asp-route-eventId="@Model.EventId">Xem khiếu nại <i class="bi bi-arrow-right"></i></a>
+                    · <a asp-page="/Results/Winners" asp-route-eventId="@Model.EventId">Danh sách nhận giải <i class="bi bi-arrow-right"></i></a>
+                </div>
             }
         </div>
         <div class="d-flex gap-2 flex-wrap">
@@ -82,7 +90,7 @@
     <div class="col-md-3">
         <select name="CategoryId" class="form-select" aria-label="Cự ly">
             <option value="">Mọi cự ly</option>
-            @foreach (var c in o.Categories.Where(c => c.IsTimed))
+            @foreach (var c in o.Categories)
             {
                 <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
             }

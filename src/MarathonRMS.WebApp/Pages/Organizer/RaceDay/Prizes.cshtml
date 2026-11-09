@@ -1,0 +1,153 @@
+@page "{eventId:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.RaceDay.PrizesModel
+@{
+    ViewData["Title"] = "Giải thưởng";
+    var d = Model.Data;
+    var ranked = d.Categories.Where(c => c.IsRanked).ToList();
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Giải thưởng</h1>
+        <p class="text-secondary mb-0">
+            @d.EventName ·
+            @(d.AwardStackingPolicy == "HighestOnly" ? "mỗi VĐV chỉ nhận giải cao nhất" : "cho phép nhận cộng dồn giải")
+            <span class="small">(đổi trong Chính sách giải)</span>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="/Results/Winners" asp-route-eventId="@Model.EventId" class="btn btn-outline-warning"><i class="bi bi-trophy"></i> Danh sách nhận giải</a>
+        <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Ngày thi</a>
+    </div>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        @if (d.Prizes.Count == 0)
+        {
+            <div class="text-center text-secondary border rounded py-5">
+                <i class="bi bi-award fs-1"></i>
+                <p class="mt-2 mb-0">Chưa có giải thưởng nào.</p>
+            </div>
+        }
+        @foreach (var group in d.Prizes.GroupBy(p => p.CategoryName))
+        {
+            <div class="card mb-3">
+                <div class="card-header fw-semibold">@group.Key</div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in group)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                            <div>
+                                <div class="small text-secondary">@PrizesModel.Describe(p)</div>
+                                <div>@p.Reward@(p.CashAmount is decimal cash && cash > 0 ? $" · {cash:N0} đ" : "")</div>
+                            </div>
+                            @if (d.CanEdit)
+                            {
+                                <form method="post" asp-page-handler="Delete" asp-route-eventId="@Model.EventId" asp-route-prizeId="@p.Id"
+                                      onsubmit="return confirm('Xóa giải thưởng này?');">
+                                    <button class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                </form>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-5">
+        @if (!d.CanEdit)
+        {
+            <div class="alert alert-info small"><i class="bi bi-lock"></i> Kết quả đã chính thức – không sửa cơ cấu giải thưởng.</div>
+        }
+        else if (ranked.Count == 0)
+        {
+            <div class="alert alert-secondary small">Giải chưa có cự ly bấm giờ và xếp hạng nào (BR-26).</div>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Create" asp-route-eventId="@Model.EventId" class="card" novalidate>
+                <div class="card-header fw-semibold">Thêm giải thưởng</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="category">Cự ly</label>
+                        <select name="CategoryId" id="category" class="form-select">
+                            @foreach (var c in ranked)
+                            {
+                                <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label asp-for="Input.AwardType" class="form-label">Loại giải</label>
+                            <select asp-for="Input.AwardType" class="form-select" id="awardType">
+                                <option value="Overall">Chung cuộc</option>
+                                <option value="AgeGroup">Nhóm tuổi</option>
+                                <option value="Nationality">Theo quốc tịch</option>
+                            </select>
+                        </div>
+                        <div class="col-5">
+                            <label asp-for="Input.Gender" class="form-label">Giới tính</label>
+                            <select asp-for="Input.Gender" class="form-select">
+                                <option value="M">Nam</option>
+                                <option value="F">Nữ</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="ageGroupField">
+                        <label asp-for="Input.AgeGroupId" class="form-label">Nhóm tuổi</label>
+                        <select asp-for="Input.AgeGroupId" class="form-select">
+                            <option value="">— Chọn nhóm tuổi —</option>
+                            @foreach (var g in d.AgeGroups)
+                            {
+                                <option value="@g.Id" data-category="@g.CategoryId">@g.Name@(g.CategoryId is null ? "" : " (riêng cự ly)")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3" id="nationalityField">
+                        <label asp-for="Input.Nationality" class="form-label">Quốc tịch</label>
+                        <input asp-for="Input.Nationality" class="form-control" placeholder="Việt Nam" />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label asp-for="Input.Rank" class="form-label">Hạng</label>
+                            <input asp-for="Input.Rank" class="form-control" min="1" max="50" />
+                            <span asp-validation-for="Input.Rank" class="text-danger small"></span>
+                        </div>
+                        <div class="col-8">
+                            <label asp-for="Input.CashAmount" class="form-label">Tiền thưởng (đ)</label>
+                            <input asp-for="Input.CashAmount" class="form-control" step="1000" min="0" />
+                            <span asp-validation-for="Input.CashAmount" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Reward" class="form-label">Phần thưởng <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Reward" class="form-control" maxlength="300" placeholder="Cúp + giấy chứng nhận" />
+                        <span asp-validation-for="Input.Reward" class="text-danger small"></span>
+                    </div>
+                    <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm</button>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Chỉ hiện trường nhóm tuổi / quốc tịch khi chọn đúng loại giải
+        (function () {
+            const type = document.getElementById('awardType');
+            if (!type) return;
+            const sync = () => {
+                document.getElementById('ageGroupField').hidden = type.value !== 'AgeGroup';
+                document.getElementById('nationalityField').hidden = type.value !== 'Nationality';
+            };
+            type.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

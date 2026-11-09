@@ -1,0 +1,77 @@
+@page "{registrationId:int}"
+@model MarathonRMS.WebApp.Pages.Results.CertificateModel
+@{
+    Layout = null;
+    var c = Model.Certificate;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>E-certificate@(c is null ? "" : $" – {c.RunnerName} – {c.EventName}")</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+        body { background: #f1f3f5; }
+        .cert { max-width: 960px; margin: 2rem auto; background: #fff; border: 12px double #c9a227; padding: 3rem 3.5rem; }
+        .cert h1 { letter-spacing: .25rem; color: #8a6d0b; }
+        .cert .runner { font-size: 2.6rem; font-weight: 700; }
+        .cert .time { font-size: 3rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; }
+        @@page { size: A4 landscape; margin: 0; }
+        @@media print {
+            body { background: #fff; }
+            .no-print { display: none !important; }
+            .cert { margin: 0; max-width: none; min-height: 100vh; }
+        }
+    </style>
+</head>
+<body>
+@if (c is null)
+{
+    <div class="container py-5 text-center">
+        <i class="bi bi-patch-exclamation fs-1 text-secondary"></i>
+        <p class="mt-2">@(Model.Error ?? "Không có e-certificate.")</p>
+        <a asp-page="Index" class="btn btn-outline-secondary">Bảng xếp hạng</a>
+    </div>
+}
+else
+{
+    <div class="no-print text-center mt-3">
+        <button class="btn btn-success" onclick="window.print()"><i class="bi bi-printer"></i> In / Lưu PDF</button>
+        <a asp-page="Detail" asp-route-registrationId="@c.RegistrationId" class="btn btn-outline-secondary">Kết quả chi tiết</a>
+    </div>
+    <div class="cert text-center">
+        <div class="text-secondary text-uppercase small">@c.OrganizationName</div>
+        <h1 class="h2 text-uppercase mt-2">Chứng nhận hoàn thành</h1>
+        <div class="text-secondary">Finisher Certificate</div>
+        <p class="mt-4 mb-1">Chứng nhận vận động viên</p>
+        <div class="runner">@c.RunnerName</div>
+        <p class="mb-0">@(c.BibNumber is int bib ? $"BIB {bib} · " : "")đã hoàn thành cự ly <strong>@c.CategoryName</strong> (@c.DistanceKm.ToString("0.##") km)</p>
+        <p>tại <strong>@c.EventName</strong> · @c.VenueName, @c.City · @c.EventDate.ToString("dd/MM/yyyy")</p>
+        <div class="time my-3">@RaceTime.Format(c.FinalTimeMs)</div>
+        <div class="row justify-content-center g-3 small">
+            <div class="col-auto">Giờ súng <span class="font-monospace">@RaceTime.Format(c.GunTimeMs)</span></div>
+            <div class="col-auto">Giờ chip <span class="font-monospace">@RaceTime.Format(c.ChipTimeMs)</span></div>
+        </div>
+        <div class="row justify-content-center g-4 mt-2">
+            @if (c.OverallRank is int overall)
+            {
+                <div class="col-auto"><div class="fs-4 fw-semibold">@overall<span class="fs-6 text-secondary">/@c.FinishersInCategory</span></div><div class="small text-secondary">Hạng chung</div></div>
+            }
+            @if (c.GenderRank is int gender)
+            {
+                <div class="col-auto"><div class="fs-4 fw-semibold">@gender</div><div class="small text-secondary">Hạng @RaceTime.GenderLabel(c.Gender).ToLower()</div></div>
+            }
+            @if (c.AgeGroupRank is int ag)
+            {
+                <div class="col-auto"><div class="fs-4 fw-semibold">@ag</div><div class="small text-secondary">Nhóm tuổi @c.AgeGroupName</div></div>
+            }
+        </div>
+        <p class="small text-secondary mt-4 mb-0">
+            Kết quả chính thức@(c.OfficialAt is DateTime at ? $" công bố {at:dd/MM/yyyy}" : "") · Marathon Race Management System · Mã @c.RegistrationId
+        </p>
+    </div>
+}
+</body>
+</html>

@@ -79,6 +79,8 @@ builder.Services.AddAuthorizationBuilder()
 
 // ---------- Tầng nghiệp vụ ----------
 builder.Services.AddMarathonServices(config);
+// Phần C – UC-91 tự xóa dữ liệu y tế quá hạn giữ (BR-52)
+builder.Services.AddHostedService<MedicalDataRetentionWorker>();
 // File tải lên (ảnh giải – BR-51) lưu ở wwwroot/uploads, phục vụ tĩnh qua /uploads
 builder.Services.Configure<FileStorageOptions>(o =>
 {

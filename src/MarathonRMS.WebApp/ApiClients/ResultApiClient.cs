@@ -44,6 +44,45 @@ public class ResultApiClient : ApiClientBase
     public Task RevokePenaltyAsync(int penaltyId, CancellationToken ct = default) =>
         PostAsync($"api/penalties/{penaltyId}/revoke", new { }, ct);
 
+    // ---------- UC-66 khiếu nại ----------
+
+    public Task<ComplaintDto> CreateComplaintAsync(int resultId, CreateComplaintRequest request, CancellationToken ct = default) =>
+        PostAsync<ComplaintDto>($"api/results/{resultId}/complaints", request, ct);
+
+    public Task<List<ComplaintDto>> GetMyComplaintsAsync(CancellationToken ct = default) =>
+        GetAsync<List<ComplaintDto>>("api/complaints/me", ct);
+
+    public Task<EventComplaintsDto> GetEventComplaintsAsync(int eventId, string? status, CancellationToken ct = default) =>
+        GetAsync<EventComplaintsDto>(Query($"api/events/{eventId}/complaints", ("status", status)), ct);
+
+    public Task<ComplaintDto> ResolveComplaintAsync(int complaintId, ResolveComplaintRequest request, CancellationToken ct = default) =>
+        PostAsync<ComplaintDto>($"api/complaints/{complaintId}/resolve", request, ct);
+
+    // ---------- UC-28 giải thưởng, UC-65 vinh danh ----------
+
+    public Task<EventPrizesDto> GetEventPrizesAsync(int eventId, CancellationToken ct = default) =>
+        GetAsync<EventPrizesDto>($"api/events/{eventId}/prizes", ct);
+
+    public Task<PrizeDto> CreatePrizeAsync(int categoryId, SavePrizeRequest request, CancellationToken ct = default) =>
+        PostAsync<PrizeDto>($"api/categories/{categoryId}/prizes", request, ct);
+
+    public Task DeletePrizeAsync(int prizeId, CancellationToken ct = default) =>
+        DeleteAsync($"api/prizes/{prizeId}", ct);
+
+    public Task<EventWinnersDto> GetWinnersAsync(int eventId, CancellationToken ct = default) =>
+        GetAsync<EventWinnersDto>($"api/events/{eventId}/winners", ct);
+
+    // ---------- UC-64 hồ sơ thành tích, e-certificate ----------
+
+    public Task<AchievementProfileDto> GetMyAchievementsAsync(CancellationToken ct = default) =>
+        GetAsync<AchievementProfileDto>("api/achievements/me", ct);
+
+    public Task<AchievementProfileDto> GetRunnerAsync(int participantId, CancellationToken ct = default) =>
+        GetAsync<AchievementProfileDto>($"api/runners/{participantId}", ct);
+
+    public Task<CertificateDto> GetCertificateAsync(int registrationId, CancellationToken ct = default) =>
+        GetAsync<CertificateDto>($"api/results/registrations/{registrationId}/certificate", ct);
+
     // ---------- UC-62 bảng xếp hạng công khai ----------
 
     public Task<List<ResultsEventDto>> GetPublishedEventsAsync(CancellationToken ct = default) =>

@@ -25,6 +25,12 @@
         </a>
     </div>
 
+    @if (d.HasCertificate)
+    {
+        <p><a asp-page="Certificate" asp-route-registrationId="@Model.RegistrationId" class="btn btn-sm btn-outline-success" target="_blank">
+            <i class="bi bi-patch-check"></i> E-certificate</a></p>
+    }
+
     @if (s.IsProvisional)
     {
         <div class="alert alert-warning small"><i class="bi bi-hourglass-split"></i> Kết quả <strong>tạm thời</strong> – có thể thay đổi sau thời gian nhận khiếu nại.</div>
@@ -103,6 +109,31 @@
         </div>
     }
 
+    @if (d.CanComplain)
+    {
+        <form method="post" asp-page-handler="Complain" asp-route-registrationId="@Model.RegistrationId" class="card mb-4" novalidate>
+            <div class="card-header fw-semibold"><i class="bi bi-chat-left-text"></i> Khiếu nại kết quả</div>
+            <div class="card-body">
+                <p class="small text-secondary">
+                    Nhận khiếu nại đến <strong>@d.ComplaintWindowEndsAt?.ToString("HH:mm dd/MM/yyyy")</strong>.
+                    @if (d.ComplaintFee > 0) { <span>Phí khiếu nại: <strong>@d.ComplaintFee.ToString("N0") đ</strong> (thu theo hướng dẫn của ban tổ chức).</span> }
+                </p>
+                <div class="mb-3">
+                    <label asp-for="Complaint.Content" class="form-label">Nội dung <span class="text-danger">*</span></label>
+                    <textarea asp-for="Complaint.Content" class="form-control" rows="3" maxlength="2000"
+                              placeholder="VD: Đã qua CP2 lúc 07:12 nhưng không có thời gian, xin kiểm tra lại"></textarea>
+                    <span asp-validation-for="Complaint.Content" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Complaint.EvidenceUrl" class="form-label">Đường dẫn bằng chứng (ảnh, video, file GPS)</label>
+                    <input asp-for="Complaint.EvidenceUrl" class="form-control" placeholder="https://…" />
+                    <span asp-validation-for="Complaint.EvidenceUrl" class="text-danger small"></span>
+                </div>
+                <button class="btn btn-warning"><i class="bi bi-send"></i> Gửi khiếu nại</button>
+            </div>
+        </form>
+    }
+
     @if (d.Penalties.Count > 0)
     {
         <h2 class="h5">Quyết định của ban tổ chức</h2>
@@ -117,4 +148,8 @@
             }
         </ul>
     }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }
