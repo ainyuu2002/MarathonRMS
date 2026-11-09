@@ -82,6 +82,14 @@
                     <label asp-for="PriceInput.Price" class="form-label">Giá (VNĐ)</label>
                     <input asp-for="PriceInput.Price" type="number" min="0" step="1000" class="form-control" />
                     <div class="form-text">0 = miễn phí; bội số 1.000đ.</div>
+                    @if (Model.Reference is { Min: decimal rmin, Median: decimal rmed, Max: decimal rmax } r)
+                    {
+                        <div class="small mt-1 text-info-emphasis">
+                            <i class="bi bi-info-circle"></i> Tham khảo @(r.Discipline == "Trail" ? "trail" : "đường phố") @r.DistanceBand:
+                            @rmin.ToString("N0") – <strong>@rmed.ToString("N0")</strong> – @rmax.ToString("N0")đ
+                            <span class="text-secondary">(@(r.Source == "System" ? $"{r.SampleCount} cự ly trên hệ thống" : "bảng khảo sát"))</span>
+                        </div>
+                    }
                     <span asp-validation-for="PriceInput.Price" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">

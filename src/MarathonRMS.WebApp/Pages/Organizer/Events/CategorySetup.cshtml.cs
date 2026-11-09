@@ -21,6 +21,7 @@ public class CategorySetupModel : BasePageModel
     public UpsertCheckpointRequest CheckpointInput { get; set; } = new();
     public EventDetailDto Event { get; private set; } = new();
     public RaceCategoryDto Category { get; private set; } = new();
+    public PriceReferenceDto? Reference { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
@@ -121,6 +122,9 @@ public class CategorySetupModel : BasePageModel
         var category = Event.Categories.FirstOrDefault(c => c.Id == CategoryId);
         if (category is null) return false;
         Category = category;
+        // UC-87: gợi ý giá – lỗi thì bỏ qua, không chặn trang
+        try { Reference = await _events.GetPriceReferenceAsync(category.Discipline, category.DistanceKm, Id, ct); }
+        catch (ApiException) { Reference = null; }
         return true;
     }
 

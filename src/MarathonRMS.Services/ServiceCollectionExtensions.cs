@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<PaymentDAO>();
         services.AddScoped<RegistrationChangeDAO>();
         services.AddScoped<EventLifecycleDAO>();
+        services.AddScoped<PriceReferenceDAO>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<BibDAO>();
         services.AddScoped<RaceKitDAO>();
@@ -80,6 +81,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IRegistrationChangeRepository, RegistrationChangeRepository>();
         services.AddScoped<IEventLifecycleRepository, EventLifecycleRepository>();
+        services.AddScoped<IPriceReferenceRepository, PriceReferenceRepository>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<IBibRepository, BibRepository>();
         services.AddScoped<IRaceKitRepository, RaceKitRepository>();
@@ -128,6 +130,8 @@ public static class ServiceCollectionExtensions
         // Phần A – hoãn / hủy giải, hoàn tiền (UC-25, 50)
         services.AddScoped<IEventLifecycleService, EventLifecycleService>();
         services.AddScoped<IRefundService, RefundService>();
+        // Phần A – GĐ3: khoảng giá tham khảo (UC-87)
+        services.AddScoped<IPriceReferenceService, PriceReferenceService>();
 
         // Phần B – giải, đăng ký, thanh toán (thêm bên dưới)
         services.AddScoped<IEventService, EventService>();

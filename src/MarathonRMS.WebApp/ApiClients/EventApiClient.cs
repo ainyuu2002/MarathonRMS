@@ -63,6 +63,11 @@ public class EventApiClient : ApiClientBase
 
     public Task DeletePriceTierAsync(int id, CancellationToken ct = default) => DeleteAsync($"api/price-tiers/{id}", ct);
 
+    /// <summary>UC-87 – khoảng giá tham khảo.</summary>
+    public Task<PriceReferenceDto> GetPriceReferenceAsync(string discipline, decimal distanceKm, int excludeEventId, CancellationToken ct = default) =>
+        GetAsync<PriceReferenceDto>(Query("api/pricing/reference", ("discipline", discipline),
+            ("distanceKm", distanceKm.ToString(System.Globalization.CultureInfo.InvariantCulture)), ("excludeEventId", excludeEventId)), ct);
+
     // UC-23 – nhóm tuổi
     public Task<List<AgeGroupDto>> GetAgeGroupsAsync(int eventId, CancellationToken ct = default) =>
         GetAsync<List<AgeGroupDto>>($"api/events/{eventId}/age-groups", ct);

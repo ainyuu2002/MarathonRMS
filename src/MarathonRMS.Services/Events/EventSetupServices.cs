@@ -61,9 +61,12 @@ public class PriceTierService : IPriceTierService
     private readonly IAuditLogger _audit;
     private readonly IUnitOfWork _uow;
 
+    private readonly IPriceReferenceService _reference;
+
     public PriceTierService(IPriceTierRepository tiers, IRaceCategoryRepository categories, EventSetupGuard guard,
-        ISystemSettingsProvider settings, IAuditLogger audit, IUnitOfWork uow)
+        ISystemSettingsProvider settings, IAuditLogger audit, IUnitOfWork uow, IPriceReferenceService reference)
     {
+        _reference = reference;
         _tiers = tiers;
         _categories = categories;
         _guard = guard;
@@ -200,6 +203,9 @@ public class PriceTierService : IPriceTierService
             else if (other.Category.DistanceKm > category.DistanceKm && other.Price < tier.Price)
                 warnings.Add($"Cự ly {other.Category.Name} dài hơn nhưng giá thấp hơn ({other.Price:N0}đ) trong cùng thời gian.");
         }
+        // BR-49 (ý 2): lệch khoảng giá tham khảo quá 50% (UC-87)
+        var reference = await _reference.GetAsync(category.Discipline.ToString(), category.DistanceKm, category.EventId, ct);
+        if (_reference.Warn(reference, tier.Price) is { } refWarning) warnings.Add(refWarning);
         return warnings.Distinct().ToList();
     }
 
