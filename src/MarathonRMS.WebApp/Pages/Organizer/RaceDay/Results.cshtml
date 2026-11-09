@@ -49,6 +49,7 @@
                 <div>
                     @if (o.OpenComplaints > 0) { <span class="text-danger">Còn @o.OpenComplaints khiếu nại chưa xử lý.</span> }
                     <a asp-page="Complaints" asp-route-eventId="@Model.EventId">Xem khiếu nại <i class="bi bi-arrow-right"></i></a>
+                    · <a asp-page="/Results/Winners" asp-route-eventId="@Model.EventId">Danh sách nhận giải <i class="bi bi-arrow-right"></i></a>
                 </div>
             }
         </div>

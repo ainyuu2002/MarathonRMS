@@ -56,6 +56,48 @@ public static class RaceDayDemoSeeder
         {
             await ShiftRaceEventToTodayAsync(db, now, logger);
         }
+
+        await SeedPrizesAsync(db, logger);
+    }
+
+    /// <summary>
+    /// Cơ cấu giải thưởng mẫu cho giải demo ngày thi (UC-28): top 3 chung cuộc nam/nữ mỗi cự ly, giải nhất nhóm tuổi của 21K;
+    /// mỗi VĐV chỉ nhận giải cao nhất. Chỉ nạp khi giải chưa có giải thưởng nào (DB cũ cũng được bổ sung).
+    /// </summary>
+    private static async Task SeedPrizesAsync(MarathonDbContext db, ILogger logger)
+    {
+        var ev = await db.Events.Include(e => e.Policy).Include(e => e.Categories).Include(e => e.AgeGroups)
+            .FirstOrDefaultAsync(e => e.Slug == RaceEventSlug);
+        if (ev is null || ev.ResultsStatus == ResultsStatus.Official ||
+            await db.Prizes.AnyAsync(p => p.Category.EventId == ev.EventId)) return;
+
+        ev.Policy.AwardStackingPolicy = AwardStackingPolicy.HighestOnly;
+        var overallRewards = new[] { ("Cúp vô địch + giấy chứng nhận", 5_000_000m), ("Cúp + giấy chứng nhận", 3_000_000m), ("Cúp + giấy chứng nhận", 2_000_000m) };
+        foreach (var category in ev.Categories.Where(c => c.IsTimed && c.IsRanked))
+        {
+            var scale = category.DistanceKm >= 20 ? 1m : 0.5m;
+            foreach (var gender in new[] { Gender.M, Gender.F })
+            {
+                for (var rank = 1; rank <= overallRewards.Length; rank++)
+                {
+                    var (reward, cash) = overallRewards[rank - 1];
+                    db.Prizes.Add(new Prize
+                    {
+                        CategoryId = category.CategoryId, AwardType = AwardType.Overall, Gender = gender,
+                        Rank = rank, Reward = reward, CashAmount = cash * scale
+                    });
+                }
+                if (category.DistanceKm < 20) continue;
+                foreach (var group in ev.AgeGroups.Where(g => g.CategoryId == null))
+                    db.Prizes.Add(new Prize
+                    {
+                        CategoryId = category.CategoryId, AwardType = AwardType.AgeGroup, Gender = gender,
+                        AgeGroupId = group.AgeGroupId, Rank = 1, Reward = "Huy chương nhóm tuổi", CashAmount = 500_000
+                    });
+            }
+        }
+        await db.SaveChangesAsync();
+        logger.LogInformation("Đã nạp giải thưởng mẫu cho giải demo {Slug}.", RaceEventSlug);
     }
 
     /// <summary>

@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<TimingDAO>();
         services.AddScoped<ResultDAO>();
         services.AddScoped<ComplaintDAO>();
+        services.AddScoped<PrizeDAO>();
 
         // Repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -68,6 +69,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITimingRepository, TimingRepository>();
         services.AddScoped<IResultRepository, ResultRepository>();
         services.AddScoped<IComplaintRepository, ComplaintRepository>();
+        services.AddScoped<IPrizeRepository, PrizeRepository>();
 
         // Hạ tầng
         services.AddHttpContextAccessor();
@@ -117,6 +119,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IResultRecalculation, ResultRecalculation>();
         services.AddScoped<IResultService, ResultService>();
         services.AddScoped<IComplaintService, ComplaintService>();
+        services.AddSingleton<IPrizeAllocator, PrizeAllocator>();
+        services.AddScoped<IPrizeService, PrizeService>();
 
         return services;
     }

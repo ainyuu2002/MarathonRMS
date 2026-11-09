@@ -1,0 +1,85 @@
+@page "{eventId:int}"
+@model MarathonRMS.WebApp.Pages.Results.WinnersModel
+@using MarathonRMS.WebApp.Pages.Organizer.RaceDay
+@{
+    ViewData["Title"] = "Vinh danh";
+    var d = Model.Data;
+    string Medal(int rank) => rank switch { 1 => "text-warning", 2 => "text-secondary", 3 => "text-danger-emphasis", _ => "text-body-tertiary" };
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (d is not null)
+{
+    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 mb-1"><i class="bi bi-trophy text-warning"></i> Vinh danh</h1>
+            <p class="text-secondary mb-0">@d.EventName · @d.OrganizationName · @d.EventDate.ToString("dd/MM/yyyy")</p>
+        </div>
+        <a asp-page="Index" asp-route-eventId="@d.EventId" class="btn btn-outline-secondary"><i class="bi bi-list-ol"></i> Bảng xếp hạng</a>
+    </div>
+
+    @if (!d.IsOfficial)
+    {
+        <div class="alert alert-warning small">
+            <i class="bi bi-eye"></i> <strong>Bản xem trước cho ban tổ chức</strong> – kết quả chưa chính thức, danh sách có thể thay đổi.
+            Trang công khai chỉ hiện sau khi chốt kết quả chính thức.
+        </div>
+    }
+    @if (d.AwardStackingPolicy == "HighestOnly")
+    {
+        <p class="small text-secondary">Mỗi VĐV chỉ nhận giải cao nhất; người kế tiếp được đôn lên.</p>
+    }
+
+    @if (d.Categories.Count == 0)
+    {
+        <div class="text-center text-secondary border rounded py-5">
+            <i class="bi bi-award fs-1"></i>
+            <p class="mt-2 mb-0">Giải chưa công bố cơ cấu giải thưởng.</p>
+        </div>
+    }
+
+    @foreach (var c in d.Categories)
+    {
+        <h2 class="h5 mt-4">@c.CategoryName</h2>
+        <div class="row g-3">
+            @foreach (var board in c.Awards.GroupBy(a => (a.Prize.AwardType, a.Prize.Gender, a.Prize.AgeGroupName, a.Prize.Nationality)))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-header small fw-semibold">
+                            @PrizesModel.TypeLabel(board.Key.AwardType)@(board.Key.AgeGroupName is null ? "" : " " + board.Key.AgeGroupName)@(board.Key.Nationality is null ? "" : " " + board.Key.Nationality)
+                            · @RaceTime.GenderLabel(board.Key.Gender)
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var a in board.OrderBy(a => a.Prize.Rank))
+                            {
+                                <li class="list-group-item">
+                                    <div class="d-flex gap-2 align-items-start">
+                                        <span class="fs-5 @Medal(a.Prize.Rank)"><i class="bi bi-award-fill"></i></span>
+                                        <div class="flex-grow-1">
+                                            @if (a.Winner is { } w)
+                                            {
+                                                <div class="fw-semibold">
+                                                    @if (w.BibNumber is int bib) { <span class="badge text-bg-dark me-1">@bib</span> }
+                                                    <a asp-page="Detail" asp-route-registrationId="@w.RegistrationId">@w.DisplayName</a>
+                                                </div>
+                                                <div class="small text-secondary">
+                                                    Hạng @a.Prize.Rank · <span class="font-monospace">@RaceTime.Format(w.FinalTimeMs)</span>@(w.ClubName is null ? "" : $" · {w.ClubName}")
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-secondary">Hạng @a.Prize.Rank – chưa có VĐV đủ điều kiện</div>
+                                            }
+                                            <div class="small">@a.Prize.Reward@(a.Prize.CashAmount is decimal cash && cash > 0 ? $" · {cash:N0} đ" : "")</div>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
