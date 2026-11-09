@@ -82,7 +82,7 @@
     <div class="col-md-3">
         <select name="CategoryId" class="form-select" aria-label="Cự ly">
             <option value="">Mọi cự ly</option>
-            @foreach (var c in o.Categories.Where(c => c.IsTimed))
+            @foreach (var c in o.Categories)
             {
                 <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
             }

@@ -234,7 +234,7 @@ public class ResultService : IResultService
             OrganizationName = e.Organization.Name,
             EventDate = e.EventDate,
             ResultsStatus = e.ResultsStatus.ToString(),
-            Categories = e.Categories.Where(c => c.IsTimed).OrderBy(c => c.StartAt).ThenBy(c => c.Name)
+            Categories = e.Categories.OrderBy(c => c.StartAt).ThenBy(c => c.Name)
                 .Select(c => new ResultCategoryOptionDto { Id = c.CategoryId, Name = c.Name, IsTimed = c.IsTimed, IsRanked = c.IsRanked })
                 .ToList(),
             AgeGroups = e.AgeGroups.OrderBy(g => g.CategoryId != null).ThenBy(g => g.MinAge)

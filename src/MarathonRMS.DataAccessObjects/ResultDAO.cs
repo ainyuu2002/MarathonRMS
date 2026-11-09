@@ -18,10 +18,11 @@ public class ResultDAO : BaseDAO<Result>
             .Include(e => e.AgeGroups)
             .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
-    /// <summary>Đăng ký đã xác nhận của giải kèm mọi thời gian đã ghi.</summary>
+    /// <summary>Đăng ký đã xác nhận của giải kèm mọi thời gian đã ghi và việc nhận kit (BR-26).</summary>
     public Task<List<Registration>> GetConfirmedWithTimingAsync(int eventId, CancellationToken ct = default) =>
-        Context.Registrations.AsNoTracking()
+        Context.Registrations.AsNoTracking().AsSplitQuery()
             .Include(r => r.TimingRecords)
+            .Include(r => r.RaceKitPickup)
             .Where(r => r.EventId == eventId && r.Status == RegistrationStatus.Confirmed)
             .ToListAsync(ct);
 
