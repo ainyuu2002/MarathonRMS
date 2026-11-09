@@ -1,0 +1,20 @@
+@page "/Runners/{participantId:int}"
+@model MarathonRMS.WebApp.Pages.Runners.ProfileModel
+@{
+    ViewData["Title"] = Model.Profile?.DisplayName ?? "Hồ sơ thành tích";
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (Model.Profile is { } p)
+{
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="rounded-circle bg-warning-subtle d-flex align-items-center justify-content-center" style="width:64px;height:64px">
+            <i class="bi bi-person-badge fs-2 text-warning"></i>
+        </div>
+        <div>
+            <h1 class="h3 mb-0">@p.DisplayName</h1>
+            <p class="text-secondary mb-0">Hồ sơ thành tích@(p.ClubName is null ? "" : $" · {p.ClubName}")</p>
+        </div>
+    </div>
+    <partial name="_AchievementProfile" model="p" />
+}

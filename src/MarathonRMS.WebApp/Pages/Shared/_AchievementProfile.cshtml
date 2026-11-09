@@ -1,0 +1,87 @@
+@model MarathonRMS.DTOs.Results.AchievementProfileDto
+@* UC-64 – phần thân hồ sơ thành tích, dùng chung cho /Member/Achievements và /Runners/{id}. *@
+@{
+    string Discipline(string d) => d == "Trail" ? "Trail" : "Đường phố";
+    string Km(decimal km) => km.ToString("0.##") + " km";
+}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="fs-3 fw-semibold">@Model.FinishedCount</div>
+            <div class="small text-secondary">Giải đã về đích</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="fs-3 fw-semibold">@Km(Model.TotalDistanceKm)</div>
+            <div class="small text-secondary">Tổng cự ly hoàn thành</div>
+        </div></div>
+    </div>
+</div>
+
+@if (Model.PersonalBests.Count > 0)
+{
+    <h2 class="h5">Thành tích tốt nhất</h2>
+    <div class="row g-3 mb-4">
+        @foreach (var pb in Model.PersonalBests)
+        {
+            <div class="col-6 col-md-3">
+                <div class="card h-100 border-warning-subtle"><div class="card-body">
+                    <div class="small text-secondary">@Discipline(pb.Discipline) · @Km(pb.DistanceKm)</div>
+                    <div class="fs-4 font-monospace fw-semibold">@RaceTime.Format(pb.FinalTimeMs)</div>
+                    <a asp-page="/Results/Detail" asp-route-registrationId="@pb.RegistrationId" class="small">@pb.EventName</a>
+                    <div class="small text-secondary">@pb.EventDate.ToString("dd/MM/yyyy")</div>
+                </div></div>
+            </div>
+        }
+    </div>
+}
+
+<h2 class="h5">Các giải đã tham gia</h2>
+@if (Model.Items.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-trophy fs-1"></i>
+        <p class="mt-2 mb-0">Chưa có kết quả nào được công bố.</p>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Giải</th><th>Cự ly</th><th>Kết quả</th><th class="text-end">Thành tích</th><th class="text-end">Hạng</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@i.EventName</div>
+                            <div class="small text-secondary">@i.EventDate.ToString("dd/MM/yyyy")@(i.BibNumber is int bib ? $" · BIB {bib}" : "")</div>
+                        </td>
+                        <td>@i.CategoryName <span class="small text-secondary">(@Discipline(i.Discipline))</span></td>
+                        <td>
+                            @if (i.Status == "Finished") { <i class="bi bi-award-fill text-warning" title="Huy chương hoàn thành"></i> }
+                            <status-badge status="@i.Status" />
+                            @if (i.IsProvisional) { <span class="badge text-bg-warning">Tạm thời</span> }
+                        </td>
+                        <td class="text-end font-monospace">@RaceTime.Format(i.FinalTimeMs)</td>
+                        <td class="text-end small">
+                            @if (i.OverallRank is int rank) { <div>Chung @rank</div> }
+                            @if (i.AgeGroupRank is int ag) { <div class="text-secondary">@i.AgeGroupName: @ag</div> }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a asp-page="/Results/Detail" asp-route-registrationId="@i.RegistrationId" class="btn btn-sm btn-outline-secondary" title="Chi tiết"><i class="bi bi-stopwatch"></i></a>
+                            @if (i.HasCertificate)
+                            {
+                                <a asp-page="/Results/Certificate" asp-route-registrationId="@i.RegistrationId" target="_blank"
+                                   class="btn btn-sm btn-outline-success" title="E-certificate"><i class="bi bi-patch-check"></i></a>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

@@ -72,6 +72,17 @@ public class ResultApiClient : ApiClientBase
     public Task<EventWinnersDto> GetWinnersAsync(int eventId, CancellationToken ct = default) =>
         GetAsync<EventWinnersDto>($"api/events/{eventId}/winners", ct);
 
+    // ---------- UC-64 hồ sơ thành tích, e-certificate ----------
+
+    public Task<AchievementProfileDto> GetMyAchievementsAsync(CancellationToken ct = default) =>
+        GetAsync<AchievementProfileDto>("api/achievements/me", ct);
+
+    public Task<AchievementProfileDto> GetRunnerAsync(int participantId, CancellationToken ct = default) =>
+        GetAsync<AchievementProfileDto>($"api/runners/{participantId}", ct);
+
+    public Task<CertificateDto> GetCertificateAsync(int registrationId, CancellationToken ct = default) =>
+        GetAsync<CertificateDto>($"api/results/registrations/{registrationId}/certificate", ct);
+
     // ---------- UC-62 bảng xếp hạng công khai ----------
 
     public Task<List<ResultsEventDto>> GetPublishedEventsAsync(CancellationToken ct = default) =>

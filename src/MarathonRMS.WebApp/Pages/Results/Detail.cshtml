@@ -25,6 +25,12 @@
         </a>
     </div>
 
+    @if (d.HasCertificate)
+    {
+        <p><a asp-page="Certificate" asp-route-registrationId="@Model.RegistrationId" class="btn btn-sm btn-outline-success" target="_blank">
+            <i class="bi bi-patch-check"></i> E-certificate</a></p>
+    }
+
     @if (s.IsProvisional)
     {
         <div class="alert alert-warning small"><i class="bi bi-hourglass-split"></i> Kết quả <strong>tạm thời</strong> – có thể thay đổi sau thời gian nhận khiếu nại.</div>

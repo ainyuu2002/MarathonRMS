@@ -67,6 +67,8 @@ public class ResultDetailDto
     // ---------- UC-66 khiếu nại (chỉ có nghĩa với chính VĐV / người đăng ký hộ) ----------
     /// <summary>Người xem là chủ đăng ký, kết quả đang tạm thời và còn trong thời gian nhận khiếu nại (BR-27).</summary>
     public bool CanComplain { get; set; }
+    /// <summary>UC-64: về đích và kết quả đã chính thức ⇒ có e-certificate.</summary>
+    public bool HasCertificate { get; set; }
     public DateTime? ComplaintWindowEndsAt { get; set; }
     public decimal ComplaintFee { get; set; }
 }

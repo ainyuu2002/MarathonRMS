@@ -1,0 +1,37 @@
+@page
+@model MarathonRMS.WebApp.Pages.Member.AchievementsModel
+@{
+    ViewData["Title"] = "Hồ sơ thành tích";
+    var p = Model.Profile;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Hồ sơ thành tích</h1>
+        <p class="text-secondary mb-0">@p.DisplayName@(p.ClubName is null ? "" : $" · {p.ClubName}")</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Khu vực của tôi</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (p.ParticipantId is null)
+{
+    <div class="alert alert-info">Tài khoản chưa có hồ sơ người chạy. <a asp-page="Profile">Cập nhật hồ sơ</a> để bắt đầu.</div>
+}
+else
+{
+    <div class="alert @(p.IsPublic ? "alert-success" : "alert-secondary") small d-flex justify-content-between align-items-center flex-wrap gap-2">
+        @if (p.IsPublic)
+        {
+            <span><i class="bi bi-globe"></i> Hồ sơ đang <strong>công khai</strong> – mọi người xem được các giải bạn không chọn ẩn tên.</span>
+            <a asp-page="/Runners/Profile" asp-route-participantId="@p.ParticipantId" class="btn btn-sm btn-outline-success">Xem trang công khai</a>
+        }
+        else
+        {
+            <span><i class="bi bi-lock"></i> Hồ sơ đang <strong>riêng tư</strong>. Bật "Hiện tên mình trên danh sách VĐV và bảng xếp hạng công khai" để công khai (người dưới 18 tuổi luôn riêng tư).</span>
+            <a asp-page="Profile" class="btn btn-sm btn-outline-secondary">Đổi ở Hồ sơ của tôi</a>
+        }
+    </div>
+
+    <partial name="_AchievementProfile" model="p" />
+}

@@ -276,6 +276,8 @@ public class ResultService : IResultService
             CanComplain = isOwner && registration.Status == RegistrationStatus.Confirmed &&
                           complaintEndsAt is DateTime ends && _clock.Now <= ends,
             ComplaintWindowEndsAt = complaintEndsAt,
+            HasCertificate = result.Status == ResultStatus.Finished && ev.ResultsStatus == ResultsStatus.Official &&
+                             registration.Status == RegistrationStatus.Confirmed,
             ComplaintFee = ev.Policy.ComplaintFee,
             Summary = summary,
             EventName = ev.Name,
