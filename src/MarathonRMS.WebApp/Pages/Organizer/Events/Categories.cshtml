@@ -9,7 +9,10 @@
         <h1 class="h3 mb-1">Cự ly của giải</h1>
         <p class="text-secondary mb-0">@Model.Event.Name</p>
     </div>
-    <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
+    <div class="d-flex gap-2">
+        <a asp-page="AgeGroups" asp-route-id="@Model.Id" class="btn btn-outline-primary"><i class="bi bi-people"></i> Nhóm tuổi</a>
+        <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
+    </div>
 </div>
 
 <partial name="_StatusMessage" model="Model.StatusMessage" />
@@ -47,6 +50,10 @@
                                 <td class="text-nowrap">@item.Capacity.ToString("N0")<div class="small text-secondary">Còn @item.RemainingSlots.ToString("N0")</div></td>
                                 <td class="text-nowrap">@item.BibFrom.ToString("N0")–@item.BibTo.ToString("N0")</td>
                                 <td class="text-end text-nowrap">
+                                    <a asp-page="PriceTiers" asp-route-eventId="@Model.Id" asp-route-categoryId="@item.Id"
+                                       class="btn btn-sm btn-outline-success" title="Mức giá"><i class="bi bi-cash-stack"></i></a>
+                                    <a asp-page="Checkpoints" asp-route-eventId="@Model.Id" asp-route-categoryId="@item.Id"
+                                       class="btn btn-sm btn-outline-secondary" title="Checkpoint"><i class="bi bi-geo-alt"></i></a>
                                     <a asp-page="Categories" asp-route-id="@Model.Id" asp-route-categoryId="@item.Id"
                                        class="btn btn-sm btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
                                     <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id" class="d-inline"

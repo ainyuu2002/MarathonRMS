@@ -231,6 +231,8 @@ public class PriceTierDto
     public decimal Price { get; set; }
     public DateTime ValidFrom { get; set; }
     public DateTime ValidTo { get; set; }
+    /// <summary>Cảnh báo BR-47/49 sau khi lưu; không chặn thao tác.</summary>
+    public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
 }
 
 /// <summary>UC-22. BR-47 (phủ kín, không chồng lấn), BR-48 (bội số 1.000đ, min/max) kiểm tra trong Service.</summary>
