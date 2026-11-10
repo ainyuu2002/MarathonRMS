@@ -20,7 +20,7 @@
         <div class="card h-100">
             <div class="card-header fw-semibold">Đổi cự ly</div>
             <div class="card-body small text-secondary pb-0">
-                Trả chênh lệch theo giá hiện hành (đổi sang cự ly rẻ hơn không hoàn tiền) + phí đổi @o.CategoryChangeFee.ToString("N0")đ.
+                Trả chênh lệch theo giá hiện hành (đổi sang cự ly rẻ hơn không hoàn tiền) + phí đổi @o.CategoryChangeFee.ToString("N0", VnFormat.Culture)đ.
                 @if (o.CategoryChangeDeadline is DateTime cd) { <span>Hạn: @cd.ToString("dd/MM/yyyy HH:mm").</span> }
                 Còn @o.CategoryChangesLeft lượt. Đã có BIB thì được gán số mới theo cự ly mới.
             </div>
@@ -38,9 +38,9 @@
                         {
                             <tr>
                                 <td>@q.CategoryName <span class="small text-secondary">@q.DistanceKm.ToString("0.##") km · còn @q.RemainingSlots</span></td>
-                                <td class="text-end">@q.PriceDifference.ToString("N0")đ</td>
-                                <td class="text-end">@q.Fee.ToString("N0")đ</td>
-                                <td class="text-end fw-semibold">@q.Total.ToString("N0")đ</td>
+                                <td class="text-end">@q.PriceDifference.ToString("N0", VnFormat.Culture)đ</td>
+                                <td class="text-end">@q.Fee.ToString("N0", VnFormat.Culture)đ</td>
+                                <td class="text-end fw-semibold">@q.Total.ToString("N0", VnFormat.Culture)đ</td>
                                 <td class="text-end">
                                     @if (q.BlockedReason is { } b)
                                     {
@@ -49,7 +49,7 @@
                                     else
                                     {
                                         <form method="post" asp-page-handler="Change" asp-route-id="@Model.Id"
-                                              onsubmit="return confirm('Đổi sang @q.CategoryName và thanh toán @q.Total.ToString("N0")đ?');">
+                                              onsubmit="return confirm('Đổi sang @q.CategoryName và thanh toán @q.Total.ToString("N0", VnFormat.Culture)đ?');">
                                             <input type="hidden" name="newCategoryId" value="@q.CategoryId" />
                                             <input type="hidden" name="expectedTotal" value="@q.Total" />
                                             <button class="btn btn-sm btn-primary">Đổi@(q.Total > 0 ? " & thanh toán (thử)" : "")</button>
@@ -71,7 +71,7 @@
             <div class="card-body">
                 <p class="small text-secondary">
                     Chuyển suất cho một người khác có tài khoản. Người nhận khai thông tin của mình và chấp nhận
-                    @(o.TransferFee > 0 ? $"(người nhận trả phí {o.TransferFee:N0}đ)" : "(miễn phí)").
+                    @(o.TransferFee > 0 ? $"(người nhận trả phí {o.TransferFee.ToString("N0", VnFormat.Culture)}đ)" : "(miễn phí)").
                     @if (o.TransferDeadline is DateTime td) { <span>Hạn: @td.ToString("dd/MM/yyyy HH:mm").</span> }
                     Còn @o.TransfersLeft lượt.
                 </p>

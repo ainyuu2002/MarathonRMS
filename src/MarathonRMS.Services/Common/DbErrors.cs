@@ -35,6 +35,9 @@ public static class RaceDayLocks
     /// <summary>Gán BIB của một giải.</summary>
     public static string Bibs(int eventId) => $"mrms:bibs:{eventId}";
 
+    /// <summary>Ghi thời gian của một đăng ký – hai trạm ghi cùng lúc cho một BIB phải lần lượt (BR-21).</summary>
+    public static string Timing(int registrationId) => $"mrms:timing:{registrationId}";
+
     public static async Task LockAsync(this IUnitOfWork uow, string resource, CancellationToken ct)
     {
         if (!await uow.TryLockAsync(resource, ct))

@@ -92,9 +92,9 @@ public class PriceReferenceService : IPriceReferenceService
     {
         if (r.Min is not decimal min || r.Max is not decimal max || price == 0) return null;
         if (price < min * 0.5m)
-            return $"Giá thấp hơn khoảng tham khảo {r.DistanceBand} quá 50% (tham khảo {min:N0}đ – {max:N0}đ).";
+            return $"Giá thấp hơn khoảng tham khảo {r.DistanceBand} quá 50% (tham khảo {min.ToString("N0", VnFormat.Culture)}đ – {max.ToString("N0", VnFormat.Culture)}đ).";
         if (price > max * 1.5m)
-            return $"Giá cao hơn khoảng tham khảo {r.DistanceBand} quá 50% (tham khảo {min:N0}đ – {max:N0}đ).";
+            return $"Giá cao hơn khoảng tham khảo {r.DistanceBand} quá 50% (tham khảo {min.ToString("N0", VnFormat.Culture)}đ – {max.ToString("N0", VnFormat.Culture)}đ).";
         return null;
     }
 }

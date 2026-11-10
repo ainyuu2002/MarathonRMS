@@ -259,8 +259,9 @@ public class ResultCalculatorTests
         Assert.Equal(1, res[2].GenderRank);
         Assert.Equal(2, res[3].GenderRank);
         Assert.Equal(2, res[4].GenderRank);
+        // Hạng nhóm tuổi xét trong từng giới (BUG-10): nữ nhóm 7 về đầu ⇒ hạng 1 dù sau một nam cùng nhóm
         Assert.Equal(1, res[1].AgeGroupRank);
-        Assert.Equal(2, res[2].AgeGroupRank);
+        Assert.Equal(1, res[2].AgeGroupRank);
         Assert.Equal(1, res[3].AgeGroupRank);
         Assert.Null(res[4].AgeGroupRank);
     }

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using MarathonRMS.BusinessObjects.Entities;
 using MarathonRMS.BusinessObjects.Enums;
 using MarathonRMS.DTOs.Common;
@@ -24,8 +23,6 @@ public interface IRegistrationChangeService
 
 public class RegistrationChangeService : IRegistrationChangeService
 {
-    private static readonly Regex CccdPattern = new(@"^\d{12}$", RegexOptions.Compiled);
-
     private readonly IRegistrationChangeRepository _repo;
     private readonly ICurrentUserService _currentUser;
     private readonly IDateTimeProvider _clock;
@@ -111,14 +108,17 @@ public class RegistrationChangeService : IRegistrationChangeService
         if (await _repo.GetPendingForRegistrationAsync(registrationId, ct) is not null)
             throw new BusinessRuleException("BR-17", "Đang có yêu cầu chuyển nhượng chờ xử lý – hủy yêu cầu đó trước.");
 
+        // Hai yêu cầu đổi song song: yêu cầu sau thấy đăng ký đã ở cự ly đích ⇒ 409, không phải lỗi dữ liệu nhập
+        if (request.NewCategoryId == r.CategoryId)
+            throw new BusinessRuleException("BR-17", "Đăng ký đã ở cự ly này.");
         var categories = await _repo.GetCategoriesWithTiersAsync(r.EventId, ct);
-        var target = categories.FirstOrDefault(c => c.CategoryId == request.NewCategoryId && c.CategoryId != r.CategoryId)
+        var target = categories.FirstOrDefault(c => c.CategoryId == request.NewCategoryId)
             ?? throw new BusinessRuleException(ErrorCodes.Validation, "Cự ly mới không hợp lệ.", 400);
         var counts = await _repo.GetActiveCountsAsync(r.EventId, ct);
         var quote = Quote(r, target, counts.GetValueOrDefault(target.CategoryId), now);
         if (quote.BlockedReason is { } blocked) throw new BusinessRuleException("BR-17", blocked);
         if (quote.Total != request.ExpectedTotal)
-            throw new BusinessRuleException(ErrorCodes.Conflict, $"Số tiền đã thay đổi thành {quote.Total:N0}đ – vui lòng xem lại trước khi xác nhận.");
+            throw new BusinessRuleException(ErrorCodes.Conflict, $"Số tiền đã thay đổi thành {quote.Total.ToString("N0", VnFormat.Culture)}đ – vui lòng xem lại trước khi xác nhận.");
 
         // Thanh toán thử (Mock) phần chênh lệch + phí; 0đ thì không tạo thanh toán (CK_Payments_Amount)
         Payment? payment = null;
@@ -435,8 +435,7 @@ public class RegistrationChangeService : IRegistrationChangeService
             if (age >= 14) throw new BusinessRuleException("BR-07", "Người chạy từ 14 tuổi phải khai số CCCD hoặc hộ chiếu.", 400);
             return;
         }
-        if (idType is null) throw new BusinessRuleException("BR-07", "Vui lòng chọn loại giấy tờ.", 400);
-        if (idType == IdType.CCCD && !CccdPattern.IsMatch(idNumber)) throw new BusinessRuleException("BR-07", "Số CCCD gồm 12 chữ số.", 400);
+        IdentityRules.Validate(idType, idNumber);
     }
 
     // ============================ Hỗ trợ ============================

@@ -40,7 +40,7 @@ public class DetailModel : BasePageModel
     {
         null => "Ngoài thời gian bán",
         0 => "Miễn phí",
-        _ => $"{price:N0}đ"
+        _ => $"{price.Value.ToString("N0", VnFormat.Culture)}đ"
     };
 
     public static string AgeText(RaceCategoryDto category) => category.MaxAge is int max
@@ -53,7 +53,7 @@ public class DetailModel : BasePageModel
     public static string TransferText(EventPolicyDto policy) => policy.TransferPolicy switch
     {
         "Free" => $"Được chuyển nhượng tối đa {policy.MaxTransfers} lần, không phí",
-        "Paid" => $"Được chuyển nhượng tối đa {policy.MaxTransfers} lần, phí {policy.TransferFee:N0}đ",
+        "Paid" => $"Được chuyển nhượng tối đa {policy.MaxTransfers} lần, phí {policy.TransferFee.ToString("N0", VnFormat.Culture)}đ",
         _ => "Không cho phép chuyển nhượng"
     };
 

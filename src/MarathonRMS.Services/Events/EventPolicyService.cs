@@ -145,7 +145,7 @@ public class EventPolicyService : IEventPolicyService
     private static void ValidateFee(decimal value, decimal maxFee, string field)
     {
         if (value % 1000 != 0 || value > maxFee)
-            throw new BusinessRuleException("BR-48", $"{field} phải là bội số 1.000đ và không vượt {maxFee:N0}đ.", 400);
+            throw new BusinessRuleException("BR-48", $"{field} phải là bội số 1.000đ và không vượt {maxFee.ToString("N0", VnFormat.Culture)}đ.", 400);
     }
 
     private static void ValidateDeadline(DateTime? value, DateTime latest, string field)

@@ -30,7 +30,7 @@ public class RegistrationChangeModel : BasePageModel
         {
             var result = await _api.ChangeCategoryAsync(Id, new ChangeCategoryRequest { NewCategoryId = newCategoryId, ExpectedTotal = expectedTotal }, ct);
             StatusMessage = $"Đã đổi sang cự ly {result.NewCategoryName}" +
-                            (result.AmountPaid > 0 ? $", thanh toán {result.AmountPaid:N0}đ (mã {result.TxnRef})" : "") +
+                            (result.AmountPaid > 0 ? $", thanh toán {result.AmountPaid.ToString("N0", VnFormat.Culture)}đ (mã {result.TxnRef})" : "") +
                             (result.NewBibNumber is int bib ? $". BIB mới: {bib}." : ".");
             return RedirectToPage("/Member/Registrations");
         }

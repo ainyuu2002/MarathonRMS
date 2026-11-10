@@ -31,6 +31,14 @@ public class IndexModel : BasePageModel
         var city = City?.Trim();
         var organizer = Organizer?.Trim();
         var discipline = Discipline is "Road" or "Trail" ? Discipline : null;
+        // Nhập ngược khoảng cự ly (từ 15 đến 5) ⇒ hiểu là 5–15 thay vì trả 0 kết quả mà không báo gì
+        if (MinDistanceKm is decimal lo && MaxDistanceKm is decimal hi && lo > hi)
+        {
+            (MinDistanceKm, MaxDistanceKm) = (hi, lo);
+            // Ô nhập lấy giá trị đã gửi từ ModelState ⇒ xóa để form hiện khoảng đã đảo
+            ModelState.Remove(nameof(MinDistanceKm));
+            ModelState.Remove(nameof(MaxDistanceKm));
+        }
         DateOnly? monthStart = null;
         if (!string.IsNullOrWhiteSpace(Month) &&
             DateOnly.TryParseExact($"{Month}-01", "yyyy-MM-dd", CultureInfo.InvariantCulture,

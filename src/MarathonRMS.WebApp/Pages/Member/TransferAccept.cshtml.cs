@@ -63,7 +63,7 @@ public class TransferAcceptModel : BasePageModel
             if (!ModelState.IsValid) return Page();
             await _api.AcceptAsync(Id, Input, ct);
             StatusMessage = $"Đã nhận suất {Transfer.EventName} – {Transfer.CategoryName}" +
-                            (Transfer.FeeAmount > 0 ? $" (đã thanh toán phí {Transfer.FeeAmount:N0}đ)." : ".");
+                            (Transfer.FeeAmount > 0 ? $" (đã thanh toán phí {Transfer.FeeAmount.ToString("N0", VnFormat.Culture)}đ)." : ".");
             return RedirectToPage("/Member/Registrations");
         }
         catch (ApiException ex) { return await HandleApiErrorAsync(ex, nameof(Input)) ?? Page(); }

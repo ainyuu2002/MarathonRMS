@@ -38,7 +38,7 @@ public class RaceKitService : IRaceKitService
     public async Task<IReadOnlyList<EventSummaryDto>> GetOperationalEventsAsync(CancellationToken ct = default)
     {
         // Status trong DTO là chuỗi chiếu từ enum – lọc sau khi tải (mỗi BTC có ít giải)
-        var events = await _events.QueryMine().OrderByDescending(e => e.EventDate).ThenBy(e => e.Name).ToListAsync(ct);
+        var events = await _events.GetMineAsync(ct);
         return events.Where(e => e.Status is not (nameof(EventStatus.Draft) or nameof(EventStatus.Cancelled))).ToList();
     }
 

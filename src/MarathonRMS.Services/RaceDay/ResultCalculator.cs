@@ -42,7 +42,7 @@ public sealed class CalcOutcome
 /// <summary>
 /// Tính thành tích và xếp hạng của một cự ly – logic thuần, không truy cập DB.
 /// BR-21 (thiếu checkpoint bắt buộc), BR-22 (giờ súng/chip, làm tròn lên giây khi xếp hạng), BR-23 (COT tổng theo giờ súng,
-/// cut-off tại trạm), BR-24 (DNS, xuất phát muộn), BR-25 (FinalTime = thời gian theo cơ sở xếp hạng + phạt; hòa), BR-26 (IsRanked).
+/// cut-off tại trạm), BR-24 (DNS, xuất phát muộn), BR-25 (FinalTime = thời gian theo cơ sở xếp hạng + phạt; hòa; hạng nhóm tuổi theo từng giới), BR-26 (IsRanked).
 /// </summary>
 public interface IResultCalculator
 {
@@ -212,7 +212,8 @@ public class ResultCalculator : IResultCalculator
         AssignRanks(finished, Overall, tieBreak, (o, rank) => o.OverallRank = rank);
         foreach (var group in finished.GroupBy(o => o.Gender))
             AssignRanks(group.ToList(), Overall, tieBreak, (o, rank) => o.GenderRank = rank);
-        foreach (var group in finished.Where(o => o.AgeGroupId is not null).GroupBy(o => o.AgeGroupId))
+        // Hạng nhóm tuổi xét trong từng giới (nam 30–39, nữ 30–39…) như cơ cấu giải thưởng nhóm tuổi × giới tính (UC-28)
+        foreach (var group in finished.Where(o => o.AgeGroupId is not null).GroupBy(o => (o.Gender, o.AgeGroupId)))
             AssignRanks(group.ToList(), AgeGroup, tieBreak, (o, rank) => o.AgeGroupRank = rank);
     }
 

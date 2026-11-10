@@ -12,9 +12,9 @@
         <status-badge status="@Model.Registration.Status" />
     </div>
     <hr />
-    <div class="d-flex justify-content-between"><span>Giá gốc</span><span>@Model.Registration.OriginalPrice.ToString("N0")đ</span></div>
-    <div class="d-flex justify-content-between mt-2 text-success"><span>Giảm giá</span><span>-@Model.Registration.DiscountAmount.ToString("N0")đ</span></div>
-    <div class="d-flex justify-content-between mt-3 fs-5"><strong>Thanh toán</strong><strong class="text-primary">@Model.Registration.FinalPrice.ToString("N0")đ</strong></div>
+    <div class="d-flex justify-content-between"><span>Giá gốc</span><span>@Model.Registration.OriginalPrice.ToString("N0", VnFormat.Culture)đ</span></div>
+    <div class="d-flex justify-content-between mt-2 text-success"><span>Giảm giá</span><span>-@Model.Registration.DiscountAmount.ToString("N0", VnFormat.Culture)đ</span></div>
+    <div class="d-flex justify-content-between mt-3 fs-5"><strong>Thanh toán</strong><strong class="text-primary">@Model.Registration.FinalPrice.ToString("N0", VnFormat.Culture)đ</strong></div>
 
     @if (Model.Registration.Status == "PendingPayment")
     {

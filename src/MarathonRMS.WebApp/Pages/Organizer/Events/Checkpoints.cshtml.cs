@@ -85,7 +85,9 @@ public class CheckpointsModel : BasePageModel
 
     private async Task LoadAsync(CancellationToken ct)
     {
-        Event = await _events.GetAsync(EventId, ct);
+        var ev = await _events.GetAsync(EventId, ct);
+        EnsureOwnOrganization(ev.OrganizationId);
+        Event = ev;
         Category = Event.Categories.FirstOrDefault(c => c.Id == CategoryId) ?? throw new ApiException(
             System.Net.HttpStatusCode.NotFound, "Không tìm thấy cự ly.");
         Checkpoints = await _events.GetCheckpointsAsync(CategoryId, ct);

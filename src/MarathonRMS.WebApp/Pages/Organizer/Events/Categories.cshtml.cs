@@ -89,7 +89,9 @@ public class CategoriesModel : BasePageModel
 
     private async Task LoadAsync(CancellationToken ct)
     {
-        Event = await _events.GetAsync(Id, ct);
+        var ev = await _events.GetAsync(Id, ct);
+        EnsureOwnOrganization(ev.OrganizationId);
+        Event = ev;
         Categories = await _events.GetCategoriesAsync(Id, ct);
     }
 

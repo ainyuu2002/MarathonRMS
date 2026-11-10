@@ -18,7 +18,7 @@ public class CreateRegistrationRequest
     [Required, AllowedValues("M", "F")] public string Gender { get; set; } = "";
     [Required, StringLength(60)] public string Nationality { get; set; } = "Việt Nam";
     [AllowedValues(null, "CCCD", "Passport", "BirthCertificate")] public string? IdType { get; set; }
-    [StringLength(20)] public string? IdNumber { get; set; }
+    [StringLength(20), RegularExpression(@"^[A-Za-z0-9]+$", ErrorMessage = "Số giấy tờ chỉ gồm chữ cái không dấu và chữ số")] public string? IdNumber { get; set; }
     [Required, Phone, StringLength(20)] public string Phone { get; set; } = "";
     [EmailAddress, StringLength(256)] public string? Email { get; set; }
     [Required, AllowedValues("XS", "S", "M", "L", "XL", "XXL")] public string TShirtSize { get; set; } = "";
@@ -31,7 +31,7 @@ public class CreateRegistrationRequest
     // Giám hộ / chạy kèm (BR-06) – bắt buộc hay không do Service quyết theo tuổi
     [StringLength(100)] public string? GuardianName { get; set; }
     [Phone, StringLength(20)] public string? GuardianPhone { get; set; }
-    [StringLength(20)] public string? GuardianIdNumber { get; set; }
+    [StringLength(20), RegularExpression(@"^[A-Za-z0-9]+$", ErrorMessage = "Số giấy tờ chỉ gồm chữ cái không dấu và chữ số")] public string? GuardianIdNumber { get; set; }
     public bool GuardianConsent { get; set; }
     [StringLength(100)] public string? EscortName { get; set; }
     [Phone, StringLength(20)] public string? EscortPhone { get; set; }
@@ -102,7 +102,7 @@ public class UpdateLockedInfoRequest
     [Required] public DateOnly DateOfBirth { get; set; }
     [Required, AllowedValues("M", "F")] public string Gender { get; set; } = "";
     [AllowedValues(null, "CCCD", "Passport", "BirthCertificate")] public string? IdType { get; set; }
-    [StringLength(20)] public string? IdNumber { get; set; }
+    [StringLength(20), RegularExpression(@"^[A-Za-z0-9]+$", ErrorMessage = "Số giấy tờ chỉ gồm chữ cái không dấu và chữ số")] public string? IdNumber { get; set; }
     [Required(ErrorMessage = "Phải ghi lý do sửa"), StringLength(500)] public string Reason { get; set; } = "";
 }
 

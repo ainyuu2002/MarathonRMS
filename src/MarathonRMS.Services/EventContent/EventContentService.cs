@@ -187,12 +187,18 @@ public class EventContentService : IEventContentService
     {
         await LoadManagedEventAsync(eventId, requireActive: true, ct);
         var mediaKind = EnumParser.ParseOptional<MediaKind>(kind) ?? MediaKind.Gallery;
+        // Cột Caption tối đa 300 ký tự (như UpdateMediaRequest) – kiểm trước khi lưu file để không ra lỗi 500
+        caption = string.IsNullOrWhiteSpace(caption) ? null : caption.Trim();
+        if (caption is { Length: > 300 })
+            throw new BusinessRuleException("BR-51", "Chú thích ảnh tối đa 300 ký tự.", 400);
 
         var extension = Path.GetExtension(fileName);
         if (!ImageSignatures.ContainsKey(extension))
             throw new BusinessRuleException("BR-51", "Chỉ nhận ảnh JPG, PNG hoặc WebP.", 400);
         var maxMb = await _settings.GetIntAsync("Media.MaxFileSizeMB", 5, ct);
-        if (length <= 0 || length > maxMb * 1024L * 1024L)
+        if (length <= 0)
+            throw new BusinessRuleException("BR-51", "File ảnh rỗng.", 400);
+        if (length > maxMb * 1024L * 1024L)
             throw new BusinessRuleException("BR-51", $"Ảnh phải nhỏ hơn {maxMb} MB.", 400);
         var maxPerEvent = await _settings.GetIntAsync("Media.MaxPerEvent", 200, ct);
         if (await _media.CountByEventAsync(eventId, ct) >= maxPerEvent)

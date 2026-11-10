@@ -175,6 +175,10 @@ public class ResultService : IResultService
         if (openComplaints > 0)
             throw new BusinessRuleException("BR-27", $"Còn {openComplaints} khiếu nại chưa xử lý.");
 
+        // Chốt trên số liệu mới nhất: dữ liệu bấm giờ có thể đã đổi sau lần tính cuối
+        await _recalc.RecalculateIfCalculatedAsync(eventId, ct);
+        await _uow.SaveChangesAsync(ct);
+
         ev.ResultsStatus = ResultsStatus.Official;
         ev.ResultsOfficialAt = _clock.Now;
         await _audit.LogAsync("Result.Finalize", nameof(Event), eventId.ToString(),

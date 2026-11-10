@@ -31,6 +31,7 @@ public class EditModel : BasePageModel
             if (Id is int id)
             {
                 var data = await _events.GetAsync(id, ct);
+                EnsureOwnOrganization(data.OrganizationId);
                 Input = new UpsertEventRequest
                 {
                     Name = data.Name,

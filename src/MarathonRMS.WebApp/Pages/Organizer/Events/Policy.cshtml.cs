@@ -71,7 +71,9 @@ public class PolicyModel : BasePageModel
 
     private async Task LoadAsync(bool populatePolicy, bool populateWaiver, CancellationToken ct)
     {
-        Event = await _events.GetAsync(Id, ct);
+        var ev = await _events.GetAsync(Id, ct);
+        EnsureOwnOrganization(ev.OrganizationId);
+        Event = ev;
         var policy = await _events.GetPolicyAsync(Id, ct);
         var waiver = await _events.GetWaiverAsync(Id, ct);
         WaiverVersion = waiver.WaiverVersion;

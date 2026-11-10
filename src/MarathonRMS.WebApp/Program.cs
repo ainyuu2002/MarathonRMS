@@ -38,7 +38,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Member", AppPolicies.MemberOnly);
     options.Conventions.AuthorizePage("/Account/Logout");
     options.Conventions.AuthorizePage("/Account/ChangePassword");
-});
+}).AddMvcOptions(VietnameseValidationMessages.Apply);
 
 // ---------- Gọi API: typed HttpClient + tự gắn JWT ----------
 builder.Services.AddHttpContextAccessor();

@@ -116,7 +116,7 @@
             <div class="card-body">
                 <p class="small text-secondary">
                     Nhận khiếu nại đến <strong>@d.ComplaintWindowEndsAt?.ToString("HH:mm dd/MM/yyyy")</strong>.
-                    @if (d.ComplaintFee > 0) { <span>Phí khiếu nại: <strong>@d.ComplaintFee.ToString("N0") đ</strong> (thu theo hướng dẫn của ban tổ chức).</span> }
+                    @if (d.ComplaintFee > 0) { <span>Phí khiếu nại: <strong>@d.ComplaintFee.ToString("N0", VnFormat.Culture)đ</strong> (thu theo hướng dẫn của ban tổ chức).</span> }
                 </p>
                 <div class="mb-3">
                     <label asp-for="Complaint.Content" class="form-label">Nội dung <span class="text-danger">*</span></label>

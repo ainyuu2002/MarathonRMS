@@ -40,6 +40,9 @@ public class EventService : IEventService
     public IQueryable<EventSummaryDto> QueryPublic() =>
         ProjectSummary(_events.QueryWithReferences().Where(e => e.Status != EventStatus.Draft));
 
+    public Task<List<EventSummaryDto>> GetMineAsync(CancellationToken ct = default) =>
+        QueryMine().OrderByDescending(e => e.EventDate).ThenBy(e => e.Name).ToListAsync(ct);
+
     public IQueryable<EventSummaryDto> QueryMine()
     {
         var organizationId = _scope.RequireOrganizationId();

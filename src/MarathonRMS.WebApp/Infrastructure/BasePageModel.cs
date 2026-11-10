@@ -1,4 +1,5 @@
 using System.Net;
+using MarathonRMS.DTOs.Common;
 using MarathonRMS.WebApp.ApiClients;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -31,6 +32,16 @@ public abstract class BasePageModel : PageModel
         if (ex.ValidationErrors.Count == 0)
             ModelState.AddModelError(string.Empty, ex.Message);
         return null;
+    }
+
+    /// <summary>
+    /// BR-30 phía giao diện: dữ liệu giải đọc qua endpoint công khai, nên trang quản lý phải tự chặn giải của BTC khác
+    /// (API vẫn chặn khi lưu). Ném ApiException 403 để trang hiện lỗi như các trang gọi endpoint có kiểm tra phạm vi.
+    /// </summary>
+    protected void EnsureOwnOrganization(int organizationId)
+    {
+        if (User.FindFirst(AppClaims.OrganizationId)?.Value != organizationId.ToString())
+            throw new ApiException(HttpStatusCode.Forbidden, "Bạn chỉ được quản lý dữ liệu của ban tổ chức mình.", "BR-30");
     }
 
     /// <summary>

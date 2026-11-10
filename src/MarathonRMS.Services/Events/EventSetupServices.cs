@@ -118,7 +118,7 @@ public class PriceTierService : IPriceTierService
         var min = await _settings.GetDecimalAsync("Price.MinNonZero", 10_000m, ct);
         var max = await _settings.GetDecimalAsync("Price.Max", 20_000_000m, ct);
         if (candidate.Price != 0 && (candidate.Price < min || candidate.Price > max))
-            throw new BusinessRuleException("BR-48", $"Giá phải bằng 0 hoặc nằm trong khoảng {min:N0}đ–{max:N0}đ.", 400);
+            throw new BusinessRuleException("BR-48", $"Giá phải bằng 0 hoặc nằm trong khoảng {min.ToString("N0", VnFormat.Culture)}đ–{max.ToString("N0", VnFormat.Culture)}đ.", 400);
 
         var ordered = candidates.OrderBy(t => t.ValidFrom).ToList();
         for (var i = 1; i < ordered.Count; i++)

@@ -111,6 +111,9 @@ public class BusinessFlowTests
         })).Expect(400);
         (await m1.Post("api/registrations", Body(p2, ev.PaidCategory, id1))).ExpectAny(403, 404);          // hồ sơ người khác
         (await m1.Post("api/registrations", Body(p1, ev.PaidCategory, id1, coupon: "KHONGCO"))).ExpectAny(400, 404, 409);
+        // BR-07: số giấy tờ phải đúng định dạng (BUG-11, BUG-12)
+        (await m1.Post("api/registrations", Body(p1, ev.PaidCategory, "abc"))).Expect(400);
+        (await m1.Post("api/registrations", Body(p1, ev.PaidCategory, "12345😀"))).Expect(400);
         var r1 = (await m1.Post("api/registrations", Body(p1, ev.PaidCategory, id1, coupon))).Expect(201);
         Assert.Equal("PendingPayment", r1.Json!["status"]!.GetValue<string>());
         Assert.Equal(150_000m, r1.Json!["finalPrice"]!.GetValue<decimal>());
@@ -205,6 +208,8 @@ public class BusinessFlowTests
         var changed = (await m1.Post($"api/registrations/{reg}/category-change", new { newCategoryId = ev.FreeCategory, expectedTotal = 0 }))
             .ExpectAny(200, 201);
         Assert.InRange(changed.Json!["newBibNumber"]!.GetValue<int>(), 5000, 5999);
+        // Đổi lại đúng cự ly đang ở ⇒ 409 (BUG-16), không phải 400 "cự ly không hợp lệ"
+        (await m1.Post($"api/registrations/{reg}/category-change", new { newCategoryId = ev.FreeCategory, expectedTotal = 0 })).Expect(409);
 
         // UC-47: chuyển nhượng suất đã có BIB – người nhận giữ cự ly và BIB, đăng ký cũ ⇒ Transferred
         (await m1.Post($"api/registrations/{reg}/transfers", new { recipientEmail = "khongton.tai@test.local" })).ExpectAny(400, 404, 409);
@@ -295,6 +300,36 @@ public class BusinessFlowTests
 
         // UC-60: công bố tạm thời ⇒ công khai
         (await org.Post($"api/events/{cuc}/results/provisional")).Expect(200);
+
+        // BUG-04: bổ sung giờ CP2 bị thiếu (VĐV BIB 2007 đang DNF MissedCheckpoint) khi kết quả Tạm thời ⇒ tự tính lại thành Finished
+        var bib2007 = rows.First(r => r!["bibNumber"]?.GetValue<int?>() == 2007)!;
+        Assert.Equal("DNF", bib2007["status"]!.GetValue<string>());
+        var cpInfo = (string)(await _api.SqlAsync($"""
+            SELECT TOP(1) CAST(cp.CheckpointId AS varchar(10)) + '|' + CONVERT(varchar(30), DATEADD(minute, 100, c.StartAt), 126)
+            FROM Registrations r JOIN RaceCategories c ON c.CategoryId = r.CategoryId JOIN Checkpoints cp ON cp.CategoryId = c.CategoryId
+            WHERE r.EventId = {cuc} AND r.BibNumber = 2007 AND cp.Type = 'Split' ORDER BY cp.Sequence DESC
+            """))!;
+        var parts2007 = cpInfo.Split('|');
+        (await (await _api.As("staff.hn")).Post("api/race-day/timing",
+            new { eventId = cuc, bibNumber = 2007, checkpointId = int.Parse(parts2007[0]), recordedAt = parts2007[1] })).Expect(200);
+        rows = (await org.Get($"api/events/{cuc}/results/rows?pageSize=100")).Expect(200).Json!["items"]!.AsArray();
+        Assert.Equal("Finished", rows.First(r => r!["bibNumber"]?.GetValue<int?>() == 2007)!["status"]!.GetValue<string>());
+
+        // BUG-05: hai trạm ghi song song cho cùng BIB (CP sau lúc +90′, đích lúc +80′) ⇒ chỉ một bản ghi được nhận (BR-21)
+        var cp2010 = ((string)(await _api.SqlAsync($"""
+            SELECT STRING_AGG(CAST(cp.CheckpointId AS varchar(10)) + '@' + CONVERT(varchar(30), c.StartAt, 126), ',') WITHIN GROUP (ORDER BY cp.Sequence)
+            FROM Registrations r JOIN RaceCategories c ON c.CategoryId = r.CategoryId JOIN Checkpoints cp ON cp.CategoryId = c.CategoryId
+            WHERE r.EventId = {cuc} AND r.BibNumber = 2010 AND cp.Type IN ('Split', 'Finish')
+            """))!).Split(',');
+        var split = cp2010[0].Split('@');
+        var finish = cp2010[^1].Split('@');
+        var gun = DateTime.Parse(split[1]);
+        var staff = await _api.As("staff.hn");
+        var racing = await Task.WhenAll(
+            staff.Post("api/race-day/timing", new { eventId = cuc, bibNumber = 2010, checkpointId = int.Parse(split[0]), recordedAt = VnTime.F(gun.AddMinutes(90)) }),
+            org.Post("api/race-day/timing", new { eventId = cuc, bibNumber = 2010, checkpointId = int.Parse(finish[0]), recordedAt = VnTime.F(gun.AddMinutes(80)) }));
+        Assert.Equal(1, racing.Count(x => x.Code == 200));
+        Assert.All(racing, x => Assert.True(x.Code is 200 or 409, $"{x.Code}: {x.Text}"));
         var board = (await (await _api.As(null)).Get($"odata/Results?$filter=EventId eq {cuc}&$count=true")).Expect(200);
         Assert.True(board.Json!["@odata.count"]!.GetValue<int>() > 0);
 

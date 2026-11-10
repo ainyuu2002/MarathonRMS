@@ -53,7 +53,7 @@ public class LifecycleModel : BasePageModel
         return await RunAsync(async () =>
         {
             var r = await _lifecycle.CancelAsync(Id, input, ct);
-            StatusMessage = $"Đã hủy giải. Hủy {r.CancelledUnpaid} đơn chưa thanh toán; tạo {r.RefundsCreated} yêu cầu hoàn tiền ({r.RefundTotal:N0}đ)" +
+            StatusMessage = $"Đã hủy giải. Hủy {r.CancelledUnpaid} đơn chưa thanh toán; tạo {r.RefundsCreated} yêu cầu hoàn tiền ({r.RefundTotal.ToString("N0", VnFormat.Culture)}đ)" +
                             (r.CancelledWithoutRefund > 0 ? $"; {r.CancelledWithoutRefund} đăng ký hủy không hoàn tiền." : ".");
         }, nameof(CancelInput), ct);
     }
@@ -97,7 +97,9 @@ public class LifecycleModel : BasePageModel
 
     private async Task LoadAsync(CancellationToken ct)
     {
-        Event = await _events.GetAsync(Id, ct);
+        var ev = await _events.GetAsync(Id, ct);
+        EnsureOwnOrganization(ev.OrganizationId);
+        Event = ev;
         Refunds = await _lifecycle.GetRefundsAsync(Id, ct);
     }
 }
