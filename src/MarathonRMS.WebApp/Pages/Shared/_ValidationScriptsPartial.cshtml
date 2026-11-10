@@ -1,2 +1,13 @@
 ﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
 <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+<script>
+    // [Range(typeof(bool), "true", "true")] trên checkbox (đồng ý điều khoản, miễn trừ, đối chiếu giấy tờ…):
+    // jQuery Validate so sánh theo số nên checkbox luôn sai ⇒ xét theo trạng thái checked. Giữ hàm gốc cho ô số.
+    (function ($) {
+        var originalRange = $.validator.methods.range;
+        $.validator.addMethod("range", function (value, element, param) {
+            if (element.type === "checkbox") return element.checked;
+            return originalRange.call(this, value, element, param);
+        });
+    })(jQuery);
+</script>

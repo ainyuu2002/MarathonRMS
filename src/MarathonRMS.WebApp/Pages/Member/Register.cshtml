@@ -51,7 +51,7 @@
         </div></div>
 
         <div class="card"><div class="card-header fw-semibold">Xác nhận và đồng ý</div><div class="card-body">
-            <div class="border rounded p-3 bg-light mb-3" style="max-height:220px;overflow:auto">@Html.Raw(Model.Waiver.WaiverText)</div>
+            <div class="border rounded p-3 bg-light mb-3" style="max-height:220px;overflow:auto;white-space:pre-line">@Model.Waiver.WaiverText</div>
             <div class="form-check mb-2"><input asp-for="Input.WaiverAccepted" class="form-check-input" /><label asp-for="Input.WaiverAccepted" class="form-check-label">Tôi đồng ý văn bản miễn trừ trách nhiệm</label><span asp-validation-for="Input.WaiverAccepted" class="text-danger d-block small"></span></div>
             <div class="form-check mb-2"><input asp-for="Input.HealthDeclarationAccepted" class="form-check-input" /><label asp-for="Input.HealthDeclarationAccepted" class="form-check-label">Tôi cam kết đủ sức khỏe tham gia</label></div>
             <div class="form-check mb-2"><input asp-for="Input.HealthDataConsent" class="form-check-input" /><label asp-for="Input.HealthDataConsent" class="form-check-label">Đồng ý xử lý dữ liệu sức khỏe</label></div>

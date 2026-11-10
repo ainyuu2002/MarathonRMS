@@ -12,8 +12,10 @@ public class PolicyModel : BasePageModel
     public PolicyModel(EventApiClient events) => _events = events;
 
     [BindProperty(SupportsGet = true)] public int Id { get; set; }
-    [BindProperty] public UpdateEventPolicyRequest PolicyInput { get; set; } = new();
-    [BindProperty] public UpdateEventWaiverRequest WaiverInput { get; set; } = new();
+    // Hai form trên cùng trang: mỗi handler chỉ bind + validate form của mình (Bind Prefix trên tham số).
+    // Dùng [BindProperty] cho cả hai thì lỗi [Required] của form kia lọt vào ModelState ⇒ lưu thất bại mà không báo gì.
+    public UpdateEventPolicyRequest PolicyInput { get; set; } = new();
+    public UpdateEventWaiverRequest WaiverInput { get; set; } = new();
     public EventDetailDto Event { get; private set; } = new();
     public int WaiverVersion { get; private set; } = 1;
 
@@ -24,9 +26,10 @@ public class PolicyModel : BasePageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostPolicyAsync(CancellationToken ct)
+    public async Task<IActionResult> OnPostPolicyAsync([Bind(Prefix = nameof(PolicyInput))] UpdateEventPolicyRequest input,
+        CancellationToken ct)
     {
-        RemoveModelStatePrefix(nameof(WaiverInput));
+        PolicyInput = input;
         if (!ModelState.IsValid) return await ReloadAsync(populatePolicy: false, populateWaiver: true, ct);
         try
         {
@@ -41,9 +44,10 @@ public class PolicyModel : BasePageModel
         }
     }
 
-    public async Task<IActionResult> OnPostWaiverAsync(CancellationToken ct)
+    public async Task<IActionResult> OnPostWaiverAsync([Bind(Prefix = nameof(WaiverInput))] UpdateEventWaiverRequest input,
+        CancellationToken ct)
     {
-        RemoveModelStatePrefix(nameof(PolicyInput));
+        WaiverInput = input;
         if (!ModelState.IsValid) return await ReloadAsync(populatePolicy: true, populateWaiver: false, ct);
         try
         {
@@ -96,11 +100,5 @@ public class PolicyModel : BasePageModel
             ForceMajeurePolicy = policy.ForceMajeurePolicy
         };
         if (populateWaiver) WaiverInput = new UpdateEventWaiverRequest { WaiverText = waiver.WaiverText };
-    }
-
-    private void RemoveModelStatePrefix(string prefix)
-    {
-        foreach (var key in ModelState.Keys.Where(k => k == prefix || k.StartsWith($"{prefix}.", StringComparison.Ordinal)).ToList())
-            ModelState.Remove(key);
     }
 }

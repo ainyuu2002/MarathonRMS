@@ -54,11 +54,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        // [Range(true,true)] cho checkbox: jQuery unobtrusive cần so sánh theo trạng thái checked
-        $.validator.addMethod("range", function (value, element, param) {
-            if (element.type === "checkbox") return element.checked;
-            return $.validator.methods.range.call(this, value, element, param);
-        });
-    </script>
 }
