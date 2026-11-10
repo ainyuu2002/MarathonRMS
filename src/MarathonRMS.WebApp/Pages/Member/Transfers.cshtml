@@ -43,7 +43,7 @@ else
                             else { <span><i class="bi bi-box-arrow-up"></i> Tới <strong>@t.ToName</strong> (@t.ToEmail)</span> }
                             <div class="text-secondary">@t.RequestedAt.ToString("HH:mm dd/MM")@(t.Status == "Pending" && t.Deadline is DateTime d ? $" · hạn {d:HH:mm dd/MM}" : "")</div>
                         </td>
-                        <td>@(t.FeeAmount > 0 ? t.FeeAmount.ToString("N0") + "đ" : "Miễn phí")</td>
+                        <td>@(t.FeeAmount > 0 ? t.FeeAmount.ToString("N0", VnFormat.Culture) + "đ" : "Miễn phí")</td>
                         <td><span class="badge @StatusClass(t.Status)">@StatusText(t.Status)</span></td>
                         <td class="text-end text-nowrap">
                             @if (t.Status == "Pending" && t.Direction == "Incoming")

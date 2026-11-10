@@ -25,7 +25,7 @@
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
         <div class="small text-secondary">Tài khoản</div>
-        <div class="fs-3 fw-semibold">@d.TotalUsers.ToString("N0")</div>
+        <div class="fs-3 fw-semibold">@d.TotalUsers.ToString("N0", VnFormat.Culture)</div>
         <div class="small">@d.LockedUsers đang khóa</div>
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
@@ -36,13 +36,13 @@
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
         <div class="small text-secondary">Đăng ký còn hiệu lực</div>
-        <div class="fs-3 fw-semibold">@d.ActiveRegistrations.ToString("N0")</div>
+        <div class="fs-3 fw-semibold">@d.ActiveRegistrations.ToString("N0", VnFormat.Culture)</div>
         <div class="small">trên @d.EventsByStatus.Sum(s => s.Count) giải</div>
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
         <div class="small text-secondary">Tiền đã thu / đã hoàn</div>
-        <div class="fs-4 fw-semibold">@d.TotalRevenue.ToString("N0")đ</div>
-        <div class="small">Hoàn @d.TotalRefunded.ToString("N0")đ · @d.PendingRefunds chờ hoàn (@d.PendingRefundAmount.ToString("N0")đ)</div>
+        <div class="fs-4 fw-semibold">@d.TotalRevenue.ToString("N0", VnFormat.Culture)đ</div>
+        <div class="small">Hoàn @d.TotalRefunded.ToString("N0", VnFormat.Culture)đ · @d.PendingRefunds chờ hoàn (@d.PendingRefundAmount.ToString("N0", VnFormat.Culture)đ)</div>
     </div></div></div>
 </div>
 

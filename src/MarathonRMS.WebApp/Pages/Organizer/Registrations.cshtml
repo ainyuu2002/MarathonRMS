@@ -27,7 +27,7 @@
             <td>@item.CategoryName<div class="small text-secondary">Event #@item.EventId</div></td>
             <td>@(item.BibNumber?.ToString() ?? "—")<div class="small text-secondary">@item.BibName</div></td>
             <td class="small">@item.Phone@if (!string.IsNullOrWhiteSpace(item.Email)) { <div>@item.Email</div> }</td>
-            <td class="small text-nowrap">@item.RegisteredAt.ToString("dd/MM/yyyy HH:mm")<div>@item.FinalPrice.ToString("N0")đ</div></td>
+            <td class="small text-nowrap">@item.RegisteredAt.ToString("dd/MM/yyyy HH:mm")<div>@item.FinalPrice.ToString("N0", VnFormat.Culture)đ</div></td>
             <td><status-badge status="@item.Status" /></td>
             <td class="text-end">
                 @if (item.Status is "PendingPayment" or "Confirmed" or "RefundPending")

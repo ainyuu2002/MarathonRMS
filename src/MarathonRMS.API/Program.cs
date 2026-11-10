@@ -93,7 +93,7 @@ builder.Services.Configure<FileStorageOptions>(o =>
 // ---------- Web API + OData ----------
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers()
+builder.Services.AddControllers(VietnameseValidationMessages.Apply)
     // Route "odata": entity set khai báo trong OData/EdmModelBuilder.cs (mỗi phần một vùng).
     // Thời gian lưu theo giờ VN (IDateTimeProvider) nên OData cũng hiểu/trả theo +07:00.
     .AddOData(options =>

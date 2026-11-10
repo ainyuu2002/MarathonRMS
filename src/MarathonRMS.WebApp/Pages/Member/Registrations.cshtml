@@ -29,7 +29,7 @@ else
                 <dt class="col-5">Người chạy</dt><dd class="col-7">@item.RunnerName</dd>
                 <dt class="col-5">Tên BIB</dt><dd class="col-7">@item.BibName</dd>
                 <dt class="col-5">Số BIB</dt><dd class="col-7">@(item.BibNumber?.ToString() ?? "Chưa gán")</dd>
-                <dt class="col-5">Phí đăng ký</dt><dd class="col-7">@item.FinalPrice.ToString("N0")đ</dd>
+                <dt class="col-5">Phí đăng ký</dt><dd class="col-7">@item.FinalPrice.ToString("N0", VnFormat.Culture)đ</dd>
                 <dt class="col-5">Đăng ký lúc</dt><dd class="col-7">@item.RegisteredAt.ToString("dd/MM/yyyy HH:mm")</dd>
                 @if (item.ExpiresAt is DateTime expires)
                 {

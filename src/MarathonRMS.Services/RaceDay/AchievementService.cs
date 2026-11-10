@@ -44,16 +44,18 @@ public class AchievementService : IAchievementService
         if (participant is null) return new AchievementProfileDto();
 
         var results = await _achievements.GetPublishedByParticipantAsync(participant.ParticipantId, ct);
-        return Build(participant, results, await IsPublicAsync(participant, ct));
+        return Build(participant, results, await IsPublicAsync(participant, results, ct));
     }
 
     public async Task<AchievementProfileDto> GetPublicAsync(int participantId, CancellationToken ct = default)
     {
-        var participant = await _achievements.GetParticipantAsync(participantId, ct);
-        if (participant is null || !await IsPublicAsync(participant, ct))
+        var participant = await _achievements.GetParticipantAsync(participantId, ct)
+                          ?? throw new NotFoundException("Hồ sơ thành tích không tồn tại hoặc không công khai.");
+        var published = await _achievements.GetPublishedByParticipantAsync(participantId, ct);
+        if (!await IsPublicAsync(participant, published, ct))
             throw new NotFoundException("Hồ sơ thành tích không tồn tại hoặc không công khai.");
 
-        var results = (await _achievements.GetPublishedByParticipantAsync(participantId, ct))
+        var results = published
             .Where(r => !r.Registration.HideFromPublicList &&
                         !_privacy.IsMinor(r.Registration.DateOfBirth, r.Registration.Event.EventDate))
             .ToList();
@@ -103,11 +105,16 @@ public class AchievementService : IAchievementService
         };
     }
 
-    /// <summary>Có tài khoản, đã bật "hiện tên công khai" và đủ 18 tuổi (BR-37).</summary>
-    private async Task<bool> IsPublicAsync(Participant participant, CancellationToken ct)
+    /// <summary>
+    /// Có tài khoản, đã bật "hiện tên công khai" và đủ 18 tuổi (BR-37). Hồ sơ không ghi ngày sinh thì lấy ngày sinh
+    /// trong bản chụp đăng ký gần nhất; không biết tuổi ⇒ không công khai (người dưới 18 mặc định ẩn).
+    /// </summary>
+    private async Task<bool> IsPublicAsync(Participant participant, IReadOnlyList<Result> results, CancellationToken ct)
     {
         if (participant.LinkedUserId is null) return false;
-        if (participant.DateOfBirth is DateOnly dob && _privacy.IsMinor(dob, _clock.Today)) return false;
+        var dob = participant.DateOfBirth ??
+                  results.OrderByDescending(r => r.Registration.Event.EventDate).Select(r => (DateOnly?)r.Registration.DateOfBirth).FirstOrDefault();
+        if (dob is not DateOnly birth || _privacy.IsMinor(birth, _clock.Today)) return false;
         var latest = await _consents.GetLatestPerTypeAsync(participant.LinkedUserId, ct);
         return latest.Any(c => c.ConsentType == ConsentType.PublicListing && c.Granted && c.WithdrawnAt == null);
     }

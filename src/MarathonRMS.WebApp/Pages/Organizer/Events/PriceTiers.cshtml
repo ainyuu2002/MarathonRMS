@@ -36,7 +36,7 @@ else
                     {
                         <tr>
                             <td class="fw-semibold">@item.Name</td>
-                            <td class="text-nowrap">@(item.Price == 0 ? "Miễn phí" : item.Price.ToString("N0") + "đ")</td>
+                            <td class="text-nowrap">@(item.Price == 0 ? "Miễn phí" : item.Price.ToString("N0", VnFormat.Culture) + "đ")</td>
                             <td class="small text-nowrap">@item.ValidFrom.ToString("dd/MM/yyyy HH:mm")<br />→ @item.ValidTo.ToString("dd/MM/yyyy HH:mm")</td>
                             <td class="text-end text-nowrap">
                                 <a asp-page="PriceTiers" asp-route-eventId="@Model.EventId" asp-route-categoryId="@Model.CategoryId" asp-route-priceTierId="@item.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
@@ -64,7 +64,7 @@ else
                     {
                         <div class="small mt-1 text-info-emphasis">
                             <i class="bi bi-info-circle"></i> Tham khảo @(r.Discipline == "Trail" ? "trail" : "đường phố") @r.DistanceBand:
-                            @rmin.ToString("N0") – <strong>@rmed.ToString("N0")</strong> – @rmax.ToString("N0")đ
+                            @rmin.ToString("N0", VnFormat.Culture) – <strong>@rmed.ToString("N0", VnFormat.Culture)</strong> – @rmax.ToString("N0", VnFormat.Culture)đ
                             <span class="text-secondary">(@(r.Source == "System" ? $"{r.SampleCount} cự ly trên hệ thống" : "bảng khảo sát"))</span>
                         </div>
                     }<span asp-validation-for="Input.Price" class="text-danger small"></span></div>

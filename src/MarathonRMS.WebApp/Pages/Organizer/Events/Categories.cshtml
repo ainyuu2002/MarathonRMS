@@ -47,8 +47,8 @@
                                     </div>
                                 </td>
                                 <td class="text-nowrap">@item.StartAt.ToString("dd/MM/yyyy HH:mm")</td>
-                                <td class="text-nowrap">@item.Capacity.ToString("N0")<div class="small text-secondary">Còn @item.RemainingSlots.ToString("N0")</div></td>
-                                <td class="text-nowrap">@item.BibFrom.ToString("N0")–@item.BibTo.ToString("N0")</td>
+                                <td class="text-nowrap">@item.Capacity.ToString("N0", VnFormat.Culture)<div class="small text-secondary">Còn @item.RemainingSlots.ToString("N0", VnFormat.Culture)</div></td>
+                                <td class="text-nowrap">@item.BibFrom.ToString("N0", VnFormat.Culture)–@item.BibTo.ToString("N0", VnFormat.Culture)</td>
                                 <td class="text-end text-nowrap">
                                     <a asp-page="PriceTiers" asp-route-eventId="@Model.Id" asp-route-categoryId="@item.Id"
                                        class="btn btn-sm btn-outline-success" title="Mức giá"><i class="bi bi-cash-stack"></i></a>

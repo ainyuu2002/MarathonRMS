@@ -18,6 +18,9 @@ public interface IEventService
     /// <summary>Danh sách giải của BTC người gọi (mọi trạng thái) cho trang Organizer.</summary>
     IQueryable<EventSummaryDto> QueryMine();
 
+    /// <summary>Giải của BTC người gọi, mới nhất trước – cho GET /api/events/mine (controller không tự truy vấn).</summary>
+    Task<List<EventSummaryDto>> GetMineAsync(CancellationToken ct = default);
+
     /// <summary>Chi tiết + cự ly + giá hiện tại (BR-10) + suất còn lại (BR-04). Giải Draft chỉ BTC sở hữu xem được.</summary>
     Task<EventDetailDto> GetDetailAsync(int eventId, CancellationToken ct = default);
 

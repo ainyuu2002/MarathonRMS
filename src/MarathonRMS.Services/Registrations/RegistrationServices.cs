@@ -84,6 +84,7 @@ public class RegistrationService : IRegistrationService
 
         var idType = ParseOptional<IdType>(request.IdType, "loại giấy tờ");
         var idNumber = Clean(request.IdNumber)?.ToUpperInvariant();
+        IdentityRules.Validate(idType, idNumber);
         if (await _registrations.HasActiveForParticipantAsync(ev.EventId, participant.ParticipantId, ct)
             || await _registrations.HasActiveForIdAsync(ev.EventId, idType, idNumber, ct))
             throw new BusinessRuleException("BR-01", "Người chạy đã có đăng ký còn hiệu lực tại giải này.");
@@ -269,6 +270,8 @@ public class RegistrationService : IRegistrationService
         var registration = await _registrations.GetTrackedWithDetailsAsync(registrationId, ct)
             ?? throw new NotFoundException("Không tìm thấy đăng ký.");
         _scope.EnsureCanManage(registration.Event.OrganizationId);
+        // BR-32: Organizer không tự sửa họ tên / ngày sinh / giấy tờ trên đăng ký của chính mình (ngày sinh quyết định nhóm tuổi)
+        _scope.EnsureNotOwnRegistration(registration.Participant.LinkedUserId, registration.RegisteredByUserId);
         await _scope.EnsureOrganizationActiveAsync(registration.Event.OrganizationId, ct);
         if (registration.Status is RegistrationStatus.Cancelled or RegistrationStatus.Expired or RegistrationStatus.Transferred
             or RegistrationStatus.Refunded)
@@ -277,6 +280,7 @@ public class RegistrationService : IRegistrationService
         var gender = ParseRequired<Gender>(request.Gender, "giới tính");
         var idType = ParseOptional<IdType>(request.IdType, "loại giấy tờ");
         var idNumber = Clean(request.IdNumber)?.ToUpperInvariant();
+        IdentityRules.Validate(idType, idNumber);
         var age = registration.Event.Policy.AgeCalculationMode == AgeCalculationMode.CalendarYear
             ? registration.Event.EventDate.Year - request.DateOfBirth.Year
             : AgeCalculator.AgeAt(request.DateOfBirth, registration.Event.EventDate);

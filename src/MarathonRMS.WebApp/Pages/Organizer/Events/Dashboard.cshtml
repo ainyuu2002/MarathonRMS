@@ -34,17 +34,17 @@
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
         <div class="small text-secondary">Đã xác nhận / sức chứa</div>
-        <div class="fs-3 fw-semibold">@d.Confirmed.ToString("N0") <span class="fs-6 text-secondary">/ @d.Capacity.ToString("N0")</span></div>
+        <div class="fs-3 fw-semibold">@d.Confirmed.ToString("N0", VnFormat.Culture) <span class="fs-6 text-secondary">/ @d.Capacity.ToString("N0", VnFormat.Culture)</span></div>
         <div class="small">@Pct(d.Confirmed, d.Capacity) lấp đầy · @d.PendingPayment chờ thanh toán</div>
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
         <div class="small text-secondary">Doanh thu thực (sau hoàn tiền)</div>
-        <div class="fs-3 fw-semibold">@d.NetRevenue.ToString("N0")đ</div>
-        <div class="small">Đã hoàn @d.Refunded.ToString("N0")đ</div>
+        <div class="fs-3 fw-semibold">@d.NetRevenue.ToString("N0", VnFormat.Culture)đ</div>
+        <div class="small">Đã hoàn @d.Refunded.ToString("N0", VnFormat.Culture)đ</div>
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
         <div class="small text-secondary">Race kit đã phát</div>
-        <div class="fs-3 fw-semibold">@d.KitsCollected.ToString("N0") <span class="fs-6 text-secondary">/ @d.Confirmed.ToString("N0")</span></div>
+        <div class="fs-3 fw-semibold">@d.KitsCollected.ToString("N0", VnFormat.Culture) <span class="fs-6 text-secondary">/ @d.Confirmed.ToString("N0", VnFormat.Culture)</span></div>
         <div class="small">@Pct(d.KitsCollected, d.Confirmed)</div>
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
@@ -73,13 +73,13 @@
         <div class="card h-100">
             <div class="card-header fw-semibold">Doanh thu & coupon</div>
             <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between"><span>Phí đăng ký</span><span>@d.RegistrationRevenue.ToString("N0")đ</span></li>
-                <li class="list-group-item d-flex justify-content-between"><span>Đổi cự ly (chênh lệch + phí)</span><span>@d.CategoryChangeRevenue.ToString("N0")đ</span></li>
-                <li class="list-group-item d-flex justify-content-between"><span>Phí chuyển nhượng</span><span>@d.TransferFeeRevenue.ToString("N0")đ</span></li>
-                @if (d.OtherRevenue > 0) { <li class="list-group-item d-flex justify-content-between"><span>Khác</span><span>@d.OtherRevenue.ToString("N0")đ</span></li> }
-                <li class="list-group-item d-flex justify-content-between text-danger"><span>Đã hoàn tiền</span><span>−@d.Refunded.ToString("N0")đ</span></li>
-                <li class="list-group-item d-flex justify-content-between fw-semibold"><span>Thực thu</span><span>@d.NetRevenue.ToString("N0")đ</span></li>
-                <li class="list-group-item d-flex justify-content-between small text-secondary"><span>Coupon đã dùng</span><span>@d.CouponUses lượt · giảm @d.CouponDiscount.ToString("N0")đ</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Phí đăng ký</span><span>@d.RegistrationRevenue.ToString("N0", VnFormat.Culture)đ</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Đổi cự ly (chênh lệch + phí)</span><span>@d.CategoryChangeRevenue.ToString("N0", VnFormat.Culture)đ</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Phí chuyển nhượng</span><span>@d.TransferFeeRevenue.ToString("N0", VnFormat.Culture)đ</span></li>
+                @if (d.OtherRevenue > 0) { <li class="list-group-item d-flex justify-content-between"><span>Khác</span><span>@d.OtherRevenue.ToString("N0", VnFormat.Culture)đ</span></li> }
+                <li class="list-group-item d-flex justify-content-between text-danger"><span>Đã hoàn tiền</span><span>−@d.Refunded.ToString("N0", VnFormat.Culture)đ</span></li>
+                <li class="list-group-item d-flex justify-content-between fw-semibold"><span>Thực thu</span><span>@d.NetRevenue.ToString("N0", VnFormat.Culture)đ</span></li>
+                <li class="list-group-item d-flex justify-content-between small text-secondary"><span>Coupon đã dùng</span><span>@d.CouponUses lượt · giảm @d.CouponDiscount.ToString("N0", VnFormat.Culture)đ</span></li>
             </ul>
             <div class="card-footer small text-secondary">Tiền tính theo thanh toán thành công (thanh toán thử).</div>
         </div>

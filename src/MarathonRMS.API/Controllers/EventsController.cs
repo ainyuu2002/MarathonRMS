@@ -3,7 +3,6 @@ using MarathonRMS.DTOs.Events;
 using MarathonRMS.Services.Events;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace MarathonRMS.API.Controllers;
 
@@ -25,7 +24,7 @@ public class EventManagementController : ControllerBase
 
     [HttpGet("mine")]
     public async Task<ActionResult<IReadOnlyList<EventSummaryDto>>> GetMine(CancellationToken ct) =>
-        Ok(await _events.QueryMine().OrderByDescending(e => e.EventDate).ThenBy(e => e.Name).ToListAsync(ct));
+        Ok(await _events.GetMineAsync(ct));
 
     [HttpGet("{id:int}")]
     [AllowAnonymous]

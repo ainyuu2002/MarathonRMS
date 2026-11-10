@@ -80,7 +80,7 @@ else if (Model.Event.PostponedFromDate is DateOnly postponedFrom)
                                     {
                                         <dt class="col-5">Cut-off</dt><dd class="col-7">@cutOff phút</dd>
                                     }
-                                    <dt class="col-5">Còn lại</dt><dd class="col-7"><strong>@category.RemainingSlots.ToString("N0")</strong> / @category.Capacity.ToString("N0") suất</dd>
+                                    <dt class="col-5">Còn lại</dt><dd class="col-7"><strong>@category.RemainingSlots.ToString("N0", VnFormat.Culture)</strong> / @category.Capacity.ToString("N0", VnFormat.Culture) suất</dd>
                                 </dl>
                                 @if (Model.Event.Status == "RegistrationOpen" && category.RemainingSlots > 0 && category.CurrentPrice is not null)
                                 {
@@ -129,7 +129,7 @@ else if (Model.Event.PostponedFromDate is DateOnly postponedFrom)
     <h2 class="h4 mb-3">Chính sách giải</h2>
     <div class="row g-3">
         <div class="col-md-6 col-xl-3"><div class="card h-100 card-body"><div class="small text-secondary">Chuyển nhượng</div><div class="fw-semibold mt-1">@DetailModel.TransferText(Model.Event.Policy)</div></div></div>
-        <div class="col-md-6 col-xl-3"><div class="card h-100 card-body"><div class="small text-secondary">Đổi cự ly</div><div class="fw-semibold mt-1">Tối đa @Model.Event.Policy.MaxCategoryChanges lần · phí @Model.Event.Policy.CategoryChangeFee.ToString("N0")đ</div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card h-100 card-body"><div class="small text-secondary">Đổi cự ly</div><div class="fw-semibold mt-1">Tối đa @Model.Event.Policy.MaxCategoryChanges lần · phí @Model.Event.Policy.CategoryChangeFee.ToString("N0", VnFormat.Culture)đ</div></div></div>
         <div class="col-md-6 col-xl-3"><div class="card h-100 card-body"><div class="small text-secondary">Xếp hạng</div><div class="fw-semibold mt-1">@DetailModel.RankingText(Model.Event.Policy.OverallRankingBasis)</div></div></div>
         <div class="col-md-6 col-xl-3"><div class="card h-100 card-body"><div class="small text-secondary">Bất khả kháng</div><div class="fw-semibold mt-1">@DetailModel.ForceMajeureText(Model.Event.Policy.ForceMajeurePolicy)</div></div></div>
     </div>

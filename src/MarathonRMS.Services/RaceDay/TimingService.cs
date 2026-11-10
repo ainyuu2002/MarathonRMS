@@ -36,6 +36,7 @@ public class TimingService : ITimingService
 
     public async Task<TimingRecordDto> RecordAsync(RecordTimingRequest request, CancellationToken ct = default)
     {
+        await using var tx = await _uow.BeginTransactionAsync(ct);
         var ev = await LoadEventForWriteAsync(request.EventId, ct);
         var r = await _timing.GetConfirmedByBibAsync(ev.EventId, request.BibNumber, ct)
                 ?? throw new NotFoundException($"Không có VĐV mang BIB {request.BibNumber} trong giải.");
@@ -62,6 +63,8 @@ public class TimingService : ITimingService
                 throw new BusinessRuleException("BR-23", $"BIB {request.BibNumber} đã bỏ cuộc tại {at.Name}.");
         }
 
+        // Khóa theo đăng ký trước khi đọc các mốc đã ghi: hai trạm ghi song song cho cùng BIB không phá được thứ tự (BR-21)
+        await _uow.LockAsync(RaceDayLocks.Timing(r.RegistrationId), ct);
         var records = await _timing.GetByRegistrationAsync(r.RegistrationId, ct);
         var existing = records.FirstOrDefault(t => t.CheckpointId == checkpoint.CheckpointId);
         if (existing is not null)
@@ -95,6 +98,12 @@ public class TimingService : ITimingService
             throw DbErrors.ToBusinessError(ex,
                 $"BIB {request.BibNumber} vừa được ghi thời gian tại {checkpoint.Name} bởi người khác.", "BR-21");
         }
+
+        // Bổ sung giờ sau khi đã tính kết quả (vd xử lý khiếu nại khi kết quả Tạm thời) ⇒ tính lại cả giải như bỏ cuộc / xóa giờ
+        await _uow.LockAsync(RaceDayLocks.Results(ev.EventId), ct);
+        await _recalc.RecalculateIfCalculatedAsync(ev.EventId, ct);
+        await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
 
         return new TimingRecordDto
         {

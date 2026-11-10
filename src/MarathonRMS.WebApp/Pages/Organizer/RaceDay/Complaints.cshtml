@@ -56,7 +56,7 @@ else
                         <div>
                             @if (c.BibNumber is int bib) { <span class="badge text-bg-dark me-1">@bib</span> }
                             <span class="fw-semibold">@c.RunnerName</span> · @c.CategoryName <status-badge status="@c.ResultStatus" />
-                            <div class="small text-secondary">Gửi lúc @c.CreatedAt.ToString("HH:mm dd/MM/yyyy")@(c.FeeAmount > 0 ? $" · phí {c.FeeAmount:N0} đ" : "")</div>
+                            <div class="small text-secondary">Gửi lúc @c.CreatedAt.ToString("HH:mm dd/MM/yyyy")@(c.FeeAmount > 0 ? $" · phí {c.FeeAmount.ToString("N0", VnFormat.Culture)}đ" : "")</div>
                         </div>
                         <status-badge status="@c.Status" />
                     </div>

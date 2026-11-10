@@ -71,7 +71,7 @@ else
 }
 
 <div class="card">
-    <div class="card-header fw-semibold">Yêu cầu hoàn tiền (@Model.Refunds.Count) – tổng @Model.Refunds.Sum(r => r.Amount).ToString("N0")đ</div>
+    <div class="card-header fw-semibold">Yêu cầu hoàn tiền (@Model.Refunds.Count) – tổng @Model.Refunds.Sum(r => r.Amount).ToString("N0", VnFormat.Culture)đ</div>
     @if (Model.Refunds.Count == 0)
     {
         <div class="card-body text-secondary small">Chưa có yêu cầu hoàn tiền.</div>
@@ -87,7 +87,7 @@ else
                     <tr>
                         <td><div class="fw-semibold">@r.RunnerName</div><div class="text-secondary">@r.CategoryName · #@r.RegistrationId</div></td>
                         <td>@r.Phone<div class="text-secondary">@r.Email</div></td>
-                        <td class="text-end fw-semibold">@r.Amount.ToString("N0")đ</td>
+                        <td class="text-end fw-semibold">@r.Amount.ToString("N0", VnFormat.Culture)đ</td>
                         <td>@(r.BankInfo ?? "— chưa khai —")</td>
                         <td>
                             <status-badge status="@(r.Status == "Pending" ? "RefundPending" : r.Status == "Completed" ? "Refunded" : "Rejected")" />

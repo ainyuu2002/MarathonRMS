@@ -71,7 +71,7 @@
                                             {
                                                 <div class="text-secondary">Hạng @a.Prize.Rank – chưa có VĐV đủ điều kiện</div>
                                             }
-                                            <div class="small">@a.Prize.Reward@(a.Prize.CashAmount is decimal cash && cash > 0 ? $" · {cash:N0} đ" : "")</div>
+                                            <div class="small">@a.Prize.Reward@(a.Prize.CashAmount is decimal cash && cash > 0 ? $" · {cash.ToString("N0", VnFormat.Culture)}đ" : "")</div>
                                         </div>
                                     </div>
                                 </li>

@@ -44,7 +44,7 @@ else
                     }
                     @if (c.FeeAmount > 0)
                     {
-                        <div class="small text-secondary mb-2">Phí khiếu nại: @c.FeeAmount.ToString("N0") đ</div>
+                        <div class="small text-secondary mb-2">Phí khiếu nại: @c.FeeAmount.ToString("N0", VnFormat.Culture)đ</div>
                     }
                     @if (c.Response is not null)
                     {

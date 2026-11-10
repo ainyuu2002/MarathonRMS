@@ -28,7 +28,7 @@
                         </div>
                         <status-badge status="@(r.Status == "Pending" ? "RefundPending" : r.Status == "Completed" ? "Refunded" : "Rejected")" />
                     </div>
-                    <div class="fs-5 fw-semibold mt-2">@r.Amount.ToString("N0")đ</div>
+                    <div class="fs-5 fw-semibold mt-2">@r.Amount.ToString("N0", VnFormat.Culture)đ</div>
                     @if (r.Status == "Completed")
                     {
                         <div class="small text-success">Đã chuyển @r.ProcessedAt?.ToString("dd/MM/yyyy") – mã giao dịch @r.TransactionRef</div>

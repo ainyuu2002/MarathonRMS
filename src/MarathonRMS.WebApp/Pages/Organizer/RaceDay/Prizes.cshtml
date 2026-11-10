@@ -41,7 +41,7 @@
                         <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
                             <div>
                                 <div class="small text-secondary">@PrizesModel.Describe(p)</div>
-                                <div>@p.Reward@(p.CashAmount is decimal cash && cash > 0 ? $" · {cash:N0} đ" : "")</div>
+                                <div>@p.Reward@(p.CashAmount is decimal cash && cash > 0 ? $" · {cash.ToString("N0", VnFormat.Culture)}đ" : "")</div>
                             </div>
                             @if (d.CanEdit)
                             {

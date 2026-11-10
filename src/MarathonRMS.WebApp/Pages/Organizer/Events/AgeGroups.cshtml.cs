@@ -75,7 +75,9 @@ public class AgeGroupsModel : BasePageModel
 
     private async Task LoadAsync(CancellationToken ct)
     {
-        Event = await _events.GetAsync(Id, ct);
+        var ev = await _events.GetAsync(Id, ct);
+        EnsureOwnOrganization(ev.OrganizationId);
+        Event = ev;
         AgeGroups = await _events.GetAgeGroupsAsync(Id, ct);
     }
 
