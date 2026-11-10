@@ -59,7 +59,15 @@ else
             <div class="card-body">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
                 <div class="mb-3"><label asp-for="Input.Name" class="form-label">Tên mức giá</label><input asp-for="Input.Name" class="form-control" placeholder="Early Bird" /><span asp-validation-for="Input.Name" class="text-danger small"></span></div>
-                <div class="mb-3"><label asp-for="Input.Price" class="form-label">Giá (đ)</label><input asp-for="Input.Price" type="number" min="0" step="1000" class="form-control" /><div class="form-text">Nhập 0 cho cự ly miễn phí; giá phải là bội số 1.000đ.</div><span asp-validation-for="Input.Price" class="text-danger small"></span></div>
+                <div class="mb-3"><label asp-for="Input.Price" class="form-label">Giá (đ)</label><input asp-for="Input.Price" type="number" min="0" step="1000" class="form-control" /><div class="form-text">Nhập 0 cho cự ly miễn phí; giá phải là bội số 1.000đ.</div>
+                    @if (Model.Reference is { Min: decimal rmin, Median: decimal rmed, Max: decimal rmax } r)
+                    {
+                        <div class="small mt-1 text-info-emphasis">
+                            <i class="bi bi-info-circle"></i> Tham khảo @(r.Discipline == "Trail" ? "trail" : "đường phố") @r.DistanceBand:
+                            @rmin.ToString("N0") – <strong>@rmed.ToString("N0")</strong> – @rmax.ToString("N0")đ
+                            <span class="text-secondary">(@(r.Source == "System" ? $"{r.SampleCount} cự ly trên hệ thống" : "bảng khảo sát"))</span>
+                        </div>
+                    }<span asp-validation-for="Input.Price" class="text-danger small"></span></div>
                 <div class="mb-3"><label asp-for="Input.ValidFrom" class="form-label">Từ</label><input asp-for="Input.ValidFrom" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" /><span asp-validation-for="Input.ValidFrom" class="text-danger small"></span></div>
                 <div><label asp-for="Input.ValidTo" class="form-label">Đến</label><input asp-for="Input.ValidTo" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" /><span asp-validation-for="Input.ValidTo" class="text-danger small"></span></div>
             </div>

@@ -42,17 +42,6 @@ public class EventDAO : BaseDAO<Event>
             .Include(e => e.Categories).ThenInclude(c => c.Checkpoints)
             .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
-    public Task<Event?> GetForLifecycleAsync(int eventId, CancellationToken ct = default) =>
-        Set.AsSplitQuery()
-            .Include(e => e.Policy)
-            .Include(e => e.Categories).ThenInclude(c => c.PriceTiers)
-            .Include(e => e.Categories).ThenInclude(c => c.Checkpoints)
-            .Include(e => e.ScheduleItems)
-            .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
-
-    public Task<List<Coupon>> GetCouponsAsync(int eventId, CancellationToken ct = default) =>
-        Context.Coupons.Where(c => c.EventId == eventId).ToListAsync(ct);
-
     public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) =>
         Set.AnyAsync(e => e.Slug == slug, ct);
 

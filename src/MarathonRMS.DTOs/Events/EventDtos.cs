@@ -2,17 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MarathonRMS.DTOs.Events;
 
-public class PostponeEventRequest
-{
-    [Required] public DateOnly NewEventDate { get; set; }
-}
-
-public class CancelEventRequest
-{
-    [Required, StringLength(500, MinimumLength = 5)] public string Reason { get; set; } = "";
-    [Required, AllowedValues("NoRefund", "CarryOver", "Refund")] public string RefundOption { get; set; } = "NoRefund";
-}
-
 // ============================ Đọc (public) ============================
 
 /// <summary>Dòng trong danh sách giải – nguồn của GET /odata/Events (UC-34). Chỉ chứa kiểu đơn giản để OData lọc/sắp xếp được.</summary>
@@ -60,6 +49,10 @@ public class EventDetailDto
     public string? EmergencyPhone { get; set; }
     public string? InsuranceNote { get; set; }
     public int WaiverVersion { get; set; }
+    /// <summary>Ngày tổ chức ban đầu nếu giải đã bị hoãn (UC-25).</summary>
+    public DateOnly? PostponedFromDate { get; set; }
+    /// <summary>Lý do hủy giải (UC-25).</summary>
+    public string? CancelReason { get; set; }
     public EventPolicyDto Policy { get; set; } = new();
     public IReadOnlyList<RaceCategoryDto> Categories { get; set; } = Array.Empty<RaceCategoryDto>();
     public IReadOnlyList<AgeGroupDto> AgeGroups { get; set; } = Array.Empty<AgeGroupDto>();

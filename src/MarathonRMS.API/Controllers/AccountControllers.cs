@@ -12,10 +12,10 @@ namespace MarathonRMS.API.Controllers;
 [ApiController]
 [Route("api/participants")]
 [Authorize]
-public class ParticipantsController : ControllerBase
+public class MyParticipantController : ControllerBase
 {
     private readonly IProfileService _profiles;
-    public ParticipantsController(IProfileService profiles) => _profiles = profiles;
+    public MyParticipantController(IProfileService profiles) => _profiles = profiles;
 
     [HttpGet("me")]
     public async Task<ActionResult<ParticipantProfileDto>> GetMine(CancellationToken ct) => Ok(await _profiles.GetMineAsync(ct));

@@ -38,7 +38,7 @@ public class RegistrationDAO : BaseDAO<Registration>
 
     public Task<Registration?> GetTrackedWithDetailsAsync(int registrationId, CancellationToken ct = default) =>
         Set.Include(r => r.Event).ThenInclude(e => e.Policy)
-            .Include(r => r.Category).ThenInclude(c => c.PriceTiers).Include(r => r.Participant)
+            .Include(r => r.Category).Include(r => r.Participant)
             .Include(r => r.RaceKitPickup).Include(r => r.Payments)
             .FirstOrDefaultAsync(r => r.RegistrationId == registrationId, ct);
 
@@ -55,9 +55,6 @@ public class RegistrationDAO : BaseDAO<Registration>
     public Task<List<int>> GetOverdueIdsAsync(DateTime now, CancellationToken ct = default) =>
         Set.AsNoTracking().Where(r => r.Status == RegistrationStatus.PendingPayment && r.ExpiresAt <= now)
             .Select(r => r.RegistrationId).ToListAsync(ct);
-
-    public Task<List<Registration>> GetByEventTrackedAsync(int eventId, CancellationToken ct = default) =>
-        Set.Where(r => r.EventId == eventId).ToListAsync(ct);
 }
 
 public class PaymentDAO : BaseDAO<Payment>

@@ -1,0 +1,108 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Member.RegistrationChangeModel
+@{
+    ViewData["Title"] = "Chuyển nhượng / đổi cự ly";
+    var o = Model.Options;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Chuyển nhượng / đổi cự ly</h1>
+        <p class="text-secondary mb-0">@o.EventName · @o.CategoryName · @o.RunnerName@(o.BibNumber is int bib ? $" · BIB {bib}" : "")</p>
+    </div>
+    <a asp-page="/Member/Registrations" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Đăng ký của tôi</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Đổi cự ly</div>
+            <div class="card-body small text-secondary pb-0">
+                Trả chênh lệch theo giá hiện hành (đổi sang cự ly rẻ hơn không hoàn tiền) + phí đổi @o.CategoryChangeFee.ToString("N0")đ.
+                @if (o.CategoryChangeDeadline is DateTime cd) { <span>Hạn: @cd.ToString("dd/MM/yyyy HH:mm").</span> }
+                Còn @o.CategoryChangesLeft lượt. Đã có BIB thì được gán số mới theo cự ly mới.
+            </div>
+            @if (o.CategoryChangeBlockedReason is { } why)
+            {
+                <div class="card-body"><div class="alert alert-secondary mb-0">@why</div></div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>Cự ly</th><th class="text-end">Chênh lệch</th><th class="text-end">Phí</th><th class="text-end">Tổng</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var q in o.CategoryOptions)
+                        {
+                            <tr>
+                                <td>@q.CategoryName <span class="small text-secondary">@q.DistanceKm.ToString("0.##") km · còn @q.RemainingSlots</span></td>
+                                <td class="text-end">@q.PriceDifference.ToString("N0")đ</td>
+                                <td class="text-end">@q.Fee.ToString("N0")đ</td>
+                                <td class="text-end fw-semibold">@q.Total.ToString("N0")đ</td>
+                                <td class="text-end">
+                                    @if (q.BlockedReason is { } b)
+                                    {
+                                        <span class="small text-secondary">@b</span>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="Change" asp-route-id="@Model.Id"
+                                              onsubmit="return confirm('Đổi sang @q.CategoryName và thanh toán @q.Total.ToString("N0")đ?');">
+                                            <input type="hidden" name="newCategoryId" value="@q.CategoryId" />
+                                            <input type="hidden" name="expectedTotal" value="@q.Total" />
+                                            <button class="btn btn-sm btn-primary">Đổi@(q.Total > 0 ? " & thanh toán (thử)" : "")</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Chuyển nhượng BIB</div>
+            <div class="card-body">
+                <p class="small text-secondary">
+                    Chuyển suất cho một người khác có tài khoản. Người nhận khai thông tin của mình và chấp nhận
+                    @(o.TransferFee > 0 ? $"(người nhận trả phí {o.TransferFee:N0}đ)" : "(miễn phí)").
+                    @if (o.TransferDeadline is DateTime td) { <span>Hạn: @td.ToString("dd/MM/yyyy HH:mm").</span> }
+                    Còn @o.TransfersLeft lượt.
+                </p>
+                @if (o.PendingTransfer is { } pt)
+                {
+                    <div class="alert alert-warning">
+                        Đang chờ <strong>@pt.ToName</strong> (@pt.ToEmail) chấp nhận – gửi lúc @pt.RequestedAt.ToString("HH:mm dd/MM").
+                        @if (pt.Direction == "Outgoing")
+                        {
+                            <form method="post" asp-page-handler="CancelTransfer" asp-route-id="@Model.Id" class="mt-2">
+                                <input type="hidden" name="transferId" value="@pt.Id" />
+                                <button class="btn btn-sm btn-outline-danger">Hủy yêu cầu</button>
+                            </form>
+                        }
+                    </div>
+                }
+                else if (o.TransferBlockedReason is { } transferWhy)
+                {
+                    <div class="alert alert-secondary mb-0">@transferWhy</div>
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="Transfer" asp-route-id="@Model.Id" novalidate
+                          onsubmit="return confirm('Gửi yêu cầu chuyển nhượng? Khi người nhận chấp nhận, suất này không còn là của bạn.');">
+                        <label asp-for="TransferInput.RecipientEmail" class="form-label">Email tài khoản người nhận</label>
+                        <input asp-for="TransferInput.RecipientEmail" class="form-control" />
+                        <span asp-validation-for="TransferInput.RecipientEmail" class="text-danger small"></span>
+                        <button class="btn btn-primary mt-3"><i class="bi bi-send"></i> Gửi yêu cầu</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

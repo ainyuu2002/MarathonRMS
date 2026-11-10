@@ -36,6 +36,10 @@ else
                     <dt class="col-5">Giữ suất đến</dt><dd class="col-7 text-warning-emphasis">@expires.ToString("dd/MM/yyyy HH:mm:ss")</dd>
                 }
             </dl>
+            @if (item.Status is "RefundPending" or "Refunded")
+            {
+                <div class="alert alert-info py-2 small">Giải đã hủy – xem <a asp-page="/Member/Refunds">hoàn tiền</a>.</div>
+            }
             @if (!string.IsNullOrWhiteSpace(item.QrToken))
             {
                 <div class="border rounded bg-body-tertiary p-3 mb-3 text-center">
@@ -51,9 +55,9 @@ else
                 {
                     <a asp-page="/Member/EditRegistration" asp-route-id="@item.Id" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i> Sửa thông tin</a>
                 }
-                @if (item.Status == "Confirmed")
+                @if (item.Status == "Confirmed" && item.EventDate > DateOnly.FromDateTime(DateTime.Today))
                 {
-                    <a asp-page="/Member/RegistrationChanges" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-left-right"></i> Đổi cự ly / chuyển suất</a>
+                    <a asp-page="/Member/RegistrationChange" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-left-right"></i> Chuyển nhượng / đổi cự ly</a>
                 }
                 @if (item.CanCancel)
                 {

@@ -320,7 +320,13 @@ public class EventService : IEventService
             EndDate = e.EndDate,
             RegistrationOpenAt = e.RegistrationOpenAt,
             RegistrationCloseAt = e.RegistrationCloseAt,
-            Status = e.Status.ToString(),
+            // OData lọc trên cột này ⇒ phải dịch được sang SQL (Enum.ToString() không dịch được ⇒ 500)
+            Status = e.Status == EventStatus.Draft ? "Draft"
+                : e.Status == EventStatus.Published ? "Published"
+                : e.Status == EventStatus.RegistrationOpen ? "RegistrationOpen"
+                : e.Status == EventStatus.RegistrationClosed ? "RegistrationClosed"
+                : e.Status == EventStatus.Postponed ? "Postponed"
+                : e.Status == EventStatus.Completed ? "Completed" : "Cancelled",
             BannerUrl = e.BannerUrl,
             Disciplines = e.Categories.Any(c => c.Discipline == Discipline.Road) && e.Categories.Any(c => c.Discipline == Discipline.Trail)
                 ? "Road,Trail"
@@ -352,6 +358,8 @@ public class EventService : IEventService
         EmergencyPhone = e.EmergencyPhone,
         InsuranceNote = e.InsuranceNote,
         WaiverVersion = e.WaiverVersion,
+        PostponedFromDate = e.PostponedFromDate,
+        CancelReason = e.CancelReason,
         Policy = ToPolicyDto(e.Policy),
         Categories = e.Categories.OrderBy(c => c.DistanceKm).ThenBy(c => c.Name)
             .Select(c => RaceCategoryMappings.ToDto(c, activeCounts.GetValueOrDefault(c.CategoryId), now)).ToList(),

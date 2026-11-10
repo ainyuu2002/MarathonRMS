@@ -33,12 +33,6 @@ public interface IEventService
     Task ChangeStatusAsync(int eventId, ChangeEventStatusRequest request, CancellationToken ct = default);
 }
 
-public interface IEventLifecycleService
-{
-    Task PostponeAsync(int eventId, PostponeEventRequest request, CancellationToken ct = default);
-    Task CancelAsync(int eventId, CancelEventRequest request, CancellationToken ct = default);
-}
-
 /// <summary>UC-19 – chính sách giải (BR-46).</summary>
 public interface IEventPolicyService
 {

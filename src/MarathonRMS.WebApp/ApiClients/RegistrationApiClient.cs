@@ -23,19 +23,6 @@ public class RegistrationApiClient : ApiClientBase
     public Task CancelAsync(int id, CancellationToken ct = default) =>
         PostAsync($"api/registrations/{id}/cancel", new { }, ct);
 
-    public Task<CategoryChangeResultDto> ChangeCategoryAsync(int id, ChangeCategoryRequest request, CancellationToken ct = default) =>
-        PostAsync<CategoryChangeResultDto>($"api/registrations/{id}/change-category", request, ct);
-    public Task<TransferDto> CreateTransferAsync(int id, CreateTransferRequest request, CancellationToken ct = default) =>
-        PostAsync<TransferDto>($"api/registrations/{id}/transfers", request, ct);
-    public Task<List<TransferDto>> GetIncomingTransfersAsync(CancellationToken ct = default) => GetAsync<List<TransferDto>>("api/transfers/incoming", ct);
-    public Task<List<TransferDto>> GetOutgoingTransfersAsync(CancellationToken ct = default) => GetAsync<List<TransferDto>>("api/transfers/outgoing", ct);
-    public Task<TransferDto> AcceptTransferAsync(int id, AcceptTransferRequest request, CancellationToken ct = default) => PostAsync<TransferDto>($"api/transfers/{id}/accept", request, ct);
-    public Task RejectTransferAsync(int id, CancellationToken ct = default) => PostAsync($"api/transfers/{id}/reject", new { }, ct);
-    public Task CancelTransferAsync(int id, CancellationToken ct = default) => PostAsync($"api/transfers/{id}/cancel", new { }, ct);
-    public Task<List<RefundDto>> GetRefundsAsync(int eventId, CancellationToken ct = default) => GetAsync<List<RefundDto>>($"api/events/{eventId}/refunds", ct);
-    public Task CompleteRefundAsync(int id, CompleteRefundRequest request, CancellationToken ct = default) => PostAsync($"api/refunds/{id}/complete", request, ct);
-    public Task RejectRefundAsync(int id, RejectRefundRequest request, CancellationToken ct = default) => PostAsync($"api/refunds/{id}/reject", request, ct);
-
     public Task<MarathonRMS.DTOs.Common.PagedResult<RegistrationListItemDto>> SearchForOrganizerAsync(
         string? filter, int page, int pageSize = 20, CancellationToken ct = default) =>
         GetODataPageAsync<RegistrationListItemDto>("Registrations", filter, "RegisteredAt desc,Id desc", page, pageSize, ct);

@@ -1,4 +1,44 @@
-using MarathonRMS.DTOs.Registrations; using MarathonRMS.WebApp.ApiClients; using MarathonRMS.WebApp.Infrastructure; using Microsoft.AspNetCore.Mvc;
+using MarathonRMS.DTOs.Registrations;
+using MarathonRMS.WebApp.ApiClients;
+using MarathonRMS.WebApp.Infrastructure;
+using Microsoft.AspNetCore.Mvc;
+
 namespace MarathonRMS.WebApp.Pages.Member;
-public class TransfersModel:BasePageModel
-{private readonly RegistrationApiClient _api;public TransfersModel(RegistrationApiClient api)=>_api=api;public List<TransferDto> Incoming{get;private set;}=new();public List<TransferDto> Outgoing{get;private set;}=new();public async Task<IActionResult> OnGetAsync(CancellationToken ct)=>await Load(ct);public async Task<IActionResult> OnPostAcceptAsync(int id,bool waiverAccepted,bool healthDeclarationAccepted,bool healthDataConsent,bool photoMarketingConsent,bool hideFromPublicList,CancellationToken ct){try{await _api.AcceptTransferAsync(id,new(){WaiverAccepted=waiverAccepted,HealthDeclarationAccepted=healthDeclarationAccepted,HealthDataConsent=healthDataConsent,PhotoMarketingConsent=photoMarketingConsent,HideFromPublicList=hideFromPublicList},ct);StatusMessage="Đã nhận suất thành công.";return RedirectToPage();}catch(ApiException ex){return await HandleApiErrorAsync(ex)??await Load(ct);}}public async Task<IActionResult> OnPostRejectAsync(int id,CancellationToken ct){try{await _api.RejectTransferAsync(id,ct);return RedirectToPage();}catch(ApiException ex){return await HandleApiErrorAsync(ex)??await Load(ct);}}public async Task<IActionResult> OnPostCancelAsync(int id,CancellationToken ct){try{await _api.CancelTransferAsync(id,ct);return RedirectToPage();}catch(ApiException ex){return await HandleApiErrorAsync(ex)??await Load(ct);}}private async Task<IActionResult> Load(CancellationToken ct){try{Incoming=await _api.GetIncomingTransfersAsync(ct);Outgoing=await _api.GetOutgoingTransfersAsync(ct);}catch(ApiException ex){return await HandleApiErrorAsync(ex)??Page();}return Page();}}
+
+/// <summary>Phần A – UC-47: yêu cầu chuyển nhượng đã gửi và nhận; từ chối / hủy.</summary>
+public class TransfersModel : BasePageModel
+{
+    private readonly RegistrationChangeApiClient _api;
+    public TransfersModel(RegistrationChangeApiClient api) => _api = api;
+
+    public List<TransferDto> Items { get; private set; } = new();
+
+    public async Task<IActionResult> OnGetAsync(CancellationToken ct)
+    {
+        try { Items = await _api.GetMyTransfersAsync(ct); }
+        catch (ApiException ex) { return await HandleApiErrorAsync(ex) ?? Page(); }
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostRejectAsync(int transferId, CancellationToken ct)
+    {
+        try
+        {
+            await _api.RejectAsync(transferId, ct);
+            StatusMessage = "Đã từ chối yêu cầu chuyển nhượng.";
+            return RedirectToPage();
+        }
+        catch (ApiException ex) { return await HandleApiErrorAsync(ex) ?? await OnGetAsync(ct); }
+    }
+
+    public async Task<IActionResult> OnPostCancelAsync(int transferId, CancellationToken ct)
+    {
+        try
+        {
+            await _api.CancelAsync(transferId, ct);
+            StatusMessage = "Đã hủy yêu cầu chuyển nhượng.";
+            return RedirectToPage();
+        }
+        catch (ApiException ex) { return await HandleApiErrorAsync(ex) ?? await OnGetAsync(ct); }
+    }
+}

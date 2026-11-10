@@ -29,8 +29,6 @@ public class EventApiClient : ApiClientBase
 
     public Task ChangeStatusAsync(int id, string status, CancellationToken ct = default) =>
         PatchAsync($"api/events/{id}/status", new ChangeEventStatusRequest { Status = status }, ct);
-    public Task PostponeAsync(int id, PostponeEventRequest request, CancellationToken ct = default) => PostAsync($"api/events/{id}/postpone", request, ct);
-    public Task CancelAsync(int id, CancelEventRequest request, CancellationToken ct = default) => PostAsync($"api/events/{id}/cancel", request, ct);
 
     public Task<EventPolicyDto> GetPolicyAsync(int id, CancellationToken ct = default) =>
         GetAsync<EventPolicyDto>($"api/events/{id}/policies", ct);
@@ -66,6 +64,11 @@ public class EventApiClient : ApiClientBase
     public Task<PriceTierDto> UpdatePriceTierAsync(int id, UpsertPriceTierRequest request, CancellationToken ct = default) =>
         PutAsync<PriceTierDto>($"api/price-tiers/{id}", request, ct);
     public Task DeletePriceTierAsync(int id, CancellationToken ct = default) => DeleteAsync($"api/price-tiers/{id}", ct);
+
+    /// <summary>UC-87 – khoảng giá tham khảo.</summary>
+    public Task<PriceReferenceDto> GetPriceReferenceAsync(string discipline, decimal distanceKm, int excludeEventId, CancellationToken ct = default) =>
+        GetAsync<PriceReferenceDto>(Query("api/pricing/reference", ("discipline", discipline),
+            ("distanceKm", distanceKm.ToString(System.Globalization.CultureInfo.InvariantCulture)), ("excludeEventId", excludeEventId)), ct);
 
     public Task<List<AgeGroupDto>> GetAgeGroupsAsync(int eventId, CancellationToken ct = default) =>
         GetAsync<List<AgeGroupDto>>($"api/events/{eventId}/age-groups", ct);

@@ -7,6 +7,17 @@
 <a asp-page="/Index" class="btn btn-sm btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
 <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
 
+@if (Model.Event.Status == "Cancelled")
+{
+    <div class="alert alert-danger"><strong>Giải đã bị hủy.</strong> @Model.Event.CancelReason
+        <div class="small mt-1">VĐV đã thanh toán xem tình trạng hoàn tiền tại <a asp-page="/Member/Refunds">Hoàn tiền của tôi</a>.</div>
+    </div>
+}
+else if (Model.Event.PostponedFromDate is DateOnly postponedFrom)
+{
+    <div class="alert alert-warning">Giải đã <strong>dời</strong> từ @postponedFrom.ToString("dd/MM/yyyy") sang @Model.Event.EventDate.ToString("dd/MM/yyyy"). Đăng ký của bạn vẫn giữ nguyên.</div>
+}
+
 <section class="card overflow-hidden mb-4">
     @if (!string.IsNullOrWhiteSpace(Model.Event.BannerUrl))
     {
@@ -34,7 +45,16 @@
 
 <div class="row g-4 mb-4">
     <div class="col-xl-8">
-        <h2 class="h4 mb-3">Cự ly và mức giá</h2>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h2 class="h4 mb-0">Cự ly và mức giá</h2>
+            <div class="d-flex gap-2 flex-wrap">
+                <a asp-page="/Events/Runners" asp-route-id="@Model.Event.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-people"></i> Danh sách VĐV</a>
+                @if (Model.Event.ResultsStatus is "Provisional" or "Official")
+                {
+                    <a asp-page="/Results/Index" asp-route-eventId="@Model.Event.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-trophy"></i> Kết quả</a>
+                }
+            </div>
+        </div>
         @if (Model.Event.Categories.Count == 0)
         {
             <div class="card card-body text-secondary">Ban tổ chức chưa công bố cự ly.</div>

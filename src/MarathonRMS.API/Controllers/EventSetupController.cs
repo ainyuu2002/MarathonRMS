@@ -47,6 +47,12 @@ public class EventSetupController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>UC-87 – khoảng giá tham khảo theo loại đường chạy + cự ly (không gồm giải đang sửa).</summary>
+    [HttpGet("pricing/reference")]
+    public async Task<ActionResult<PriceReferenceDto>> GetPriceReference([FromQuery] string discipline, [FromQuery] decimal distanceKm,
+        [FromQuery] int? excludeEventId, [FromServices] IPriceReferenceService reference, CancellationToken ct) =>
+        Ok(await reference.GetAsync(discipline, distanceKm, excludeEventId, ct));
+
     [HttpGet("events/{eventId:int}/age-groups")]
     [AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<AgeGroupDto>>> GetAgeGroups(int eventId, CancellationToken ct) =>

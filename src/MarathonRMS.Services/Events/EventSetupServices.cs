@@ -17,11 +17,13 @@ public class PriceTierService : IPriceTierService
     private readonly ISystemSettingsProvider _settings;
     private readonly IAuditLogger _audit;
     private readonly IUnitOfWork _uow;
+    private readonly IPriceReferenceService _reference;
 
     public PriceTierService(IPriceTierRepository tiers, IRaceCategoryRepository categories,
         IOrganizationScope scope, ICurrentUserService currentUser, ISystemSettingsProvider settings,
-        IAuditLogger audit, IUnitOfWork uow)
+        IAuditLogger audit, IUnitOfWork uow, IPriceReferenceService reference)
     {
+        _reference = reference;
         _tiers = tiers;
         _categories = categories;
         _scope = scope;
@@ -138,6 +140,9 @@ public class PriceTierService : IPriceTierService
         if (await _tiers.HasShorterCategoryWithHigherOverlappingTierAsync(category.EventId, category.CategoryId,
                 category.DistanceKm, candidate.Price, candidate.ValidFrom, candidate.ValidTo, ct))
             warnings.Add("BR-49: cự ly dài đang rẻ hơn một cự ly ngắn hơn trong cùng thời gian bán.");
+        // BR-49 (ý 2): lệch khoảng giá tham khảo quá 50% (UC-87, phần A)
+        var reference = await _reference.GetAsync(category.Discipline.ToString(), category.DistanceKm, category.EventId, ct);
+        if (_reference.Warn(reference, candidate.Price) is { } refWarning) warnings.Add(refWarning);
         return warnings;
     }
 

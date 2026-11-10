@@ -18,6 +18,8 @@ public class PriceTiersModel : BasePageModel
     public EventDetailDto Event { get; private set; } = new();
     public RaceCategoryDto Category { get; private set; } = new();
     public List<PriceTierDto> PriceTiers { get; private set; } = new();
+    /// <summary>UC-87 – khoảng giá tham khảo (phần A); null nếu không lấy được.</summary>
+    public PriceReferenceDto? Reference { get; private set; }
     public bool IsEditing => PriceTierId.HasValue;
     public bool CoverageComplete => CoversWindow();
 
@@ -92,6 +94,9 @@ public class PriceTiersModel : BasePageModel
         Category = Event.Categories.FirstOrDefault(c => c.Id == CategoryId) ?? throw new ApiException(
             System.Net.HttpStatusCode.NotFound, "Không tìm thấy cự ly.");
         PriceTiers = await _events.GetPriceTiersAsync(CategoryId, ct);
+        // UC-87: gợi ý giá – lỗi thì bỏ qua, không chặn trang
+        try { Reference = await _events.GetPriceReferenceAsync(Category.Discipline, Category.DistanceKm, EventId, ct); }
+        catch (ApiException) { Reference = null; }
     }
 
     private bool CoversWindow()

@@ -25,8 +25,6 @@ public class RegistrationExpiryWorker : BackgroundService
                 using var scope = _scopes.CreateScope();
                 var count = await scope.ServiceProvider.GetRequiredService<IRegistrationService>().ExpireOverdueAsync(stoppingToken);
                 if (count > 0) _logger.LogInformation("BR-13: đã hết hạn {Count} đăng ký chờ thanh toán.", count);
-                var transferCount = await scope.ServiceProvider.GetRequiredService<ITransferService>().ExpireOverdueAsync(stoppingToken);
-                if (transferCount > 0) _logger.LogInformation("BR-16: đã hết hạn {Count} yêu cầu chuyển suất.", transferCount);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

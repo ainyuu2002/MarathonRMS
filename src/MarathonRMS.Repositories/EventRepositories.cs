@@ -10,8 +10,6 @@ public interface IEventRepository
     Task<Event?> GetWithCategoriesAsync(int eventId, CancellationToken ct = default);
     Task<Event?> GetTrackedAsync(int eventId, CancellationToken ct = default);
     Task<Event?> GetForStatusChangeAsync(int eventId, CancellationToken ct = default);
-    Task<Event?> GetForLifecycleAsync(int eventId, CancellationToken ct = default);
-    Task<List<Coupon>> GetCouponsAsync(int eventId, CancellationToken ct = default);
     Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default);
     Task<bool> HasRegistrationsAsync(int eventId, CancellationToken ct = default);
     Task<bool> HasCouponsAsync(int eventId, CancellationToken ct = default);
@@ -30,8 +28,6 @@ public class EventRepository : IEventRepository
     public Task<Event?> GetWithCategoriesAsync(int eventId, CancellationToken ct = default) => _dao.GetWithCategoriesAsync(eventId, ct);
     public Task<Event?> GetTrackedAsync(int eventId, CancellationToken ct = default) => _dao.GetTrackedAsync(eventId, ct);
     public Task<Event?> GetForStatusChangeAsync(int eventId, CancellationToken ct = default) => _dao.GetForStatusChangeAsync(eventId, ct);
-    public Task<Event?> GetForLifecycleAsync(int eventId, CancellationToken ct = default) => _dao.GetForLifecycleAsync(eventId, ct);
-    public Task<List<Coupon>> GetCouponsAsync(int eventId, CancellationToken ct = default) => _dao.GetCouponsAsync(eventId, ct);
     public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) => _dao.SlugExistsAsync(slug, ct);
     public Task<bool> HasRegistrationsAsync(int eventId, CancellationToken ct = default) => _dao.HasRegistrationsAsync(eventId, ct);
     public Task<bool> HasCouponsAsync(int eventId, CancellationToken ct = default) => _dao.HasCouponsAsync(eventId, ct);

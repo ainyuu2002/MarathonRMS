@@ -3,6 +3,7 @@
     ViewData["Title"] = "Quản trị nền tảng";
     var cards = new[]
     {
+        new NavCard("Dashboard hệ thống", "Số liệu tổng: tài khoản, BTC, giải, đăng ký, doanh thu, hoàn tiền", "bi-bar-chart", "/Admin/Dashboard"),
         new NavCard("Hồ sơ Ban tổ chức", "Duyệt / từ chối hồ sơ đăng ký làm BTC", "bi-inbox", "/Admin/OrganizationApplications"),
         new NavCard("Ban tổ chức", "Xem, sửa, tạm khóa ban tổ chức", "bi-buildings", "/Admin/Organizations"),
         new NavCard("Tài khoản", "Tìm kiếm, khóa / mở tài khoản", "bi-people", "/Admin/Users"),

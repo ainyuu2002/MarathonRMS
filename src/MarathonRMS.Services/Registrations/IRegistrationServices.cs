@@ -41,26 +41,3 @@ public interface IPaymentService
     /// <summary>Tạo Payment; Mock ⇒ Success ngay và áp dụng theo Purpose (đăng ký ⇒ Confirmed). Chống xử lý trùng theo TxnRef.</summary>
     Task<PaymentResultDto> CreateAsync(CreatePaymentRequest request, CancellationToken ct = default);
 }
-
-public interface ICategoryChangeService
-{
-    Task<CategoryChangeResultDto> ChangeAsync(int registrationId, ChangeCategoryRequest request, CancellationToken ct = default);
-}
-
-public interface ITransferService
-{
-    Task<TransferDto> CreateAsync(int registrationId, CreateTransferRequest request, CancellationToken ct = default);
-    Task<IReadOnlyList<TransferDto>> GetIncomingAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<TransferDto>> GetOutgoingAsync(CancellationToken ct = default);
-    Task<TransferDto> AcceptAsync(int transferId, AcceptTransferRequest request, CancellationToken ct = default);
-    Task RejectAsync(int transferId, CancellationToken ct = default);
-    Task CancelAsync(int transferId, CancellationToken ct = default);
-    Task<int> ExpireOverdueAsync(CancellationToken ct = default);
-}
-
-public interface IRefundService
-{
-    Task<IReadOnlyList<RefundDto>> GetByEventAsync(int eventId, CancellationToken ct = default);
-    Task CompleteAsync(int refundId, CompleteRefundRequest request, CancellationToken ct = default);
-    Task RejectAsync(int refundId, RejectRefundRequest request, CancellationToken ct = default);
-}

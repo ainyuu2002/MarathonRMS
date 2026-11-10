@@ -1,0 +1,143 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.Events.DashboardModel
+@using System.Text.Json
+@{
+    var d = Model.Data;
+    ViewData["Title"] = "Dashboard – " + d.EventName;
+    string Pct(int part, int whole) => whole == 0 ? "0%" : $"{part * 100.0 / whole:0}%";
+    var started = d.Categories.Sum(c => c.Finished + c.Dnf + c.Dsq);
+    var finished = d.Categories.Sum(c => c.Finished);
+    var hasResults = d.Categories.Any(c => c.Finished + c.Dnf + c.Dns + c.Dsq > 0);
+    var chart = JsonSerializer.Serialize(new
+    {
+        days = d.RegistrationsByDay.Select(x => x.Date.ToString("dd/MM")),
+        counts = d.RegistrationsByDay.Select(x => x.Count),
+        cats = d.Categories.Select(c => c.Name),
+        confirmed = d.Categories.Select(c => c.Confirmed),
+        remaining = d.Categories.Select(c => Math.Max(0, c.Capacity - c.Confirmed - c.PendingPayment))
+    });
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">Dashboard giải</h1>
+        <p class="text-secondary mb-0">@d.EventName · @d.EventDate.ToString("dd/MM/yyyy") · <status-badge status="@d.Status" /></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="Registrations" asp-route-id="@Model.Id" class="btn btn-outline-primary"><i class="bi bi-person-lines-fill"></i> Đăng ký</a>
+        <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
+    </div>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+        <div class="small text-secondary">Đã xác nhận / sức chứa</div>
+        <div class="fs-3 fw-semibold">@d.Confirmed.ToString("N0") <span class="fs-6 text-secondary">/ @d.Capacity.ToString("N0")</span></div>
+        <div class="small">@Pct(d.Confirmed, d.Capacity) lấp đầy · @d.PendingPayment chờ thanh toán</div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+        <div class="small text-secondary">Doanh thu thực (sau hoàn tiền)</div>
+        <div class="fs-3 fw-semibold">@d.NetRevenue.ToString("N0")đ</div>
+        <div class="small">Đã hoàn @d.Refunded.ToString("N0")đ</div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+        <div class="small text-secondary">Race kit đã phát</div>
+        <div class="fs-3 fw-semibold">@d.KitsCollected.ToString("N0") <span class="fs-6 text-secondary">/ @d.Confirmed.ToString("N0")</span></div>
+        <div class="small">@Pct(d.KitsCollected, d.Confirmed)</div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+        <div class="small text-secondary">@(hasResults ? "Tỉ lệ hoàn thành" : "Nam / nữ")</div>
+        @if (hasResults)
+        {
+            <div class="fs-3 fw-semibold">@Pct(finished, started)</div>
+            <div class="small">@finished về đích / @started xuất phát</div>
+        }
+        else
+        {
+            <div class="fs-3 fw-semibold">@d.Male / @d.Female</div>
+            <div class="small">@Pct(d.Female, d.Male + d.Female) nữ</div>
+        }
+    </div></div></div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Đăng ký mới theo ngày</div>
+            <div class="card-body"><canvas id="byDay" height="140"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Doanh thu & coupon</div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between"><span>Phí đăng ký</span><span>@d.RegistrationRevenue.ToString("N0")đ</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Đổi cự ly (chênh lệch + phí)</span><span>@d.CategoryChangeRevenue.ToString("N0")đ</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Phí chuyển nhượng</span><span>@d.TransferFeeRevenue.ToString("N0")đ</span></li>
+                @if (d.OtherRevenue > 0) { <li class="list-group-item d-flex justify-content-between"><span>Khác</span><span>@d.OtherRevenue.ToString("N0")đ</span></li> }
+                <li class="list-group-item d-flex justify-content-between text-danger"><span>Đã hoàn tiền</span><span>−@d.Refunded.ToString("N0")đ</span></li>
+                <li class="list-group-item d-flex justify-content-between fw-semibold"><span>Thực thu</span><span>@d.NetRevenue.ToString("N0")đ</span></li>
+                <li class="list-group-item d-flex justify-content-between small text-secondary"><span>Coupon đã dùng</span><span>@d.CouponUses lượt · giảm @d.CouponDiscount.ToString("N0")đ</span></li>
+            </ul>
+            <div class="card-footer small text-secondary">Tiền tính theo thanh toán thành công (thanh toán thử).</div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header fw-semibold">Theo cự ly</div>
+    <div class="card-body"><canvas id="byCategory" height="90"></canvas></div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0 small text-nowrap">
+            <thead>
+                <tr>
+                    <th>Cự ly</th><th class="text-end">Xác nhận</th><th class="text-end">Chờ TT</th><th class="text-end">Sức chứa</th><th class="text-end">Kit</th>
+                    @foreach (var s in new[] { "XS", "S", "M", "L", "XL", "XXL" }) { <th class="text-end">Áo @s</th> }
+                    @if (hasResults) { <th class="text-end">Về đích</th><th class="text-end">DNF</th><th class="text-end">DNS</th><th class="text-end">DSQ</th> }
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var c in d.Categories)
+            {
+                <tr>
+                    <td class="fw-semibold">@c.Name</td>
+                    <td class="text-end">@c.Confirmed</td>
+                    <td class="text-end">@c.PendingPayment</td>
+                    <td class="text-end">@c.Capacity</td>
+                    <td class="text-end">@c.KitsCollected</td>
+                    @foreach (var s in new[] { "XS", "S", "M", "L", "XL", "XXL" }) { <td class="text-end">@c.ShirtSizes.GetValueOrDefault(s)</td> }
+                    @if (hasResults) { <td class="text-end">@c.Finished</td><td class="text-end">@c.Dnf</td><td class="text-end">@c.Dns</td><td class="text-end">@c.Dsq</td> }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        (() => {
+            if (!window.Chart) return;
+            const d = @Html.Raw(chart);
+            new Chart(document.getElementById('byDay'), {
+                type: 'bar',
+                data: { labels: d.days, datasets: [{ label: 'Đăng ký', data: d.counts, backgroundColor: '#0d6efd' }] },
+                options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            });
+            new Chart(document.getElementById('byCategory'), {
+                type: 'bar',
+                data: {
+                    labels: d.cats,
+                    datasets: [
+                        { label: 'Đã xác nhận', data: d.confirmed, backgroundColor: '#198754' },
+                        { label: 'Còn suất', data: d.remaining, backgroundColor: '#dee2e6' }
+                    ]
+                },
+                options: { indexAxis: 'y', scales: { x: { stacked: true, ticks: { precision: 0 } }, y: { stacked: true } } }
+            });
+        })();
+    </script>
+}

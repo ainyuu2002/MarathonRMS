@@ -1,10 +1,71 @@
 @page
 @model MarathonRMS.WebApp.Pages.Member.TransfersModel
-@{ViewData["Title"]="Chuyển suất";}
-<h1 class="h3">Chuyển suất</h1><div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
-<h2 class="h5 mt-4">Yêu cầu đến</h2>
-@foreach(var x in Model.Incoming){<div class="card card-body mb-2"><div><strong>@x.EventName</strong> · @x.CategoryName · @x.FromEmail</div><div class="small text-secondary">Phí @x.FeeAmount.ToString("N0")đ · @x.Status</div>@if(x.CanAccept){<form method="post" asp-page-handler="Accept" asp-route-id="@x.Id" class="mt-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="waiverAccepted" value="true" required/><label class="form-check-label">Tôi chấp nhận miễn trừ trách nhiệm</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="healthDeclarationAccepted" value="true" required/><label class="form-check-label">Tôi cam kết đủ sức khỏe tham gia</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="healthDataConsent" value="true"/><label class="form-check-label">Đồng ý xử lý dữ liệu sức khỏe (bắt buộc nếu hồ sơ có dữ liệu này)</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="photoMarketingConsent" value="true"/><label class="form-check-label">Đồng ý sử dụng hình ảnh truyền thông</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="hideFromPublicList" value="true"/><label class="form-check-label">Ẩn khỏi danh sách công khai</label></div><button class="btn btn-primary btn-sm mt-2">Chấp nhận & thanh toán Mock</button></form><form method="post" asp-page-handler="Reject" asp-route-id="@x.Id" class="mt-2"><button class="btn btn-outline-danger btn-sm">Từ chối</button></form>}</div>}
-@if(Model.Incoming.Count==0){<p class="text-secondary">Không có yêu cầu đến.</p>}
-<h2 class="h5 mt-4">Yêu cầu đã gửi</h2>
-@foreach(var x in Model.Outgoing){<div class="card card-body mb-2"><div><strong>@x.EventName</strong> · @x.CategoryName · @x.ToEmail</div><div class="small text-secondary">@x.Status</div>@if(x.CanCancel){<form method="post" asp-page-handler="Cancel" asp-route-id="@x.Id" class="mt-2"><button class="btn btn-outline-danger btn-sm">Hủy yêu cầu</button></form>}</div>}
-@if(Model.Outgoing.Count==0){<p class="text-secondary">Chưa gửi yêu cầu nào.</p>}
+@{
+    ViewData["Title"] = "Chuyển nhượng BIB";
+    string StatusText(string s) => s switch
+    {
+        "Pending" => "Chờ người nhận", "Accepted" => "Đã chuyển", "Rejected" => "Bị từ chối",
+        "Cancelled" => "Đã hủy", "Expired" => "Hết hạn", _ => s
+    };
+    string StatusClass(string s) => s switch
+    {
+        "Pending" => "text-bg-warning", "Accepted" => "text-bg-success", "Rejected" => "text-bg-danger", _ => "text-bg-secondary"
+    };
+}
+
+<h1 class="h3 mb-1">Chuyển nhượng BIB</h1>
+<p class="text-secondary">Gửi yêu cầu từ trang <a asp-page="/Member/Registrations">Đăng ký của tôi</a> → "Chuyển nhượng / đổi cự ly".</p>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="text-center text-secondary border rounded py-5">
+        <i class="bi bi-arrow-left-right fs-1"></i>
+        <p class="mt-2 mb-0">Chưa có yêu cầu chuyển nhượng nào.</p>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Giải</th><th>Chiều</th><th>Phí</th><th>Trạng thái</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var t in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@t.EventName</div>
+                            <div class="small text-secondary">@t.EventDate.ToString("dd/MM/yyyy") · @t.CategoryName</div>
+                        </td>
+                        <td class="small">
+                            @if (t.Direction == "Incoming") { <span><i class="bi bi-box-arrow-in-down"></i> Từ <strong>@t.FromName</strong></span> }
+                            else { <span><i class="bi bi-box-arrow-up"></i> Tới <strong>@t.ToName</strong> (@t.ToEmail)</span> }
+                            <div class="text-secondary">@t.RequestedAt.ToString("HH:mm dd/MM")@(t.Status == "Pending" && t.Deadline is DateTime d ? $" · hạn {d:HH:mm dd/MM}" : "")</div>
+                        </td>
+                        <td>@(t.FeeAmount > 0 ? t.FeeAmount.ToString("N0") + "đ" : "Miễn phí")</td>
+                        <td><span class="badge @StatusClass(t.Status)">@StatusText(t.Status)</span></td>
+                        <td class="text-end text-nowrap">
+                            @if (t.Status == "Pending" && t.Direction == "Incoming")
+                            {
+                                <a asp-page="/Member/TransferAccept" asp-route-id="@t.Id" class="btn btn-sm btn-primary">Chấp nhận</a>
+                                <form method="post" asp-page-handler="Reject" class="d-inline" onsubmit="return confirm('Từ chối nhận suất này?');">
+                                    <input type="hidden" name="transferId" value="@t.Id" />
+                                    <button class="btn btn-sm btn-outline-danger">Từ chối</button>
+                                </form>
+                            }
+                            else if (t.Status == "Pending")
+                            {
+                                <form method="post" asp-page-handler="Cancel" class="d-inline">
+                                    <input type="hidden" name="transferId" value="@t.Id" />
+                                    <button class="btn btn-sm btn-outline-danger">Hủy yêu cầu</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
