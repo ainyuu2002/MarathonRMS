@@ -1,0 +1,74 @@
+@page "{eventId:int}/{categoryId:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.Events.PriceTiersModel
+@{
+    ViewData["Title"] = "Mức giá";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div><h1 class="h3 mb-1">Mức giá – @Model.Category.Name</h1><p class="text-secondary mb-0">@Model.Event.Name</p></div>
+    <a asp-page="Categories" asp-route-id="@Model.EventId" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Cự ly</a>
+</div>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+@if (Model.CoverageComplete)
+{
+    <div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> Các mức giá đã phủ kín thời gian đăng ký.</div>
+}
+else
+{
+    <div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle"></i> BR-47: các mức giá chưa phủ kín, liền mạch từ @Model.Event.RegistrationOpenAt.ToString("dd/MM/yyyy HH:mm") đến @Model.Event.RegistrationCloseAt.ToString("dd/MM/yyyy HH:mm").</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header fw-semibold">Danh sách mức giá</div>
+            @if (Model.PriceTiers.Count == 0)
+            {
+                <div class="card-body text-center text-secondary py-5">Chưa có mức giá.</div>
+            }
+            else
+            {
+                <div class="table-responsive"><table class="table align-middle mb-0">
+                    <thead><tr><th>Tên</th><th>Giá</th><th>Thời gian áp dụng</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.PriceTiers)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.Name</td>
+                            <td class="text-nowrap">@(item.Price == 0 ? "Miễn phí" : item.Price.ToString("N0") + "đ")</td>
+                            <td class="small text-nowrap">@item.ValidFrom.ToString("dd/MM/yyyy HH:mm")<br />→ @item.ValidTo.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end text-nowrap">
+                                <a asp-page="PriceTiers" asp-route-eventId="@Model.EventId" asp-route-categoryId="@Model.CategoryId" asp-route-priceTierId="@item.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Xóa mức giá @item.Name?');">
+                                    <input type="hidden" name="eventId" value="@Model.EventId" /><input type="hidden" name="categoryId" value="@Model.CategoryId" /><input type="hidden" name="id" value="@item.Id" />
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table></div>
+            }
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <form method="post" asp-page-handler="Save" class="card" novalidate>
+            <input type="hidden" name="eventId" value="@Model.EventId" /><input type="hidden" name="categoryId" value="@Model.CategoryId" /><input type="hidden" name="priceTierId" value="@Model.PriceTierId" />
+            <div class="card-header fw-semibold">@(Model.IsEditing ? "Sửa mức giá" : "Thêm mức giá")</div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                <div class="mb-3"><label asp-for="Input.Name" class="form-label">Tên mức giá</label><input asp-for="Input.Name" class="form-control" placeholder="Early Bird" /><span asp-validation-for="Input.Name" class="text-danger small"></span></div>
+                <div class="mb-3"><label asp-for="Input.Price" class="form-label">Giá (đ)</label><input asp-for="Input.Price" type="number" min="0" step="1000" class="form-control" /><div class="form-text">Nhập 0 cho cự ly miễn phí; giá phải là bội số 1.000đ.</div><span asp-validation-for="Input.Price" class="text-danger small"></span></div>
+                <div class="mb-3"><label asp-for="Input.ValidFrom" class="form-label">Từ</label><input asp-for="Input.ValidFrom" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" /><span asp-validation-for="Input.ValidFrom" class="text-danger small"></span></div>
+                <div><label asp-for="Input.ValidTo" class="form-label">Đến</label><input asp-for="Input.ValidTo" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" /><span asp-validation-for="Input.ValidTo" class="text-danger small"></span></div>
+            </div>
+            <div class="card-footer text-end">
+                @if (Model.IsEditing) { <a asp-page="PriceTiers" asp-route-eventId="@Model.EventId" asp-route-categoryId="@Model.CategoryId" class="btn btn-outline-secondary">Hủy sửa</a> }
+                <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu mức giá</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

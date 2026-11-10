@@ -37,6 +37,9 @@ public static class ServiceCollectionExtensions
         // Phần B – giải
         services.AddScoped<EventDAO>();
         services.AddScoped<RaceCategoryDAO>();
+        services.AddScoped<PriceTierDAO>();
+        services.AddScoped<AgeGroupDAO>();
+        services.AddScoped<CheckpointDAO>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<BibDAO>();
         services.AddScoped<RaceKitDAO>();
@@ -65,6 +68,9 @@ public static class ServiceCollectionExtensions
         // Phần B – giải
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IRaceCategoryRepository, RaceCategoryRepository>();
+        services.AddScoped<IPriceTierRepository, PriceTierRepository>();
+        services.AddScoped<IAgeGroupRepository, AgeGroupRepository>();
+        services.AddScoped<ICheckpointRepository, CheckpointRepository>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<IBibRepository, BibRepository>();
         services.AddScoped<IRaceKitRepository, RaceKitRepository>();
@@ -113,6 +119,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IEventPolicyService, EventPolicyService>();
         services.AddScoped<IRaceCategoryService, RaceCategoryService>();
+        services.AddScoped<IPriceTierService, PriceTierService>();
+        services.AddScoped<IAgeGroupService, AgeGroupService>();
+        services.AddScoped<ICheckpointService, CheckpointService>();
 
         // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
         services.AddSingleton<IBibAllocator, BibAllocator>();

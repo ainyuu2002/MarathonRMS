@@ -32,6 +32,7 @@ public class EventDAO : BaseDAO<Event>
         Set.Include(e => e.Organization)
             .Include(e => e.Venue)
             .Include(e => e.Policy)
+            .Include(e => e.Categories)
             .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
     public Task<Event?> GetForStatusChangeAsync(int eventId, CancellationToken ct = default) =>
@@ -45,6 +46,9 @@ public class EventDAO : BaseDAO<Event>
 
     public Task<bool> HasRegistrationsAsync(int eventId, CancellationToken ct = default) =>
         Context.Registrations.AnyAsync(r => r.EventId == eventId, ct);
+
+    public Task<bool> HasCouponsAsync(int eventId, CancellationToken ct = default) =>
+        Context.Coupons.AnyAsync(c => c.EventId == eventId, ct);
 
     public Task<Dictionary<int, int>> GetActiveRegistrationCountsAsync(int eventId, CancellationToken ct = default) =>
         Context.Registrations.AsNoTracking()

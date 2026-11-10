@@ -68,7 +68,7 @@ public class EventService : IEventService
             OrganizationId = organizationId,
             VenueId = request.VenueId,
             Name = request.Name.Trim(),
-            Slug = await CreateUniqueSlugAsync(request.Name, ct),
+            Slug = "",
             DescriptionHtml = CleanHtml(request.DescriptionHtml),
             BannerUrl = CleanOptional(request.BannerUrl),
             EventDate = request.EventDate,
@@ -88,6 +88,9 @@ public class EventService : IEventService
         };
 
         await using var tx = await _uow.BeginTransactionAsync(ct);
+        var slugRoot = CreateSlugRoot(request.Name);
+        await _uow.LockAsync($"mrms:event-slug:{slugRoot}", ct);
+        entity.Slug = await CreateUniqueSlugAsync(request.Name, ct);
         await _events.AddAsync(entity, ct);
         await _uow.SaveChangesAsync(ct);
         await _audit.LogAsync("Event.Create", nameof(Event), entity.EventId.ToString(), null,
@@ -102,6 +105,8 @@ public class EventService : IEventService
     {
         Validate(request);
         var entity = await LoadForWriteAsync(eventId, ct);
+        EnsureUpdateAllowed(entity, request);
+        EnsureCategoryStartTimesFit(entity.Categories, request.EventDate, request.EndDate);
         _ = await _venues.GetTrackedAsync(request.VenueId, ct)
             ?? throw new BusinessRuleException("VALIDATION", "Địa điểm không tồn tại.", 400);
 
@@ -139,6 +144,8 @@ public class EventService : IEventService
             throw new BusinessRuleException("BR-31", "Chỉ được xóa giải đang ở trạng thái bản nháp.");
         if (await _events.HasRegistrationsAsync(eventId, ct))
             throw new BusinessRuleException("BR-31", "Không thể xóa giải đã có đăng ký.");
+        if (await _events.HasCouponsAsync(eventId, ct))
+            throw new BusinessRuleException("BR-31", "Giải đã có mã giảm giá; hãy xóa mã giảm giá trước khi xóa giải.");
 
         await _audit.LogAsync("Event.Delete", nameof(Event), eventId.ToString(),
             new { entity.Name, entity.VenueId, entity.EventDate }, null, ct);
@@ -186,12 +193,47 @@ public class EventService : IEventService
 
     private async Task<string> CreateUniqueSlugAsync(string name, CancellationToken ct)
     {
-        var root = SlugHelper.ToSlug(name);
-        if (string.IsNullOrWhiteSpace(root)) root = "giai-chay";
+        var root = CreateSlugRoot(name);
         var slug = root;
         var suffix = 2;
         while (await _events.SlugExistsAsync(slug, ct)) slug = $"{root}-{suffix++}";
         return slug;
+    }
+
+    private static string CreateSlugRoot(string name)
+    {
+        var root = SlugHelper.ToSlug(name);
+        return string.IsNullOrWhiteSpace(root) ? "giai-chay" : root;
+    }
+
+    private static void EnsureUpdateAllowed(Event entity, UpsertEventRequest request)
+    {
+        if (entity.Status is EventStatus.Completed or EventStatus.Cancelled)
+            throw new BusinessRuleException("BR-46", "Không được sửa thông tin giải đã hoàn thành hoặc đã hủy.");
+
+        if (entity.Status is not (EventStatus.RegistrationOpen or EventStatus.RegistrationClosed or EventStatus.Postponed))
+            return;
+
+        var changesLockedField = !string.Equals(entity.Name, request.Name.Trim(), StringComparison.Ordinal) ||
+                                 entity.VenueId != request.VenueId ||
+                                 entity.EventDate != request.EventDate ||
+                                 entity.EndDate != request.EndDate ||
+                                 entity.RegistrationOpenAt != request.RegistrationOpenAt ||
+                                 entity.RegistrationCloseAt != request.RegistrationCloseAt;
+        if (changesLockedField)
+            throw new BusinessRuleException("BR-46",
+                "Sau khi mở đăng ký, chỉ được sửa mô tả, ảnh bìa, số điện thoại khẩn cấp và ghi chú bảo hiểm.");
+    }
+
+    private static void EnsureCategoryStartTimesFit(IEnumerable<RaceCategory> categories, DateOnly eventDate, DateOnly endDate)
+    {
+        var earliest = eventDate.AddDays(-1).ToDateTime(TimeOnly.MinValue);
+        var latest = endDate.ToDateTime(TimeOnly.MaxValue);
+        var invalidNames = categories.Where(c => c.StartAt < earliest || c.StartAt > latest)
+            .OrderBy(c => c.Name).Select(c => c.Name).ToList();
+        if (invalidNames.Count > 0)
+            throw new BusinessRuleException("BR-39",
+                $"Giờ xuất phát không còn phù hợp với ngày tổ chức mới ở các cự ly: {string.Join(", ", invalidNames)}.");
     }
 
     private static void EnsureReadyToOpen(Event entity)
