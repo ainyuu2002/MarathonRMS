@@ -64,6 +64,10 @@ else
                                 <a asp-page="Categories" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Cự ly"><i class="bi bi-signpost-split"></i></a>
                                 <a asp-page="/Organizer/EventContent" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Nội dung"><i class="bi bi-file-richtext"></i></a>
                                 <a asp-page="/Organizer/EventAlbum" asp-route-eventId="@item.Id" class="btn btn-sm btn-outline-secondary" title="Album"><i class="bi bi-images"></i></a>
+                                @if (item.Status is not ("Draft" or "Completed" or "Cancelled"))
+                                {
+                                    <a asp-page="Lifecycle" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Hoãn / hủy"><i class="bi bi-calendar-x"></i></a>
+                                }
                                 @if (next.Status is not null)
                                 {
                                     <form method="post" asp-page-handler="ChangeStatus" asp-route-id="@item.Id" class="d-inline"

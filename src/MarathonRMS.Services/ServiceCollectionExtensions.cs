@@ -43,6 +43,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CheckpointDAO>();
         services.AddScoped<RegistrationDAO>();
         services.AddScoped<PaymentDAO>();
+        services.AddScoped<BibTransferDAO>();
+        services.AddScoped<RefundDAO>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<BibDAO>();
         services.AddScoped<RaceKitDAO>();
@@ -76,6 +78,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICheckpointRepository, CheckpointRepository>();
         services.AddScoped<IRegistrationRepository, RegistrationRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IBibTransferRepository, BibTransferRepository>();
+        services.AddScoped<IRefundRepository, RefundRepository>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<IBibRepository, BibRepository>();
         services.AddScoped<IRaceKitRepository, RaceKitRepository>();
@@ -129,6 +133,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICheckpointService, CheckpointService>();
         services.AddScoped<IRegistrationService, RegistrationService>();
         services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<IEventLifecycleService, EventLifecycleService>();
+        services.AddScoped<ICategoryChangeService, CategoryChangeService>();
+        services.AddScoped<ITransferService, TransferService>();
+        services.AddScoped<IRefundService, RefundService>();
 
         // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
         services.AddSingleton<IBibAllocator, BibAllocator>();

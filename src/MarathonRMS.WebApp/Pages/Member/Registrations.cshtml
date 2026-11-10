@@ -51,6 +51,10 @@ else
                 {
                     <a asp-page="/Member/EditRegistration" asp-route-id="@item.Id" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i> Sửa thông tin</a>
                 }
+                @if (item.Status == "Confirmed")
+                {
+                    <a asp-page="/Member/RegistrationChanges" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-left-right"></i> Đổi cự ly / chuyển suất</a>
+                }
                 @if (item.CanCancel)
                 {
                     <form method="post" asp-page-handler="Cancel" asp-route-id="@item.Id" onsubmit="return confirm('Hủy đăng ký chưa thanh toán này?');">

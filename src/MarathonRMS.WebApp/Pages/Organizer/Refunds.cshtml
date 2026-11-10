@@ -1,0 +1,7 @@
+@page
+@model MarathonRMS.WebApp.Pages.Organizer.RefundsModel
+@{ViewData["Title"]="Hoàn tiền";}
+<h1 class="h3">Xử lý hoàn tiền</h1><partial name="_StatusMessage" model="Model.StatusMessage"/><div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+<form method="get" class="mb-3"><select asp-for="EventId" class="form-select" onchange="this.form.submit()"><option value="">Chọn giải đã hủy</option>@foreach(var e in Model.Events){<option value="@e.Id">@e.Name · @e.Status</option>}</select></form>
+@foreach(var x in Model.Items){<div class="card card-body mb-2"><div class="d-flex justify-content-between"><strong>@x.RunnerName</strong><status-badge status="@x.Status"/></div><div>@x.Amount.ToString("N0")đ · @x.Email</div>@if(x.Status=="Pending"){<div class="row g-2 mt-1"><div class="col-md-6"><form method="post" asp-page-handler="Complete" asp-route-id="@x.Id"><input type="hidden" asp-for="EventId"/><div class="input-group"><input name="transactionRef" class="form-control" placeholder="Mã giao dịch" required/><button class="btn btn-success">Hoàn tất</button></div></form></div><div class="col-md-6"><form method="post" asp-page-handler="Reject" asp-route-id="@x.Id"><input type="hidden" asp-for="EventId"/><div class="input-group"><input name="reason" class="form-control" placeholder="Lý do từ chối" required/><button class="btn btn-outline-danger">Từ chối</button></div></form></div></div>}</div>}
+@if(Model.EventId is not null&&Model.Items.Count==0){<p class="text-secondary">Không có khoản hoàn tiền nào.</p>}

@@ -16,6 +16,7 @@ public interface IRegistrationRepository
     Task<List<Registration>> GetMineAsync(string userId, CancellationToken ct = default);
     IQueryable<Registration> QueryWithDetails();
     Task<List<int>> GetOverdueIdsAsync(DateTime now, CancellationToken ct = default);
+    Task<List<Registration>> GetByEventTrackedAsync(int eventId, CancellationToken ct = default);
     Task AddAsync(Registration registration, CancellationToken ct = default);
 }
 
@@ -33,6 +34,7 @@ public class RegistrationRepository : IRegistrationRepository
     public Task<List<Registration>> GetMineAsync(string userId, CancellationToken ct = default) => _dao.GetMineAsync(userId, ct);
     public IQueryable<Registration> QueryWithDetails() => _dao.QueryWithDetails();
     public Task<List<int>> GetOverdueIdsAsync(DateTime now, CancellationToken ct = default) => _dao.GetOverdueIdsAsync(now, ct);
+    public Task<List<Registration>> GetByEventTrackedAsync(int eventId, CancellationToken ct = default) => _dao.GetByEventTrackedAsync(eventId, ct);
     public Task AddAsync(Registration registration, CancellationToken ct = default) => _dao.AddAsync(registration, ct);
 }
 

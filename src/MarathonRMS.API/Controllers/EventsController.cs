@@ -16,12 +16,22 @@ public class EventManagementController : ControllerBase
     private readonly IEventService _events;
     private readonly IEventPolicyService _policies;
     private readonly IRaceCategoryService _categories;
-    public EventManagementController(IEventService events, IEventPolicyService policies, IRaceCategoryService categories)
+    private readonly IEventLifecycleService _lifecycle;
+    public EventManagementController(IEventService events, IEventPolicyService policies, IRaceCategoryService categories, IEventLifecycleService lifecycle)
     {
         _events = events;
         _policies = policies;
         _categories = categories;
+        _lifecycle = lifecycle;
     }
+
+    [HttpPost("{id:int}/postpone")]
+    public async Task<IActionResult> Postpone(int id, PostponeEventRequest request, CancellationToken ct)
+    { await _lifecycle.PostponeAsync(id, request, ct); return NoContent(); }
+
+    [HttpPost("{id:int}/cancel")]
+    public async Task<IActionResult> CancelEvent(int id, CancelEventRequest request, CancellationToken ct)
+    { await _lifecycle.CancelAsync(id, request, ct); return NoContent(); }
 
     [HttpGet("mine")]
     public async Task<ActionResult<IReadOnlyList<EventSummaryDto>>> GetMine(CancellationToken ct) =>

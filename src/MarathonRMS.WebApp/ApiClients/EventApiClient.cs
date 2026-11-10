@@ -29,6 +29,8 @@ public class EventApiClient : ApiClientBase
 
     public Task ChangeStatusAsync(int id, string status, CancellationToken ct = default) =>
         PatchAsync($"api/events/{id}/status", new ChangeEventStatusRequest { Status = status }, ct);
+    public Task PostponeAsync(int id, PostponeEventRequest request, CancellationToken ct = default) => PostAsync($"api/events/{id}/postpone", request, ct);
+    public Task CancelAsync(int id, CancelEventRequest request, CancellationToken ct = default) => PostAsync($"api/events/{id}/cancel", request, ct);
 
     public Task<EventPolicyDto> GetPolicyAsync(int id, CancellationToken ct = default) =>
         GetAsync<EventPolicyDto>($"api/events/{id}/policies", ct);

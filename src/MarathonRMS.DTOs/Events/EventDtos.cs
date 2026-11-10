@@ -2,6 +2,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MarathonRMS.DTOs.Events;
 
+public class PostponeEventRequest
+{
+    [Required] public DateOnly NewEventDate { get; set; }
+}
+
+public class CancelEventRequest
+{
+    [Required, StringLength(500, MinimumLength = 5)] public string Reason { get; set; } = "";
+    [Required, AllowedValues("NoRefund", "CarryOver", "Refund")] public string RefundOption { get; set; } = "NoRefund";
+}
+
 // ============================ Đọc (public) ============================
 
 /// <summary>Dòng trong danh sách giải – nguồn của GET /odata/Events (UC-34). Chỉ chứa kiểu đơn giản để OData lọc/sắp xếp được.</summary>
