@@ -31,11 +31,24 @@ public static class VietnameseValidationMessages
 
     private sealed class Provider : IValidationMetadataProvider
     {
+        /// <summary>[EmailAddress], [Phone], [Url] tự gán sẵn câu tiếng Anh vào ErrorMessage ⇒ coi câu đó là "chưa dịch".</summary>
+        private static readonly Dictionary<Type, string?> FrameworkDefaults = new()
+        {
+            [typeof(EmailAddressAttribute)] = new EmailAddressAttribute().ErrorMessage,
+            [typeof(PhoneAttribute)] = new PhoneAttribute().ErrorMessage,
+            [typeof(UrlAttribute)] = new UrlAttribute().ErrorMessage
+        };
+
+        private static bool HasOwnMessage(ValidationAttribute attribute) =>
+            attribute.ErrorMessageResourceType is not null ||
+            (!string.IsNullOrEmpty(attribute.ErrorMessage) &&
+             !(FrameworkDefaults.TryGetValue(attribute.GetType(), out var english) && attribute.ErrorMessage == english));
+
         public void CreateValidationMetadata(ValidationMetadataProviderContext context)
         {
             foreach (var attribute in context.ValidationMetadata.ValidatorMetadata.OfType<ValidationAttribute>())
             {
-                if (!string.IsNullOrEmpty(attribute.ErrorMessage) || attribute.ErrorMessageResourceType is not null) continue;
+                if (HasOwnMessage(attribute)) continue;
                 attribute.ErrorMessage = attribute switch
                 {
                     RequiredAttribute => "Vui lòng nhập thông tin này.",

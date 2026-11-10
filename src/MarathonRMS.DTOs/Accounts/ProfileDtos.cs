@@ -36,7 +36,7 @@ public class UpdateProfileRequest
     [AllowedValues(null, "M", "F")] public string? Gender { get; set; }
     [StringLength(60)] public string? Nationality { get; set; }
     [AllowedValues(null, "CCCD", "Passport", "BirthCertificate")] public string? IdType { get; set; }
-    [StringLength(20), RegularExpression(@"^[A-Za-z0-9]+$", ErrorMessage = "Số giấy tờ chỉ gồm chữ và số")]
+    [StringLength(20), RegularExpression(@"^\s*[A-Za-z0-9]+\s*$", ErrorMessage = "Số giấy tờ chỉ gồm chữ cái không dấu và chữ số")]
     public string? IdNumber { get; set; }
     [Phone, StringLength(20)] public string? Phone { get; set; }
     [AllowedValues(null, "XS", "S", "M", "L", "XL", "XXL")] public string? TShirtSize { get; set; }

@@ -8,7 +8,6 @@
     <div><h1 class="h3 mb-1">Checkpoint – @Model.Category.Name</h1><p class="text-secondary mb-0">@Model.Event.Name</p></div>
     <a asp-page="Categories" asp-route-id="@Model.EventId" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Cự ly</a>
 </div>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
 @if (Model.Event.ResultsStatus != "Draft") { <div class="alert alert-warning py-2">BR-46: checkpoint đã bị khóa vì kết quả không còn ở trạng thái Draft.</div> }
 
 <div class="row g-4">

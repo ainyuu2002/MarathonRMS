@@ -148,6 +148,7 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseODataQueryLimit();
 app.MapControllers();
 
 await DbInitializer.InitializeAsync(app.Services, config, app.Logger);

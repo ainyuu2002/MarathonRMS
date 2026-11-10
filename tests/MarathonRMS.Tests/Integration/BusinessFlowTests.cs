@@ -330,6 +330,20 @@ public class BusinessFlowTests
             org.Post("api/race-day/timing", new { eventId = cuc, bibNumber = 2010, checkpointId = int.Parse(finish[0]), recordedAt = VnTime.F(gun.AddMinutes(80)) }));
         Assert.Equal(1, racing.Count(x => x.Code == 200));
         Assert.All(racing, x => Assert.True(x.Code is 200 or 409, $"{x.Code}: {x.Text}"));
+
+        // N-01: ghi bỏ cuộc tại CP và ghi giờ về đích gửi cùng lúc cho cùng BIB ⇒ chỉ một thao tác được nhận (BR-23)
+        var cp3008 = ((string)(await _api.SqlAsync($"""
+            SELECT STRING_AGG(CAST(cp.CheckpointId AS varchar(10)) + '@' + CONVERT(varchar(30), c.StartAt, 126), ',') WITHIN GROUP (ORDER BY cp.Sequence)
+            FROM Registrations r JOIN RaceCategories c ON c.CategoryId = r.CategoryId JOIN Checkpoints cp ON cp.CategoryId = c.CategoryId
+            WHERE r.EventId = {cuc} AND r.BibNumber = 3008 AND cp.Type IN ('Split', 'Finish')
+            """))!).Split(',');
+        var wSplit = cp3008[0].Split('@');
+        var wFinish = cp3008[^1].Split('@');
+        var both = await Task.WhenAll(
+            org.Post("api/race-day/withdrawals", new { eventId = cuc, bibNumber = 3008, checkpointId = int.Parse(wSplit[0]), reason = "Medical", note = "Chan thuong" }),
+            staff.Post("api/race-day/timing", new { eventId = cuc, bibNumber = 3008, checkpointId = int.Parse(wFinish[0]), recordedAt = VnTime.F(DateTime.Parse(wFinish[1]).AddMinutes(70)) }));
+        Assert.Equal(1, both.Count(x => x.Code is 200 or 204));
+        Assert.All(both, x => Assert.True(x.Code is 200 or 204 or 409, $"{x.Code}: {x.Text}"));
         var board = (await (await _api.As(null)).Get($"odata/Results?$filter=EventId eq {cuc}&$count=true")).Expect(200);
         Assert.True(board.Json!["@odata.count"]!.GetValue<int>() > 0);
 

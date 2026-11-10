@@ -5,6 +5,13 @@
 <div class="text-center py-5">
     <i class="bi bi-shield-lock fs-1 text-danger"></i>
     <h1 class="h4 mt-3">Bạn không có quyền truy cập trang này</h1>
-    <p class="text-secondary">Trang này dành cho vai trò khác. Hãy đăng nhập bằng tài khoản phù hợp.</p>
+    @if (ViewContext.HttpContext.Request.Query["reason"] == "organization")
+    {
+        <p class="text-secondary">Giải này thuộc ban tổ chức khác – bạn chỉ được quản lý dữ liệu của ban tổ chức mình.</p>
+    }
+    else
+    {
+        <p class="text-secondary">Trang này dành cho vai trò khác. Hãy đăng nhập bằng tài khoản phù hợp.</p>
+    }
     <a asp-page="/Index" class="btn btn-outline-primary">Về trang chủ</a>
 </div>

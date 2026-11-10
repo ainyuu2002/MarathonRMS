@@ -60,6 +60,8 @@ public class ProfileService : IProfileService
         self.Nationality = Trim(request.Nationality);
         self.IdType = EnumParser.ParseOptional<IdType>(request.IdType);
         self.IdNumber = Trim(request.IdNumber)?.ToUpperInvariant();
+        // Cùng quy tắc với đăng ký giải (BR-07) – số sai ở hồ sơ sẽ tự điền sang form đăng ký rồi bị chặn ở đó
+        IdentityRules.Validate(self.IdType, self.IdNumber);
         self.Phone = Trim(request.Phone);
         self.TShirtSize = EnumParser.ParseOptional<TShirtSize>(request.TShirtSize);
         self.EmergencyContactName = Trim(request.EmergencyContactName);
