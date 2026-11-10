@@ -64,6 +64,8 @@ public class MyRegistrationDto
     public string Status { get; set; } = "";
     public int? BibNumber { get; set; }
     public string BibName { get; set; } = "";
+    public decimal OriginalPrice { get; set; }
+    public decimal DiscountAmount { get; set; }
     public decimal FinalPrice { get; set; }
     public DateTime RegisteredAt { get; set; }
     /// <summary>Hạn thanh toán khi đang PendingPayment (BR-13).</summary>

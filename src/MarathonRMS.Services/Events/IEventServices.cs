@@ -45,6 +45,7 @@ public interface IEventPolicyService
 /// <summary>UC-21 – cự ly (BR-19 dải BIB không chồng lấn, BR-39 StartAt, BR-46 không giảm Capacity dưới số đăng ký).</summary>
 public interface IRaceCategoryService
 {
+    Task<RaceCategoryDto> GetAsync(int categoryId, CancellationToken ct = default);
     Task<IReadOnlyList<RaceCategoryDto>> GetByEventAsync(int eventId, CancellationToken ct = default);
     Task<RaceCategoryDto> CreateAsync(int eventId, UpsertRaceCategoryRequest request, CancellationToken ct = default);
     Task<RaceCategoryDto> UpdateAsync(int categoryId, UpsertRaceCategoryRequest request, CancellationToken ct = default);

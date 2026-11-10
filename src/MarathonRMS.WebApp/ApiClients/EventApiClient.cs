@@ -45,6 +45,9 @@ public class EventApiClient : ApiClientBase
     public Task<List<RaceCategoryDto>> GetCategoriesAsync(int eventId, CancellationToken ct = default) =>
         GetAsync<List<RaceCategoryDto>>($"api/events/{eventId}/categories", ct);
 
+    public Task<RaceCategoryDto> GetCategoryAsync(int categoryId, CancellationToken ct = default) =>
+        GetAsync<RaceCategoryDto>($"api/categories/{categoryId}", ct);
+
     public Task<RaceCategoryDto> CreateCategoryAsync(int eventId, UpsertRaceCategoryRequest request,
         CancellationToken ct = default) => PostAsync<RaceCategoryDto>($"api/events/{eventId}/categories", request, ct);
 

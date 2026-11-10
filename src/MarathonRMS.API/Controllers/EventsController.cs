@@ -92,6 +92,11 @@ public class EventManagementController : ControllerBase
     public async Task<ActionResult<RaceCategoryDto>> UpdateCategory(int id, UpsertRaceCategoryRequest request,
         CancellationToken ct) => Ok(await _categories.UpdateAsync(id, request, ct));
 
+    [HttpGet("/api/categories/{id:int}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<RaceCategoryDto>> GetCategory(int id, CancellationToken ct) =>
+        Ok(await _categories.GetAsync(id, ct));
+
     [HttpDelete("/api/categories/{id:int}")]
     public async Task<IActionResult> DeleteCategory(int id, CancellationToken ct)
     {

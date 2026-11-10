@@ -10,6 +10,7 @@ using MarathonRMS.Services.Events;
 using MarathonRMS.Services.Legal;
 using MarathonRMS.Services.Organizations;
 using MarathonRMS.Services.RaceDay;
+using MarathonRMS.Services.Registrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -40,6 +41,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<PriceTierDAO>();
         services.AddScoped<AgeGroupDAO>();
         services.AddScoped<CheckpointDAO>();
+        services.AddScoped<RegistrationDAO>();
+        services.AddScoped<PaymentDAO>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<BibDAO>();
         services.AddScoped<RaceKitDAO>();
@@ -71,6 +74,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPriceTierRepository, PriceTierRepository>();
         services.AddScoped<IAgeGroupRepository, AgeGroupRepository>();
         services.AddScoped<ICheckpointRepository, CheckpointRepository>();
+        services.AddScoped<IRegistrationRepository, RegistrationRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
         // Phần C – ngày thi & kết quả
         services.AddScoped<IBibRepository, BibRepository>();
         services.AddScoped<IRaceKitRepository, RaceKitRepository>();
@@ -122,6 +127,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPriceTierService, PriceTierService>();
         services.AddScoped<IAgeGroupService, AgeGroupService>();
         services.AddScoped<ICheckpointService, CheckpointService>();
+        services.AddScoped<IRegistrationService, RegistrationService>();
+        services.AddScoped<IPaymentService, PaymentService>();
 
         // Phần C – BIB, race kit, bấm giờ, kết quả (thêm bên dưới)
         services.AddSingleton<IBibAllocator, BibAllocator>();

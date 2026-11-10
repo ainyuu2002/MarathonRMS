@@ -62,6 +62,21 @@
                                     }
                                     <dt class="col-5">Còn lại</dt><dd class="col-7"><strong>@category.RemainingSlots.ToString("N0")</strong> / @category.Capacity.ToString("N0") suất</dd>
                                 </dl>
+                                @if (Model.Event.Status == "RegistrationOpen" && category.RemainingSlots > 0 && category.CurrentPrice is not null)
+                                {
+                                    if (User.IsInRole(AppRoles.Member))
+                                    {
+                                        <a asp-page="/Member/Register" asp-route-categoryId="@category.Id" class="btn btn-primary w-100 mt-3">
+                                            <i class="bi bi-ticket-perforated"></i> Đăng ký cự ly
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-page="/Account/Login" asp-route-returnUrl="/Member/Register/@category.Id" class="btn btn-outline-primary w-100 mt-3">
+                                            Đăng nhập để đăng ký
+                                        </a>
+                                    }
+                                }
                             </div>
                         </article>
                     </div>
