@@ -11,6 +11,10 @@ public class EventApiClient : ApiClientBase
     public Task<List<EventSummaryDto>> GetMineAsync(CancellationToken ct = default) =>
         GetAsync<List<EventSummaryDto>>("api/events/mine", ct);
 
+    public Task<MarathonRMS.DTOs.Common.PagedResult<EventSummaryDto>> SearchPublicAsync(
+        string? filter, string? orderBy, int page, int pageSize = 12, CancellationToken ct = default) =>
+        GetODataPageAsync<EventSummaryDto>("Events", filter, orderBy, page, pageSize, ct);
+
     public Task<EventDetailDto> GetAsync(int id, CancellationToken ct = default) =>
         GetAsync<EventDetailDto>($"api/events/{id}", ct);
 

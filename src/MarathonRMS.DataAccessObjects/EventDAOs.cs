@@ -26,6 +26,7 @@ public class EventDAO : BaseDAO<Event>
             .Include(e => e.Policy)
             .Include(e => e.Categories).ThenInclude(c => c.PriceTiers)
             .Include(e => e.Categories).ThenInclude(c => c.Checkpoints)
+            .Include(e => e.AgeGroups)
             .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
     public Task<Event?> GetTrackedAsync(int eventId, CancellationToken ct = default) =>

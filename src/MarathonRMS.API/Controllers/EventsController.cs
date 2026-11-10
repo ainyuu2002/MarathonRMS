@@ -11,12 +11,12 @@ namespace MarathonRMS.API.Controllers;
 [ApiController]
 [Route("api/events")]
 [Authorize(Policy = AppPolicies.OrganizerOnly)]
-public class EventsController : ControllerBase
+public class EventManagementController : ControllerBase
 {
     private readonly IEventService _events;
     private readonly IEventPolicyService _policies;
     private readonly IRaceCategoryService _categories;
-    public EventsController(IEventService events, IEventPolicyService policies, IRaceCategoryService categories)
+    public EventManagementController(IEventService events, IEventPolicyService policies, IRaceCategoryService categories)
     {
         _events = events;
         _policies = policies;
@@ -28,6 +28,7 @@ public class EventsController : ControllerBase
         Ok(await _events.QueryMine().OrderByDescending(e => e.EventDate).ThenBy(e => e.Name).ToListAsync(ct));
 
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     public async Task<ActionResult<EventDetailDto>> Get(int id, CancellationToken ct) =>
         Ok(await _events.GetDetailAsync(id, ct));
 
