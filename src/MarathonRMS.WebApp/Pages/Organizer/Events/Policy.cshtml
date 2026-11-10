@@ -12,12 +12,10 @@
     <a asp-page="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Danh sách giải</a>
 </div>
 
-<partial name="_StatusMessage" model="Model.StatusMessage" />
-
 <form method="post" asp-page-handler="Policy" asp-route-id="@Model.Id" class="card mb-4">
     <div class="card-header fw-semibold">Quy định áp dụng cho giải</div>
     <div class="card-body">
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        @if (Model.ActiveForm != "Waiver") { <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div> }
         @if (Model.Event.ResultsStatus != "Draft")
         {
             <div class="alert alert-warning py-2">Kết quả đã được công bố tạm. Cơ sở xếp hạng, quy tắc hòa và cộng dồn giải thưởng đã bị khóa.</div>
@@ -176,7 +174,7 @@
         <span class="badge text-bg-secondary">Phiên bản @Model.WaiverVersion</span>
     </div>
     <div class="card-body">
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        @if (Model.ActiveForm == "Waiver") { <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div> }
         <textarea asp-for="WaiverInput.WaiverText" class="form-control" rows="10" maxlength="20000"></textarea>
         <div class="form-text">Nội dung thay đổi sẽ tạo phiên bản mới; người đã đồng ý phiên bản cũ không phải đồng ý lại.</div>
         <span asp-validation-for="WaiverInput.WaiverText" class="text-danger small"></span>

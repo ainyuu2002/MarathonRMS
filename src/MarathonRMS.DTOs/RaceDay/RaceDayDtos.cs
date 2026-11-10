@@ -91,7 +91,7 @@ public class RaceKitPickupRequest
     public bool IdChecked { get; set; }
     public bool IsProxy { get; set; }
     [StringLength(100)] public string? ProxyName { get; set; }
-    [StringLength(20), RegularExpression(@"^[A-Za-z0-9]+$", ErrorMessage = "Số giấy tờ chỉ gồm chữ cái không dấu và chữ số")] public string? ProxyIdNumber { get; set; }
+    [StringLength(20), RegularExpression(@"^\s*[A-Za-z0-9]+\s*$", ErrorMessage = "Số giấy tờ chỉ gồm chữ cái không dấu và chữ số")] public string? ProxyIdNumber { get; set; }
     [StringLength(500)] public string? Note { get; set; }
 }
 

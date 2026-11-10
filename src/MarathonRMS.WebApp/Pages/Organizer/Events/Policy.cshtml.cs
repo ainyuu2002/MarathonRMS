@@ -17,6 +17,8 @@ public class PolicyModel : BasePageModel
     public UpdateEventPolicyRequest PolicyInput { get; set; } = new();
     public UpdateEventWaiverRequest WaiverInput { get; set; } = new();
     public EventDetailDto Event { get; private set; } = new();
+    /// <summary>Form vừa gửi ("Policy" / "Waiver") – mỗi form chỉ hiện lỗi chung của mình.</summary>
+    public string? ActiveForm { get; private set; }
     public int WaiverVersion { get; private set; } = 1;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
@@ -30,6 +32,7 @@ public class PolicyModel : BasePageModel
         CancellationToken ct)
     {
         PolicyInput = input;
+        ActiveForm = "Policy";
         if (!ModelState.IsValid) return await ReloadAsync(populatePolicy: false, populateWaiver: true, ct);
         try
         {
@@ -48,6 +51,7 @@ public class PolicyModel : BasePageModel
         CancellationToken ct)
     {
         WaiverInput = input;
+        ActiveForm = "Waiver";
         if (!ModelState.IsValid) return await ReloadAsync(populatePolicy: true, populateWaiver: false, ct);
         try
         {

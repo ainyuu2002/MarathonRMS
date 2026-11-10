@@ -8,8 +8,6 @@
     <div><h1 class="h3 mb-1">Mức giá – @Model.Category.Name</h1><p class="text-secondary mb-0">@Model.Event.Name</p></div>
     <a asp-page="Categories" asp-route-id="@Model.EventId" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Cự ly</a>
 </div>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
-
 @if (Model.CoverageComplete)
 {
     <div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> Các mức giá đã phủ kín thời gian đăng ký.</div>

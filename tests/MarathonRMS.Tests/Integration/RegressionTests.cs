@@ -74,5 +74,26 @@ public class RegressionTests
         var p = (await (await _api.As("organizer.hn")).Post("api/events", new { })).Expect(400);
         Assert.DoesNotContain("field is required", p.Text);
         Assert.Contains("Vui lòng nhập", p.Text);
+        // N1: [EmailAddress] / [Phone] có sẵn câu tiếng Anh của framework – cũng phải được dịch
+        var e = (await (await _api.As(null)).Post("api/auth/register",
+            new { fullName = "Nguyen Van A", email = "khong-phai-email", password = "Demo@12345", acceptTerms = true, acceptPrivacy = true })).Expect(400);
+        Assert.DoesNotContain("not a valid", e.Text);
+    }
+
+    /// <summary>N-02: hồ sơ cá nhân dùng chung quy tắc số giấy tờ với đăng ký giải (BR-07).</summary>
+    [Fact]
+    public async Task Profile_rejects_malformed_cccd_br07()
+    {
+        var m = await _api.As(await _api.NewMemberAsync("prof"));
+        (await m.Put("api/participants/me", new { fullName = "Nguyen Van A", idType = "CCCD", idNumber = "ABC" })).Expect(400);
+        (await m.Put("api/participants/me", new { fullName = "Nguyen Van A", idType = "CCCD", idNumber = " 001095000123 " })).Expect(200);
+    }
+
+    /// <summary>N5: $filter quá dài bị chặn trước khi xuống DB.</summary>
+    [Fact]
+    public async Task Long_odata_option_is_rejected_before_database()
+    {
+        var r = (await (await _api.As(null)).Get($"odata/Events?$filter=contains(Name,'{new string('a', 1200)}')")).Expect(400);
+        Assert.Contains("quá dài", r.Text);
     }
 }

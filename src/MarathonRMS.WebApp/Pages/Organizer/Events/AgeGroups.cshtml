@@ -8,7 +8,6 @@
     <div><h1 class="h3 mb-1">Nhóm tuổi</h1><p class="text-secondary mb-0">@Model.Event.Name</p></div>
     <a asp-page="Categories" asp-route-id="@Model.Id" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Thiết lập giải</a>
 </div>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
 @if (Model.Event.ResultsStatus != "Draft")
 {
     <div class="alert alert-warning py-2">BR-46: nhóm tuổi đã bị khóa vì kết quả không còn ở trạng thái Draft.</div>

@@ -36,12 +36,29 @@ public abstract class BasePageModel : PageModel
 
     /// <summary>
     /// BR-30 phía giao diện: dữ liệu giải đọc qua endpoint công khai, nên trang quản lý phải tự chặn giải của BTC khác
-    /// (API vẫn chặn khi lưu). Ném ApiException 403 để trang hiện lỗi như các trang gọi endpoint có kiểm tra phạm vi.
+    /// (API vẫn chặn khi lưu). Ném exception riêng (không phải ApiException nên không bị các khối catch của trang nuốt)
+    /// ⇒ OnPageHandlerExecuted chuyển sang trang "không có quyền", không vẽ khung trang rỗng.
     /// </summary>
     protected void EnsureOwnOrganization(int organizationId)
     {
         if (User.FindFirst(AppClaims.OrganizationId)?.Value != organizationId.ToString())
-            throw new ApiException(HttpStatusCode.Forbidden, "Bạn chỉ được quản lý dữ liệu của ban tổ chức mình.", "BR-30");
+            throw new OtherOrganizationException();
+    }
+
+    public override void OnPageHandlerExecuted(Microsoft.AspNetCore.Mvc.Filters.PageHandlerExecutedContext context)
+    {
+        if (context.Exception is OtherOrganizationException)
+        {
+            context.Result = RedirectToPage("/Account/AccessDenied", new { reason = "organization" });
+            context.ExceptionHandled = true;
+        }
+        base.OnPageHandlerExecuted(context);
+    }
+
+    /// <summary>Giải thuộc ban tổ chức khác (BR-30).</summary>
+    protected sealed class OtherOrganizationException : Exception
+    {
+        public OtherOrganizationException() : base("Bạn chỉ được quản lý dữ liệu của ban tổ chức mình.") { }
     }
 
     /// <summary>
