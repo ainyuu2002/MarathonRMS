@@ -1,0 +1,32 @@
+@page "{registrationId:int}"
+@model MarathonRMS.WebApp.Pages.Member.CheckoutModel
+@{
+    ViewData["Title"] = "Thanh toán đăng ký";
+}
+
+<h1 class="h3 mb-3">Thanh toán đăng ký</h1>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card"><div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+        <div><h2 class="h5 mb-1">@Model.Registration.EventName</h2><div class="text-secondary">@Model.Registration.CategoryName · @Model.Registration.RunnerName</div></div>
+        <status-badge status="@Model.Registration.Status" />
+    </div>
+    <hr />
+    <div class="d-flex justify-content-between"><span>Giá gốc</span><span>@Model.Registration.OriginalPrice.ToString("N0")đ</span></div>
+    <div class="d-flex justify-content-between mt-2 text-success"><span>Giảm giá</span><span>-@Model.Registration.DiscountAmount.ToString("N0")đ</span></div>
+    <div class="d-flex justify-content-between mt-3 fs-5"><strong>Thanh toán</strong><strong class="text-primary">@Model.Registration.FinalPrice.ToString("N0")đ</strong></div>
+
+    @if (Model.Registration.Status == "PendingPayment")
+    {
+        <div class="alert alert-warning mt-4 mb-3">Giữ suất đến <strong>@Model.Registration.ExpiresAt?.ToString("dd/MM/yyyy HH:mm:ss")</strong>.</div>
+        <form method="post" asp-page-handler="Pay"><button class="btn btn-primary w-100" type="submit"><i class="bi bi-credit-card"></i> Thanh toán Mock</button></form>
+    }
+    else if (Model.Registration.Status == "Confirmed")
+    {
+        <div class="alert alert-success mt-4 mb-0"><i class="bi bi-check-circle"></i> Đăng ký đã được xác nhận.</div>
+    }
+    else
+    {
+        <div class="alert alert-secondary mt-4 mb-0">Đăng ký không còn chờ thanh toán.</div>
+    }
+</div></div></div></div>

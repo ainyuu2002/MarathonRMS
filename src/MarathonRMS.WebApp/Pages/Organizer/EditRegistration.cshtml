@@ -1,0 +1,23 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Organizer.EditRegistrationModel
+@{
+    ViewData["Title"] = "Sửa trường khóa";
+}
+
+<a asp-page="/Organizer/Registrations" class="btn btn-sm btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> Danh sách đăng ký</a>
+<h1 class="h3 mb-1">Sửa trường thông tin khóa</h1>
+<p class="text-secondary">Đăng ký #@Model.Registration.Id · @Model.Registration.CategoryName · @Model.Registration.BibName</p>
+<div class="alert alert-warning"><i class="bi bi-shield-exclamation"></i> Thao tác này chỉ dành cho sửa sai thông tin định danh và luôn được ghi nhật ký.</div>
+
+<form method="post" class="card"><div class="card-body row g-3">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+    <div class="col-md-8"><label asp-for="Input.FullName" class="form-label">Họ tên</label><input asp-for="Input.FullName" class="form-control" /><span asp-validation-for="Input.FullName" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Input.DateOfBirth" class="form-label">Ngày sinh</label><input asp-for="Input.DateOfBirth" type="date" class="form-control" /></div>
+    <div class="col-md-4"><label asp-for="Input.Gender" class="form-label">Giới tính</label><select asp-for="Input.Gender" class="form-select"><option value="M">Nam</option><option value="F">Nữ</option></select></div>
+    <div class="col-md-4"><label asp-for="Input.IdType" class="form-label">Loại giấy tờ</label><select asp-for="Input.IdType" class="form-select"><option value="">Chọn</option><option>CCCD</option><option>Passport</option><option>BirthCertificate</option></select></div>
+    <div class="col-md-4"><label asp-for="Input.IdNumber" class="form-label">Số giấy tờ</label><input asp-for="Input.IdNumber" class="form-control" /></div>
+    <div class="col-12"><label asp-for="Input.Reason" class="form-label">Lý do sửa <span class="text-danger">*</span></label><textarea asp-for="Input.Reason" class="form-control" rows="3"></textarea><span asp-validation-for="Input.Reason" class="text-danger small"></span></div>
+    <div class="col-12 d-flex gap-2"><button class="btn btn-primary">Lưu và ghi nhật ký</button><a asp-page="/Organizer/Registrations" class="btn btn-outline-secondary">Hủy</a></div>
+</div></form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

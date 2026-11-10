@@ -1,18 +1,122 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Trang chủ";
-}
-<section class="p-4 p-md-5 mb-4 rounded-3 bg-body-tertiary border">
-    <h1 class="display-6 fw-semibold">Marathon Race Management System</h1>
-    <p class="lead mb-4">Nền tảng đăng ký và quản lý giải chạy cho nhiều ban tổ chức – giải đường phố và trail.</p>
-    @if (User.Identity?.IsAuthenticated != true)
+    ViewData["Title"] = "Giải chạy";
+    var pagerRoute = new
     {
-        <a class="btn btn-warning btn-lg me-2" asp-page="/Account/Register">Tạo tài khoản</a>
-        <a class="btn btn-outline-secondary btn-lg" asp-page="/Account/Login">Đăng nhập</a>
-    }
+        Model.Keyword, Model.City, Model.Month, Model.Discipline,
+        Model.MinDistanceKm, Model.MaxDistanceKm, Model.Organizer, Model.Sort
+    };
+}
+
+<section class="p-4 p-md-5 mb-4 rounded-3 bg-dark text-white">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <h1 class="display-6 fw-semibold">Tìm giải chạy tiếp theo của bạn</h1>
+            <p class="lead text-white-50 mb-0">Khám phá các giải road và trail, so sánh cự ly, thời gian và ban tổ chức.</p>
+        </div>
+        @if (User.Identity?.IsAuthenticated != true)
+        {
+            <div class="col-lg-4 text-lg-end">
+                <a class="btn btn-warning me-2" asp-page="/Account/Register">Tạo tài khoản</a>
+                <a class="btn btn-outline-light" asp-page="/Account/Login">Đăng nhập</a>
+            </div>
+        }
+    </div>
 </section>
 
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> Danh sách giải chạy (UC-34) sẽ hiển thị ở đây từ Giai đoạn 1.
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<form method="get" class="card card-body mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-lg-4 col-md-6">
+            <label asp-for="Keyword" class="form-label small">Tên giải, địa điểm hoặc BTC</label>
+            <input asp-for="Keyword" class="form-control" placeholder="Ví dụ: Hồ Gươm, trail…" />
+        </div>
+        <div class="col-lg-2 col-md-3 col-6">
+            <label asp-for="City" class="form-label small">Thành phố</label>
+            <input asp-for="City" class="form-control" placeholder="Hà Nội" />
+        </div>
+        <div class="col-lg-2 col-md-3 col-6">
+            <label asp-for="Month" class="form-label small">Tháng tổ chức</label>
+            <input asp-for="Month" type="month" class="form-control" />
+        </div>
+        <div class="col-lg-2 col-md-3 col-6">
+            <label asp-for="Discipline" class="form-label small">Loại đường chạy</label>
+            <select asp-for="Discipline" class="form-select">
+                <option value="">Tất cả</option>
+                <option value="Road">Road</option>
+                <option value="Trail">Trail</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-3 col-6">
+            <label asp-for="Sort" class="form-label small">Sắp xếp</label>
+            <select asp-for="Sort" class="form-select">
+                <option value="date">Ngày gần nhất</option>
+                <option value="date_desc">Ngày xa nhất</option>
+                <option value="distance">Cự ly ngắn nhất</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-3 col-6">
+            <label asp-for="MinDistanceKm" class="form-label small">Cự ly từ (km)</label>
+            <input asp-for="MinDistanceKm" type="number" min="0" step="0.1" class="form-control" />
+        </div>
+        <div class="col-lg-2 col-md-3 col-6">
+            <label asp-for="MaxDistanceKm" class="form-label small">Đến (km)</label>
+            <input asp-for="MaxDistanceKm" type="number" min="0" step="0.1" class="form-control" />
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <label asp-for="Organizer" class="form-label small">Ban tổ chức</label>
+            <input asp-for="Organizer" class="form-control" placeholder="Tên ban tổ chức" />
+        </div>
+        <div class="col-lg-4 col-md-6 d-flex gap-2">
+            <button class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Tìm giải</button>
+            <a asp-page="/Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> Bỏ lọc</a>
+        </div>
+    </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">Giải chạy</h2>
+    <span class="text-secondary small">@Model.Events.TotalCount kết quả</span>
 </div>
+
+@if (Model.Events.Items.Count == 0)
+{
+    <div class="card card-body text-center text-secondary py-5">
+        <i class="bi bi-search fs-1"></i>
+        <p class="mt-2 mb-0">Không tìm thấy giải phù hợp. Hãy thử nới điều kiện lọc.</p>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var item in Model.Events.Items)
+        {
+            <div class="col-lg-4 col-md-6">
+                <article class="card h-100 shadow-sm overflow-hidden">
+                    @if (!string.IsNullOrWhiteSpace(item.BannerUrl))
+                    {
+                        <img src="@item.BannerUrl" class="card-img-top" alt="Ảnh @item.Name" style="height:180px;object-fit:cover" />
+                    }
+                    else
+                    {
+                        <div class="bg-body-tertiary d-flex align-items-center justify-content-center text-secondary" style="height:180px"><i class="bi bi-flag fs-1"></i></div>
+                    }
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between gap-2 mb-2"><status-badge status="@item.Status" /><span class="small text-secondary">@item.Disciplines</span></div>
+                        <h3 class="h5">@item.Name</h3>
+                        <div class="small text-secondary mb-1"><i class="bi bi-calendar-event"></i> @item.EventDate.ToString("dd/MM/yyyy")@(item.EndDate == item.EventDate ? "" : $" – {item.EndDate:dd/MM/yyyy}")</div>
+                        <div class="small text-secondary mb-1"><i class="bi bi-geo-alt"></i> @item.VenueName, @item.City</div>
+                        <div class="small text-secondary mb-3"><i class="bi bi-building"></i> @item.OrganizationName</div>
+                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">@(item.MinDistanceKm == item.MaxDistanceKm ? $"{item.MinDistanceKm:0.##} km" : $"{item.MinDistanceKm:0.##}–{item.MaxDistanceKm:0.##} km")</span>
+                            <a asp-page="/Events/Detail" asp-route-id="@item.Id" asp-route-slug="@item.Slug" class="btn btn-sm btn-outline-primary">Xem chi tiết <i class="bi bi-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+    <div class="mt-4"><partial name="_Pager" model="PagerModel.From(Model.Events, pagerRoute)" /></div>
+}

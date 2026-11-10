@@ -1,5 +1,6 @@
 using MarathonRMS.BusinessObjects.Entities;
 using MarathonRMS.BusinessObjects.Enums;
+using MarathonRMS.DTOs.Common;
 using MarathonRMS.DTOs.Events;
 using MarathonRMS.Repositories;
 using MarathonRMS.Services.Common;
@@ -48,7 +49,8 @@ public class EventService : IEventService
     public async Task<EventDetailDto> GetDetailAsync(int eventId, CancellationToken ct = default)
     {
         var entity = await _events.GetWithCategoriesAsync(eventId, ct) ?? throw new NotFoundException("Không tìm thấy giải.");
-        _scope.EnsureCanManage(entity.OrganizationId);
+        if (entity.Status == EventStatus.Draft && !CanManage(entity.OrganizationId))
+            throw new NotFoundException("Không tìm thấy giải.");
         var activeCounts = await _events.GetActiveRegistrationCountsAsync(eventId, ct);
         return ToDetail(entity, activeCounts, _clock.Now);
     }
@@ -190,6 +192,9 @@ public class EventService : IEventService
         await _scope.EnsureOrganizationActiveAsync(entity.OrganizationId, ct);
         return entity;
     }
+
+    private bool CanManage(int organizationId) => _currentUser.IsAdminOrAbove ||
+        (_currentUser.IsInRole(AppRoles.Organizer) && _currentUser.OrganizationId == organizationId);
 
     private async Task<string> CreateUniqueSlugAsync(string name, CancellationToken ct)
     {
@@ -349,7 +354,12 @@ public class EventService : IEventService
         WaiverVersion = e.WaiverVersion,
         Policy = ToPolicyDto(e.Policy),
         Categories = e.Categories.OrderBy(c => c.DistanceKm).ThenBy(c => c.Name)
-            .Select(c => RaceCategoryMappings.ToDto(c, activeCounts.GetValueOrDefault(c.CategoryId), now)).ToList()
+            .Select(c => RaceCategoryMappings.ToDto(c, activeCounts.GetValueOrDefault(c.CategoryId), now)).ToList(),
+        AgeGroups = e.AgeGroups.OrderBy(g => g.CategoryId).ThenBy(g => g.MinAge).Select(g => new AgeGroupDto
+        {
+            Id = g.AgeGroupId, EventId = g.EventId, CategoryId = g.CategoryId,
+            Name = g.Name, MinAge = g.MinAge, MaxAge = g.MaxAge
+        }).ToList()
     };
 
     private static EventPolicyDto ToPolicyDto(EventPolicy p) => new()

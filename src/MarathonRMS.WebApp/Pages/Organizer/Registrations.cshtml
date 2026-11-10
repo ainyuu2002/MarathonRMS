@@ -1,0 +1,43 @@
+@page
+@model MarathonRMS.WebApp.Pages.Organizer.RegistrationsModel
+@{
+    ViewData["Title"] = "Danh sách đăng ký";
+    var pagerRoute = new { eventId = Model.EventId, categoryId = Model.CategoryId, status = Model.Status, keyword = Model.Keyword };
+}
+
+<h1 class="h3 mb-1">Danh sách đăng ký</h1>
+<p class="text-secondary">Dữ liệu chỉ gồm các giải thuộc ban tổ chức của bạn.</p>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+<form method="get" class="card card-body mb-3"><div class="row g-2 align-items-end">
+    <div class="col-md-3"><label for="EventId" class="form-label small">Giải</label><select id="EventId" name="EventId" class="form-select form-select-sm" onchange="this.form.submit()"><option value="">Tất cả giải</option>@foreach (var ev in Model.Events) { <option value="@ev.Id" selected="@(ev.Id == Model.EventId)">@ev.Name</option> }</select></div>
+    <div class="col-md-2"><label for="CategoryId" class="form-label small">Cự ly</label><select id="CategoryId" name="CategoryId" class="form-select form-select-sm"><option value="">Tất cả</option>@foreach (var c in Model.Categories) { <option value="@c.Id" selected="@(c.Id == Model.CategoryId)">@c.Name</option> }</select></div>
+    <div class="col-md-2"><label for="Status" class="form-label small">Trạng thái</label><select id="Status" name="Status" class="form-select form-select-sm"><option value="">Tất cả</option>@foreach (var s in new[] { "PendingPayment", "Confirmed", "Cancelled", "Expired", "Transferred", "RefundPending", "Refunded" }) { <option value="@s" selected="@(s == Model.Status)">@s</option> }</select></div>
+    <div class="col-md-4"><label for="Keyword" class="form-label small">Tên / BIB / SĐT / email</label><input id="Keyword" name="Keyword" value="@Model.Keyword" class="form-control form-control-sm" /></div>
+    <div class="col-md-1 d-flex gap-1"><button class="btn btn-sm btn-primary" title="Lọc"><i class="bi bi-funnel"></i></button><a asp-page="/Organizer/Registrations" class="btn btn-sm btn-outline-secondary" title="Bỏ lọc"><i class="bi bi-x-lg"></i></a></div>
+</div></form>
+
+<div class="card"><div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>VĐV</th><th>Giải / cự ly</th><th>BIB</th><th>Liên hệ</th><th>Đăng ký</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.Data.Items)
+    {
+        <tr>
+            <td><strong>@item.FullName</strong><div class="small text-secondary">@item.Gender · @item.DateOfBirth.ToString("dd/MM/yyyy") · áo @item.TShirtSize</div></td>
+            <td>@item.CategoryName<div class="small text-secondary">Event #@item.EventId</div></td>
+            <td>@(item.BibNumber?.ToString() ?? "—")<div class="small text-secondary">@item.BibName</div></td>
+            <td class="small">@item.Phone@if (!string.IsNullOrWhiteSpace(item.Email)) { <div>@item.Email</div> }</td>
+            <td class="small text-nowrap">@item.RegisteredAt.ToString("dd/MM/yyyy HH:mm")<div>@item.FinalPrice.ToString("N0")đ</div></td>
+            <td><status-badge status="@item.Status" /></td>
+            <td class="text-end">
+                @if (item.Status is "PendingPayment" or "Confirmed" or "RefundPending")
+                {
+                    <a asp-page="/Organizer/EditRegistration" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Sửa trường khóa</a>
+                }
+            </td>
+        </tr>
+    }
+    @if (Model.Data.Items.Count == 0) { <tr><td colspan="7" class="text-center text-secondary py-4">Không có đăng ký phù hợp.</td></tr> }
+    </tbody>
+</table></div></div>
+<div class="mt-2"><partial name="_Pager" model="PagerModel.From(Model.Data, pagerRoute)" /></div>

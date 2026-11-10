@@ -1,0 +1,23 @@
+@page "{id:int}"
+@model MarathonRMS.WebApp.Pages.Member.EditRegistrationModel
+@{
+    ViewData["Title"] = "Sửa thông tin đăng ký";
+}
+
+<a asp-page="/Member/Registrations" class="btn btn-sm btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> Đăng ký của tôi</a>
+<h1 class="h3 mb-1">Sửa thông tin đăng ký</h1>
+<p class="text-secondary">@Model.Registration.EventName · @Model.Registration.CategoryName</p>
+
+<form method="post" class="card"><div class="card-body row g-3">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+    <div class="col-md-6"><label asp-for="Input.BibName" class="form-label">Tên in BIB</label><input asp-for="Input.BibName" class="form-control" /><span asp-validation-for="Input.BibName" class="text-danger small"></span></div>
+    <div class="col-md-6"><label asp-for="Input.TShirtSize" class="form-label">Cỡ áo</label><select asp-for="Input.TShirtSize" class="form-select">@foreach (var size in new[] { "XS", "S", "M", "L", "XL", "XXL" }) { <option>@size</option> }</select></div>
+    <div class="col-md-6"><label asp-for="Input.Phone" class="form-label">Số điện thoại</label><input asp-for="Input.Phone" class="form-control" /><span asp-validation-for="Input.Phone" class="text-danger small"></span></div>
+    <div class="col-md-6"><label asp-for="Input.ClubName" class="form-label">Câu lạc bộ</label><input asp-for="Input.ClubName" class="form-control" /></div>
+    <div class="col-md-6"><label asp-for="Input.EmergencyContactName" class="form-label">Liên hệ khẩn cấp</label><input asp-for="Input.EmergencyContactName" class="form-control" /></div>
+    <div class="col-md-6"><label asp-for="Input.EmergencyContactPhone" class="form-label">SĐT khẩn cấp</label><input asp-for="Input.EmergencyContactPhone" class="form-control" /></div>
+    <div class="col-12"><div class="form-check"><input asp-for="Input.HideFromPublicList" class="form-check-input" /><label asp-for="Input.HideFromPublicList" class="form-check-label">Ẩn tên khỏi danh sách công khai</label></div></div>
+    <div class="col-12 d-flex gap-2"><button class="btn btn-primary">Lưu thay đổi</button><a asp-page="/Member/Registrations" class="btn btn-outline-secondary">Hủy</a></div>
+</div></form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

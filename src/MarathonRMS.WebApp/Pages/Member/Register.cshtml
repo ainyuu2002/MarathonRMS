@@ -1,0 +1,79 @@
+@page "{categoryId:int}"
+@model MarathonRMS.WebApp.Pages.Member.RegisterModel
+@{
+    ViewData["Title"] = "Đăng ký cự ly";
+}
+
+<a asp-page="/Events/Detail" asp-route-id="@Model.Event.Id" asp-route-slug="@Model.Event.Slug" class="btn btn-sm btn-outline-secondary mb-3">
+    <i class="bi bi-arrow-left"></i> Quay lại giải
+</a>
+<h1 class="h3">Đăng ký @Model.Category.Name</h1>
+<p class="text-secondary">@Model.Event.Name · @Model.Event.EventDate.ToString("dd/MM/yyyy")</p>
+
+@if (!Model.Profile.IsCompleteForRegistration)
+{
+    <div class="alert alert-warning">
+        Hồ sơ của bạn chưa đủ thông tin để đăng ký. <a asp-page="/Member/Profile" class="alert-link">Hoàn thiện hồ sơ</a> rồi quay lại.
+    </div>
+}
+
+<form method="post" class="row g-4">
+    <input type="hidden" asp-for="Input.CategoryId" />
+    <input type="hidden" asp-for="Input.ParticipantId" />
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+    <div class="col-lg-8">
+        <div class="card mb-4"><div class="card-header fw-semibold">Thông tin người chạy (lưu snapshot)</div><div class="card-body row g-3">
+            <div class="col-md-8"><label asp-for="Input.FullName" class="form-label">Họ tên</label><input asp-for="Input.FullName" class="form-control" /><span asp-validation-for="Input.FullName" class="text-danger small"></span></div>
+            <div class="col-md-4"><label asp-for="Input.BibName" class="form-label">Tên in BIB</label><input asp-for="Input.BibName" class="form-control" /><span asp-validation-for="Input.BibName" class="text-danger small"></span></div>
+            <div class="col-md-4"><label asp-for="Input.DateOfBirth" class="form-label">Ngày sinh</label><input asp-for="Input.DateOfBirth" type="date" class="form-control" /></div>
+            <div class="col-md-4"><label asp-for="Input.Gender" class="form-label">Giới tính</label><select asp-for="Input.Gender" class="form-select"><option value="">Chọn</option><option value="M">Nam</option><option value="F">Nữ</option></select></div>
+            <div class="col-md-4"><label asp-for="Input.Nationality" class="form-label">Quốc tịch</label><input asp-for="Input.Nationality" class="form-control" /></div>
+            <div class="col-md-4"><label asp-for="Input.IdType" class="form-label">Loại giấy tờ</label><select asp-for="Input.IdType" class="form-select"><option value="">Chọn</option><option>CCCD</option><option>Passport</option><option>BirthCertificate</option></select></div>
+            <div class="col-md-4"><label asp-for="Input.IdNumber" class="form-label">Số giấy tờ</label><input asp-for="Input.IdNumber" class="form-control" /></div>
+            <div class="col-md-4"><label asp-for="Input.TShirtSize" class="form-label">Cỡ áo</label><select asp-for="Input.TShirtSize" class="form-select"><option value="">Chọn</option>@foreach (var size in new[] { "XS", "S", "M", "L", "XL", "XXL" }) { <option>@size</option> }</select></div>
+            <div class="col-md-6"><label asp-for="Input.Phone" class="form-label">Điện thoại</label><input asp-for="Input.Phone" class="form-control" /></div>
+            <div class="col-md-6"><label asp-for="Input.Email" class="form-label">Email</label><input asp-for="Input.Email" class="form-control" /></div>
+            <div class="col-md-6"><label asp-for="Input.EmergencyContactName" class="form-label">Liên hệ khẩn cấp</label><input asp-for="Input.EmergencyContactName" class="form-control" /></div>
+            <div class="col-md-6"><label asp-for="Input.EmergencyContactPhone" class="form-label">SĐT khẩn cấp</label><input asp-for="Input.EmergencyContactPhone" class="form-control" /></div>
+            <div class="col-md-4"><label asp-for="Input.BloodType" class="form-label">Nhóm máu</label><input asp-for="Input.BloodType" class="form-control" /></div>
+            <div class="col-md-8"><label asp-for="Input.MedicalNotes" class="form-label">Lưu ý y tế</label><input asp-for="Input.MedicalNotes" class="form-control" /></div>
+            <div class="col-12"><label asp-for="Input.ClubName" class="form-label">Câu lạc bộ</label><input asp-for="Input.ClubName" class="form-control" /></div>
+        </div></div>
+
+        <div class="card mb-4"><div class="card-header fw-semibold">Giám hộ / người chạy kèm (nếu độ tuổi yêu cầu)</div><div class="card-body row g-3">
+            <div class="col-md-6"><label asp-for="Input.GuardianName" class="form-label">Tên người giám hộ</label><input asp-for="Input.GuardianName" class="form-control" /></div>
+            <div class="col-md-6"><label asp-for="Input.GuardianPhone" class="form-label">SĐT người giám hộ</label><input asp-for="Input.GuardianPhone" class="form-control" /></div>
+            <div class="col-md-6"><label asp-for="Input.GuardianIdNumber" class="form-label">Giấy tờ người giám hộ</label><input asp-for="Input.GuardianIdNumber" class="form-control" /></div>
+            <div class="col-md-6 d-flex align-items-end"><div class="form-check mb-2"><input asp-for="Input.GuardianConsent" class="form-check-input" /><label asp-for="Input.GuardianConsent" class="form-check-label">Người giám hộ đồng ý</label></div></div>
+            <div class="col-md-6"><label asp-for="Input.EscortName" class="form-label">Tên người chạy kèm</label><input asp-for="Input.EscortName" class="form-control" /></div>
+            <div class="col-md-6"><label asp-for="Input.EscortPhone" class="form-label">SĐT người chạy kèm</label><input asp-for="Input.EscortPhone" class="form-control" /></div>
+        </div></div>
+
+        <div class="card"><div class="card-header fw-semibold">Xác nhận và đồng ý</div><div class="card-body">
+            <div class="border rounded p-3 bg-light mb-3" style="max-height:220px;overflow:auto">@Html.Raw(Model.Waiver.WaiverText)</div>
+            <div class="form-check mb-2"><input asp-for="Input.WaiverAccepted" class="form-check-input" /><label asp-for="Input.WaiverAccepted" class="form-check-label">Tôi đồng ý văn bản miễn trừ trách nhiệm</label><span asp-validation-for="Input.WaiverAccepted" class="text-danger d-block small"></span></div>
+            <div class="form-check mb-2"><input asp-for="Input.HealthDeclarationAccepted" class="form-check-input" /><label asp-for="Input.HealthDeclarationAccepted" class="form-check-label">Tôi cam kết đủ sức khỏe tham gia</label></div>
+            <div class="form-check mb-2"><input asp-for="Input.HealthDataConsent" class="form-check-input" /><label asp-for="Input.HealthDataConsent" class="form-check-label">Đồng ý xử lý dữ liệu sức khỏe</label></div>
+            <div class="form-check mb-2"><input asp-for="Input.PhotoMarketingConsent" class="form-check-input" /><label asp-for="Input.PhotoMarketingConsent" class="form-check-label">Đồng ý dùng hình ảnh cho truyền thông</label></div>
+            <div class="form-check"><input asp-for="Input.HideFromPublicList" class="form-check-input" /><label asp-for="Input.HideFromPublicList" class="form-check-label">Ẩn tên khỏi danh sách công khai</label></div>
+        </div></div>
+    </div>
+
+    <aside class="col-lg-4"><div class="card position-sticky" style="top:1rem"><div class="card-header fw-semibold">Tóm tắt</div><div class="card-body">
+        <div class="d-flex justify-content-between"><span>Cự ly</span><strong>@Model.Category.Name</strong></div>
+        <div class="d-flex justify-content-between mt-2"><span>Giá hiện tại</span><strong>@(Model.Category.CurrentPrice?.ToString("N0") ?? "—")đ</strong></div>
+        <div class="mt-3"><label asp-for="Input.CouponCode" class="form-label">Mã giảm giá</label><input asp-for="Input.CouponCode" class="form-control text-uppercase" /></div>
+        @if (Model.Profile.IsCompleteForRegistration)
+        {
+            <button type="submit" class="btn btn-primary w-100 mt-3">Xác nhận đăng ký</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary w-100 mt-3" disabled>Xác nhận đăng ký</button>
+        }
+        <div class="small text-secondary mt-2">Thông tin sẽ được chụp lại tại thời điểm đăng ký.</div>
+    </div></div></aside>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

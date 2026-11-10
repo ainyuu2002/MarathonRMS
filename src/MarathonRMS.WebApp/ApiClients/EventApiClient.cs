@@ -11,6 +11,10 @@ public class EventApiClient : ApiClientBase
     public Task<List<EventSummaryDto>> GetMineAsync(CancellationToken ct = default) =>
         GetAsync<List<EventSummaryDto>>("api/events/mine", ct);
 
+    public Task<MarathonRMS.DTOs.Common.PagedResult<EventSummaryDto>> SearchPublicAsync(
+        string? filter, string? orderBy, int page, int pageSize = 12, CancellationToken ct = default) =>
+        GetODataPageAsync<EventSummaryDto>("Events", filter, orderBy, page, pageSize, ct);
+
     public Task<EventDetailDto> GetAsync(int id, CancellationToken ct = default) =>
         GetAsync<EventDetailDto>($"api/events/{id}", ct);
 
@@ -25,6 +29,8 @@ public class EventApiClient : ApiClientBase
 
     public Task ChangeStatusAsync(int id, string status, CancellationToken ct = default) =>
         PatchAsync($"api/events/{id}/status", new ChangeEventStatusRequest { Status = status }, ct);
+    public Task PostponeAsync(int id, PostponeEventRequest request, CancellationToken ct = default) => PostAsync($"api/events/{id}/postpone", request, ct);
+    public Task CancelAsync(int id, CancelEventRequest request, CancellationToken ct = default) => PostAsync($"api/events/{id}/cancel", request, ct);
 
     public Task<EventPolicyDto> GetPolicyAsync(int id, CancellationToken ct = default) =>
         GetAsync<EventPolicyDto>($"api/events/{id}/policies", ct);
@@ -40,6 +46,9 @@ public class EventApiClient : ApiClientBase
 
     public Task<List<RaceCategoryDto>> GetCategoriesAsync(int eventId, CancellationToken ct = default) =>
         GetAsync<List<RaceCategoryDto>>($"api/events/{eventId}/categories", ct);
+
+    public Task<RaceCategoryDto> GetCategoryAsync(int categoryId, CancellationToken ct = default) =>
+        GetAsync<RaceCategoryDto>($"api/categories/{categoryId}", ct);
 
     public Task<RaceCategoryDto> CreateCategoryAsync(int eventId, UpsertRaceCategoryRequest request,
         CancellationToken ct = default) => PostAsync<RaceCategoryDto>($"api/events/{eventId}/categories", request, ct);

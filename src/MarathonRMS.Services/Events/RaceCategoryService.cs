@@ -42,6 +42,15 @@ public class RaceCategoryService : IRaceCategoryService
         return categories.Select(c => RaceCategoryMappings.ToDto(c, counts.GetValueOrDefault(c.CategoryId), _clock.Now)).ToList();
     }
 
+    public async Task<RaceCategoryDto> GetAsync(int categoryId, CancellationToken ct = default)
+    {
+        var category = await _categories.GetTrackedAsync(categoryId, ct) ?? throw new NotFoundException("Không tìm thấy cự ly.");
+        if (category.Event.Status == EventStatus.Draft && !CanManage(category.Event.OrganizationId))
+            throw new NotFoundException("Không tìm thấy cự ly.");
+        var activeCount = await _categories.CountActiveRegistrationsAsync(categoryId, ct);
+        return RaceCategoryMappings.ToDto(category, activeCount, _clock.Now);
+    }
+
     public async Task<RaceCategoryDto> CreateAsync(int eventId, UpsertRaceCategoryRequest request,
         CancellationToken ct = default)
     {

@@ -60,6 +60,7 @@ AddApiClient<CouponApiClient>();
 AddApiClient<EventContentApiClient>();
 // Phần B
 AddApiClient<EventApiClient>();
+AddApiClient<RegistrationApiClient>();
 
 // Phần C
 AddApiClient<RaceDayApiClient>();

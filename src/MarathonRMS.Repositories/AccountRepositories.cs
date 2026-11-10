@@ -7,6 +7,7 @@ namespace MarathonRMS.Repositories;
 public interface IParticipantRepository
 {
     Task<Participant?> GetSelfAsync(string userId, CancellationToken ct = default);
+    Task<Participant?> GetOwnedAsync(int participantId, string ownerUserId, CancellationToken ct = default);
     Task AddAsync(Participant participant, CancellationToken ct = default);
 }
 
@@ -16,6 +17,8 @@ public class ParticipantRepository : IParticipantRepository
     public ParticipantRepository(ParticipantDAO dao) => _dao = dao;
 
     public Task<Participant?> GetSelfAsync(string userId, CancellationToken ct = default) => _dao.GetSelfAsync(userId, ct);
+    public Task<Participant?> GetOwnedAsync(int participantId, string ownerUserId, CancellationToken ct = default) =>
+        _dao.GetOwnedAsync(participantId, ownerUserId, ct);
     public Task AddAsync(Participant participant, CancellationToken ct = default) => _dao.AddAsync(participant, ct);
 }
 

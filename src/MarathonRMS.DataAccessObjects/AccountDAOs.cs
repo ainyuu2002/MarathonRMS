@@ -12,6 +12,10 @@ public class ParticipantDAO : BaseDAO<Participant>
     /// <summary>Hồ sơ chính chủ (có tracking – dùng để sửa).</summary>
     public Task<Participant?> GetSelfAsync(string userId, CancellationToken ct = default) =>
         Set.FirstOrDefaultAsync(p => p.OwnerUserId == userId && p.Relationship == ParticipantRelationship.Self && !p.IsDeleted, ct);
+
+    public Task<Participant?> GetOwnedAsync(int participantId, string ownerUserId, CancellationToken ct = default) =>
+        Set.Include(p => p.Owner).FirstOrDefaultAsync(p => p.ParticipantId == participantId &&
+            p.OwnerUserId == ownerUserId && !p.IsDeleted, ct);
 }
 
 public class ConsentRecordDAO : BaseDAO<ConsentRecord>

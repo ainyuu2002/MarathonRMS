@@ -64,6 +64,14 @@ public class MyRegistrationDto
     public string Status { get; set; } = "";
     public int? BibNumber { get; set; }
     public string BibName { get; set; } = "";
+    public string TShirtSize { get; set; } = "";
+    public string Phone { get; set; } = "";
+    public string EmergencyContactName { get; set; } = "";
+    public string EmergencyContactPhone { get; set; } = "";
+    public string? ClubName { get; set; }
+    public bool HideFromPublicList { get; set; }
+    public decimal OriginalPrice { get; set; }
+    public decimal DiscountAmount { get; set; }
     public decimal FinalPrice { get; set; }
     public DateTime RegisteredAt { get; set; }
     /// <summary>Hạn thanh toán khi đang PendingPayment (BR-13).</summary>
@@ -110,6 +118,8 @@ public class RegistrationListItemDto
     public int? BibNumber { get; set; }
     public string Gender { get; set; } = "";
     public DateOnly DateOfBirth { get; set; }
+    public string? IdType { get; set; }
+    public string? IdNumber { get; set; }
     public string Nationality { get; set; } = "";
     public string Phone { get; set; } = "";
     public string? Email { get; set; }
