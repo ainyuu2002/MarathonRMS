@@ -29,6 +29,13 @@ public class RegistrationDAO : BaseDAO<Registration>
         Set.AnyAsync(r => r.EventId == eventId && r.IdType == idType && r.IdNumber == idNumber &&
             (r.Status == RegistrationStatus.PendingPayment || r.Status == RegistrationStatus.Confirmed), ct);
 
+    public Task<bool> HasActiveForIdExceptAsync(int eventId, IdType? idType, string? idNumber,
+        int exceptRegistrationId, CancellationToken ct = default) =>
+        string.IsNullOrEmpty(idNumber) ? Task.FromResult(false) :
+        Set.AnyAsync(r => r.EventId == eventId && r.RegistrationId != exceptRegistrationId
+            && r.IdType == idType && r.IdNumber == idNumber
+            && (r.Status == RegistrationStatus.PendingPayment || r.Status == RegistrationStatus.Confirmed), ct);
+
     public Task<Registration?> GetTrackedWithDetailsAsync(int registrationId, CancellationToken ct = default) =>
         Set.Include(r => r.Event).ThenInclude(e => e.Policy)
             .Include(r => r.Category).Include(r => r.Participant)

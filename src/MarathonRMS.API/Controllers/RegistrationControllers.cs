@@ -25,6 +25,33 @@ public class RegistrationsController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<IReadOnlyList<MyRegistrationDto>>> GetMine(CancellationToken ct) =>
         Ok(await _registrations.GetMineAsync(ct));
+
+    [HttpPut("{id:int}/info")]
+    public async Task<ActionResult<MyRegistrationDto>> UpdateInfo(int id, UpdateRegistrationInfoRequest request,
+        CancellationToken ct) => Ok(await _registrations.UpdateInfoAsync(id, request, ct));
+
+    [HttpPost("{id:int}/cancel")]
+    public async Task<IActionResult> Cancel(int id, CancellationToken ct)
+    {
+        await _registrations.CancelAsync(id, ct);
+        return NoContent();
+    }
+}
+
+[ApiController]
+[Route("api/organizer/registrations")]
+[Authorize(Policy = AppPolicies.OrganizerOnly)]
+public class OrganizerRegistrationsController : ControllerBase
+{
+    private readonly IRegistrationService _registrations;
+    public OrganizerRegistrationsController(IRegistrationService registrations) => _registrations = registrations;
+
+    [HttpPut("{id:int}/locked-info")]
+    public async Task<IActionResult> UpdateLockedInfo(int id, UpdateLockedInfoRequest request, CancellationToken ct)
+    {
+        await _registrations.UpdateLockedInfoAsync(id, request, ct);
+        return NoContent();
+    }
 }
 
 [ApiController]

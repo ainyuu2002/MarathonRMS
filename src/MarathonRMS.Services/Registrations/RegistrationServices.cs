@@ -183,6 +183,9 @@ public class RegistrationService : IRegistrationService
 
     public async Task<MyRegistrationDto> UpdateInfoAsync(int registrationId, UpdateRegistrationInfoRequest request, CancellationToken ct = default)
     {
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        if (!await _uow.TryLockAsync($"mrms:payment-registration:{registrationId}", ct))
+            throw new BusinessRuleException("BR-08", "Đăng ký đang được xử lý. Vui lòng thử lại.");
         var registration = await LoadOwnedAsync(registrationId, ct);
         var deadline = registration.Event.Policy.InfoEditDeadline ?? registration.Event.RegistrationCloseAt;
         if (_clock.Now >= deadline || registration.Status is not (RegistrationStatus.PendingPayment or RegistrationStatus.Confirmed))
@@ -194,13 +197,23 @@ public class RegistrationService : IRegistrationService
         registration.EmergencyContactPhone = request.EmergencyContactPhone.Trim();
         registration.ClubName = Clean(request.ClubName);
         registration.HideFromPublicList = request.HideFromPublicList;
+        await _consents.AddAsync(new ConsentRecord
+        {
+            UserId = registration.RegisteredByUserId, RegistrationId = registrationId,
+            ConsentType = ConsentType.PublicListing, DocumentVersion = registration.Event.WaiverVersion,
+            Granted = !request.HideFromPublicList, CreatedAt = _clock.Now
+        }, ct);
         await _audit.LogAsync("Registration.UpdateInfo", nameof(Registration), registrationId.ToString(), null, request, ct);
         await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return ToMineDto(registration, _clock.Now);
     }
 
     public async Task CancelAsync(int registrationId, CancellationToken ct = default)
     {
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        if (!await _uow.TryLockAsync($"mrms:payment-registration:{registrationId}", ct))
+            throw new BusinessRuleException("BR-14", "Đăng ký đang được xử lý. Vui lòng thử lại.");
         var registration = await LoadOwnedAsync(registrationId, ct);
         if (registration.Status != RegistrationStatus.PendingPayment)
             throw new BusinessRuleException("BR-14", "Chỉ có thể hủy đăng ký đang chờ thanh toán.");
@@ -210,6 +223,7 @@ public class RegistrationService : IRegistrationService
         if (registration.CouponId is int couponId) await _coupons.ReleaseAsync(couponId, ct);
         await _audit.LogAsync("Registration.Cancel", nameof(Registration), registrationId.ToString(), null, new { registration.Status }, ct);
         await _uow.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
     }
 
     public IQueryable<RegistrationListItemDto> QueryForOrganizer()
@@ -219,28 +233,80 @@ public class RegistrationService : IRegistrationService
             .Select(r => new RegistrationListItemDto
             {
                 Id = r.RegistrationId, EventId = r.EventId, CategoryId = r.CategoryId, CategoryName = r.Category.Name,
-                FullName = r.FullName, BibName = r.BibName, BibNumber = r.BibNumber, Gender = r.Gender.ToString(),
-                DateOfBirth = r.DateOfBirth, Nationality = r.Nationality, Phone = r.Phone, Email = r.Email,
-                TShirtSize = r.TShirtSize.ToString(), ClubName = r.ClubName, EntryType = r.EntryType.ToString(),
-                Status = r.Status.ToString(), FinalPrice = r.FinalPrice, RegisteredAt = r.RegisteredAt,
+                FullName = r.FullName, BibName = r.BibName, BibNumber = r.BibNumber,
+                Gender = r.Gender == Gender.M ? "M" : "F",
+                DateOfBirth = r.DateOfBirth,
+                IdType = r.IdType == null ? null
+                    : r.IdType == IdType.CCCD ? "CCCD"
+                    : r.IdType == IdType.Passport ? "Passport" : "BirthCertificate",
+                IdNumber = r.IdNumber, Nationality = r.Nationality, Phone = r.Phone, Email = r.Email,
+                TShirtSize = r.TShirtSize == TShirtSize.XS ? "XS"
+                    : r.TShirtSize == TShirtSize.S ? "S"
+                    : r.TShirtSize == TShirtSize.M ? "M"
+                    : r.TShirtSize == TShirtSize.L ? "L"
+                    : r.TShirtSize == TShirtSize.XL ? "XL" : "XXL",
+                ClubName = r.ClubName,
+                EntryType = r.EntryType == EntryType.Public ? "Public"
+                    : r.EntryType == EntryType.Partner ? "Partner"
+                    : r.EntryType == EntryType.Complimentary ? "Complimentary"
+                    : r.EntryType == EntryType.Pacer ? "Pacer" : "Charity",
+                Status = r.Status == RegistrationStatus.PendingPayment ? "PendingPayment"
+                    : r.Status == RegistrationStatus.Confirmed ? "Confirmed"
+                    : r.Status == RegistrationStatus.Cancelled ? "Cancelled"
+                    : r.Status == RegistrationStatus.Expired ? "Expired"
+                    : r.Status == RegistrationStatus.Transferred ? "Transferred"
+                    : r.Status == RegistrationStatus.RefundPending ? "RefundPending" : "Refunded",
+                FinalPrice = r.FinalPrice, RegisteredAt = r.RegisteredAt,
                 RaceKitCollected = r.RaceKitPickup != null
             });
     }
 
     public async Task UpdateLockedInfoAsync(int registrationId, UpdateLockedInfoRequest request, CancellationToken ct = default)
     {
+        await using var tx = await _uow.BeginTransactionAsync(ct);
+        if (!await _uow.TryLockAsync($"mrms:registration-locked-info:{registrationId}", ct))
+            throw new BusinessRuleException("BR-08", "Đăng ký đang được sửa. Vui lòng thử lại.");
         var registration = await _registrations.GetTrackedWithDetailsAsync(registrationId, ct)
             ?? throw new NotFoundException("Không tìm thấy đăng ký.");
         _scope.EnsureCanManage(registration.Event.OrganizationId);
+        await _scope.EnsureOrganizationActiveAsync(registration.Event.OrganizationId, ct);
+        if (registration.Status is RegistrationStatus.Cancelled or RegistrationStatus.Expired or RegistrationStatus.Transferred
+            or RegistrationStatus.Refunded)
+            throw new BusinessRuleException("BR-08", "Không thể sửa đăng ký không còn hiệu lực.");
+
+        var gender = ParseRequired<Gender>(request.Gender, "giới tính");
+        var idType = ParseOptional<IdType>(request.IdType, "loại giấy tờ");
+        var idNumber = Clean(request.IdNumber)?.ToUpperInvariant();
+        var age = registration.Event.Policy.AgeCalculationMode == AgeCalculationMode.CalendarYear
+            ? registration.Event.EventDate.Year - request.DateOfBirth.Year
+            : AgeCalculator.AgeAt(request.DateOfBirth, registration.Event.EventDate);
+        if (age < registration.Category.MinAge || registration.Category.MaxAge is int maxAge && age > maxAge)
+            throw new BusinessRuleException("BR-05", "Ngày sinh mới không đáp ứng độ tuổi của cự ly.");
+        if (age >= 14 && (idType is null || idNumber is null))
+            throw new BusinessRuleException("BR-05", "Người chạy từ 14 tuổi phải có loại và số giấy tờ.", 400);
+        if (age < registration.Event.Policy.GuardianConsentUnderAge
+            && (string.IsNullOrWhiteSpace(registration.GuardianName) || !registration.GuardianConsent))
+            throw new BusinessRuleException("BR-06", "Ngày sinh mới yêu cầu xác nhận người giám hộ.");
+        if (registration.Category.EscortRequiredUnderAge is int escortAge && age < escortAge
+            && string.IsNullOrWhiteSpace(registration.EscortName))
+            throw new BusinessRuleException("BR-06", "Ngày sinh mới yêu cầu người chạy kèm.");
+        if (await _registrations.HasActiveForIdExceptAsync(registration.EventId, idType, idNumber, registrationId, ct))
+            throw new BusinessRuleException("BR-01", "Số giấy tờ đã có đăng ký còn hiệu lực tại giải này.");
+
         var old = new { registration.FullName, registration.DateOfBirth, registration.Gender, registration.IdType, registration.IdNumber };
         registration.FullName = request.FullName.Trim();
         registration.DateOfBirth = request.DateOfBirth;
-        registration.Gender = ParseRequired<Gender>(request.Gender, "giới tính");
-        registration.IdType = ParseOptional<IdType>(request.IdType, "loại giấy tờ");
-        registration.IdNumber = Clean(request.IdNumber)?.ToUpperInvariant();
+        registration.Gender = gender;
+        registration.IdType = idType;
+        registration.IdNumber = idNumber;
         await _audit.LogAsync("Registration.UpdateLockedInfo", nameof(Registration), registrationId.ToString(), old,
             new { request.FullName, request.DateOfBirth, request.Gender, request.IdType, request.IdNumber, request.Reason }, ct);
-        await _uow.SaveChangesAsync(ct);
+        try { await _uow.SaveChangesAsync(ct); }
+        catch (DbUpdateException)
+        {
+            throw new BusinessRuleException("BR-01", "Số giấy tờ đã có đăng ký còn hiệu lực tại giải này.");
+        }
+        await tx.CommitAsync(ct);
     }
 
     public async Task<int> ExpireOverdueAsync(CancellationToken ct = default)
@@ -303,6 +369,9 @@ public class RegistrationService : IRegistrationService
             CategoryId = r.CategoryId, CategoryName = r.Category.Name, ParticipantId = r.ParticipantId,
             RunnerName = r.FullName, IsDependent = r.Participant.Relationship != ParticipantRelationship.Self,
             Status = r.Status.ToString(), BibNumber = r.BibNumber, BibName = r.BibName,
+            TShirtSize = r.TShirtSize.ToString(), Phone = r.Phone,
+            EmergencyContactName = r.EmergencyContactName, EmergencyContactPhone = r.EmergencyContactPhone,
+            ClubName = r.ClubName, HideFromPublicList = r.HideFromPublicList,
             OriginalPrice = r.OriginalPrice, DiscountAmount = r.DiscountAmount, FinalPrice = r.FinalPrice,
             RegisteredAt = r.RegisteredAt, ExpiresAt = r.ExpiresAt,
             QrToken = r.Status == RegistrationStatus.Confirmed ? r.QrToken : null,

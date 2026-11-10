@@ -1,0 +1,64 @@
+@page
+@model MarathonRMS.WebApp.Pages.Member.RegistrationsModel
+@{
+    ViewData["Title"] = "Đăng ký của tôi";
+}
+
+<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+    <div><h1 class="h3 mb-1">Đăng ký của tôi</h1><p class="text-secondary mb-0">Theo dõi trạng thái, BIB và mã nhận race kit.</p></div>
+    <a asp-page="/Index" class="btn btn-outline-primary"><i class="bi bi-search"></i> Tìm giải</a>
+</div>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="card card-body text-center py-5"><i class="bi bi-ticket-perforated display-5 text-secondary"></i><p class="mt-3 mb-2">Bạn chưa có đăng ký nào.</p><a asp-page="/Index">Khám phá giải đang mở</a></div>
+}
+else
+{
+    <div class="row g-3">
+    @foreach (var item in Model.Items)
+    {
+        <div class="col-xl-6"><article class="card h-100"><div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div><h2 class="h5 mb-1">@item.EventName</h2><div class="text-secondary">@item.CategoryName · @item.EventDate.ToString("dd/MM/yyyy")</div></div>
+                <status-badge status="@item.Status" />
+            </div>
+            <hr />
+            <dl class="row small mb-3">
+                <dt class="col-5">Người chạy</dt><dd class="col-7">@item.RunnerName</dd>
+                <dt class="col-5">Tên BIB</dt><dd class="col-7">@item.BibName</dd>
+                <dt class="col-5">Số BIB</dt><dd class="col-7">@(item.BibNumber?.ToString() ?? "Chưa gán")</dd>
+                <dt class="col-5">Phí đăng ký</dt><dd class="col-7">@item.FinalPrice.ToString("N0")đ</dd>
+                <dt class="col-5">Đăng ký lúc</dt><dd class="col-7">@item.RegisteredAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                @if (item.ExpiresAt is DateTime expires)
+                {
+                    <dt class="col-5">Giữ suất đến</dt><dd class="col-7 text-warning-emphasis">@expires.ToString("dd/MM/yyyy HH:mm:ss")</dd>
+                }
+            </dl>
+            @if (!string.IsNullOrWhiteSpace(item.QrToken))
+            {
+                <div class="border rounded bg-body-tertiary p-3 mb-3 text-center">
+                    <i class="bi bi-qr-code fs-2"></i><div class="small text-secondary">Mã nhận race kit</div><code class="user-select-all">@item.QrToken</code>
+                </div>
+            }
+            <div class="d-flex gap-2 flex-wrap">
+                @if (item.Status == "PendingPayment")
+                {
+                    <a asp-page="/Member/Checkout" asp-route-registrationId="@item.Id" class="btn btn-primary btn-sm"><i class="bi bi-credit-card"></i> Thanh toán</a>
+                }
+                @if (item.CanEditInfo)
+                {
+                    <a asp-page="/Member/EditRegistration" asp-route-id="@item.Id" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i> Sửa thông tin</a>
+                }
+                @if (item.CanCancel)
+                {
+                    <form method="post" asp-page-handler="Cancel" asp-route-id="@item.Id" onsubmit="return confirm('Hủy đăng ký chưa thanh toán này?');">
+                        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle"></i> Hủy đăng ký</button>
+                    </form>
+                }
+            </div>
+        </div></article></div>
+    }
+    </div>
+}

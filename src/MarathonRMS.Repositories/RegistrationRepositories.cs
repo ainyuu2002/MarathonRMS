@@ -10,6 +10,8 @@ public interface IRegistrationRepository
     Task<int> CountActiveAsync(int categoryId, CancellationToken ct = default);
     Task<bool> HasActiveForParticipantAsync(int eventId, int participantId, CancellationToken ct = default);
     Task<bool> HasActiveForIdAsync(int eventId, IdType? idType, string? idNumber, CancellationToken ct = default);
+    Task<bool> HasActiveForIdExceptAsync(int eventId, IdType? idType, string? idNumber, int exceptRegistrationId,
+        CancellationToken ct = default);
     Task<Registration?> GetTrackedWithDetailsAsync(int registrationId, CancellationToken ct = default);
     Task<List<Registration>> GetMineAsync(string userId, CancellationToken ct = default);
     IQueryable<Registration> QueryWithDetails();
@@ -25,6 +27,8 @@ public class RegistrationRepository : IRegistrationRepository
     public Task<int> CountActiveAsync(int id, CancellationToken ct = default) => _dao.CountActiveAsync(id, ct);
     public Task<bool> HasActiveForParticipantAsync(int eventId, int participantId, CancellationToken ct = default) => _dao.HasActiveForParticipantAsync(eventId, participantId, ct);
     public Task<bool> HasActiveForIdAsync(int eventId, IdType? type, string? number, CancellationToken ct = default) => _dao.HasActiveForIdAsync(eventId, type, number, ct);
+    public Task<bool> HasActiveForIdExceptAsync(int eventId, IdType? type, string? number, int exceptId,
+        CancellationToken ct = default) => _dao.HasActiveForIdExceptAsync(eventId, type, number, exceptId, ct);
     public Task<Registration?> GetTrackedWithDetailsAsync(int id, CancellationToken ct = default) => _dao.GetTrackedWithDetailsAsync(id, ct);
     public Task<List<Registration>> GetMineAsync(string userId, CancellationToken ct = default) => _dao.GetMineAsync(userId, ct);
     public IQueryable<Registration> QueryWithDetails() => _dao.QueryWithDetails();
