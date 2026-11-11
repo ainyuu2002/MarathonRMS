@@ -153,5 +153,6 @@ app.MapControllers();
 
 await DbInitializer.InitializeAsync(app.Services, config, app.Logger);
 await RaceDayDemoSeeder.SeedAsync(app.Services, config, app.Logger);
+await SampleDataSeeder.SeedAsync(app.Services, config, app.Logger);
 
 app.Run();

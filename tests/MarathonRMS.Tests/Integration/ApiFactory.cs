@@ -34,6 +34,8 @@ public sealed class ApiFactory : WebApplicationFactory<AuthController>, IAsyncLi
         Environment.SetEnvironmentVariable("ConnectionStrings__MarathonDb", ConnectionString);
         Environment.SetEnvironmentVariable("Jwt__SigningKey", "integration-test-signing-key-0123456789-abcdef");
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        // Test dựa trên bộ demo nhỏ (DbInitializer + RaceDayDemoSeeder) – tắt bộ dữ liệu mẫu lớn
+        Environment.SetEnvironmentVariable("Seed__SampleData", "false");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -45,8 +47,8 @@ public sealed class ApiFactory : WebApplicationFactory<AuthController>, IAsyncLi
     private static string RepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "global.json"))) dir = dir.Parent;
-        return dir?.FullName ?? throw new InvalidOperationException("Không tìm thấy thư mục gốc repo (global.json).");
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "src", "MarathonRMS.sln"))) dir = dir.Parent;
+        return dir?.FullName ?? throw new InvalidOperationException("Không tìm thấy thư mục gốc repo (src/MarathonRMS.sln).");
     }
 
     public async Task InitializeAsync()

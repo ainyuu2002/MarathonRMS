@@ -17,17 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.Services", "Mar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.WebApp", "MarathonRMS.WebApp\MarathonRMS.WebApp.csproj", "{D92B3919-9BCD-42B8-B031-3B300E391A27}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{69C510BB-445A-43FC-86A6-79643DDA373A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarathonRMS.Tests", "..\tests\MarathonRMS.Tests\MarathonRMS.Tests.csproj", "{AA171568-D5C2-43A5-ABF8-28A446D38E8D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{27FC6C1C-11D6-4B84-B9B0-E953FAE0CA0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -58,12 +51,8 @@ Global
 		{D92B3919-9BCD-42B8-B031-3B300E391A27}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D92B3919-9BCD-42B8-B031-3B300E391A27}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D92B3919-9BCD-42B8-B031-3B300E391A27}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AA171568-D5C2-43A5-ABF8-28A446D38E8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AA171568-D5C2-43A5-ABF8-28A446D38E8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AA171568-D5C2-43A5-ABF8-28A446D38E8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AA171568-D5C2-43A5-ABF8-28A446D38E8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{AA171568-D5C2-43A5-ABF8-28A446D38E8D} = {69C510BB-445A-43FC-86A6-79643DDA373A}
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

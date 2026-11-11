@@ -7,7 +7,7 @@ PRN232 final project – a multi-organizer platform for running races (road & tr
 
 | Thành phần | Phiên bản | Ghi chú |
 |---|---|---|
-| .NET SDK | **8.0.4xx** | Khóa bằng `global.json` – máy có cả SDK 10 vẫn dùng SDK 8 |
+| .NET SDK | **8.0** trở lên | Project nhắm `net8.0`; SDK 9/10 build được, cần .NET 8 runtime để chạy |
 | SQL Server | LocalDB (đi kèm Visual Studio) **hoặc** SQL Server bất kỳ | Xem bên dưới |
 | dotnet-ef | 8.x | `dotnet tool install -g dotnet-ef --version 8.*` |
 | Visual Studio 2022 (17.8+) hoặc VS Code + C# Dev Kit | | |
@@ -73,7 +73,7 @@ Phụ thuộc: `API → Services → Repositories → DataAccessObjects → Busi
 
 ## Quy ước
 
-- **Phiên bản package** chỉ khai báo trong `Directory.Packages.props`; csproj ghi `<PackageReference Include="..." />` không kèm Version.
+- **Phiên bản package** ghi ngay trong từng `.csproj` (`Version="..."`); package dùng ở nhiều project phải cùng phiên bản (EF Core / ASP.NET Core 8.0.32). Folder `src` tự chứa đủ để build – không cần file nào ở thư mục cha.
 - **Lỗi nghiệp vụ**: Service ném `BusinessRuleException("BR-xx", "...")` → API trả `ProblemDetails` có `code`; WebApp bắt `ApiException` qua `BasePageModel.HandleApiErrorAsync`.
 - **Phân quyền WebApp** theo thư mục trang: `/SuperAdmin`, `/Admin`, `/Organizer`, `/Staff`, `/Member` (cấu hình trong `Program.cs`).
 - **Migration**: chỉ một người tạo migration tại một thời điểm, đặt tên theo tính năng:
