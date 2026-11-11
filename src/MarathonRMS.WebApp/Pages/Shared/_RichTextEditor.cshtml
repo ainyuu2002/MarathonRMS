@@ -4,5 +4,8 @@
     Nội dung HTML được ghi vào <input type="hidden" name="@Model.FieldName">; server PHẢI lọc lại bằng IHtmlContentSanitizer (BR-50).
     Trang dùng partial này cần thêm vào section Styles/Scripts: <partial name="_RichTextEditorAssets" />
 *@
-<div class="rich-text-editor border rounded" data-target="@Model.FieldId" style="min-height:@(Model.MinHeightPx)px"></div>
+@* Quill đặt .ql-container { height: 100% }. Dùng min-height ở đây khiến editor có thể
+   tràn khỏi Bootstrap card và phủ lên footer/nút submit. Chiều cao cố định giúp layout
+   dành đúng không gian; phần .ql-editor của Quill sẽ tự cuộn khi nội dung dài. *@
+<div class="rich-text-editor border rounded" data-target="@Model.FieldId" style="height:@(Model.MinHeightPx)px"></div>
 <input type="hidden" id="@Model.FieldId" name="@Model.FieldName" value="@Model.Value" />
